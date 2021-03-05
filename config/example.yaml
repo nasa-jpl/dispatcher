@@ -1,0 +1,11 @@
+nodes:
+  - name: kuka
+    namespace: kuka
+    node_name: kuka
+    cmd: ros2 run kuka kuka --ros-args -p kuka_rsi_config_path:=storm_launch/cfg/kuka/kuka_offline.yaml
+  - name: kuka-simulator
+    namespace: kuka
+    node_name: kuka_rsi_simulator
+    cmd: ros2 run kuka kuka_rsi_simulator
+
+other_stuff: stuff

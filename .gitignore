@@ -1,0 +1,6 @@
+build
+.pyc
+*.swp
+CMakeFiles
+.used
+*.DS_Store
