@@ -4,3 +4,4 @@ build
 CMakeFiles
 .used
 *.DS_Store
+.clang-format
