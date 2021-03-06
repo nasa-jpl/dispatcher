@@ -80,6 +80,7 @@ target_include_directories(dispatcher_widget
 target_link_libraries(
     dispatcher_widget
     cfw
+    icons
 )
 ament_target_dependencies(dispatcher_widget
     rclcpp
