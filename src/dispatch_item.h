@@ -28,6 +28,7 @@ private:
   std::string node_name_;
   std::string node_namespace_;
   std::string cmd_;
+  int index_ = -1;
 
 signals:
 };
