@@ -6,6 +6,8 @@
 #include <QWidget>
 
 #include <yaml-cpp/yaml.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/empty.hpp>
 
 namespace dispatcher {
 
@@ -18,6 +20,8 @@ class DispatchItem : public QWidget {
 public:
   explicit DispatchItem(QWidget* parent, const YAML::Node&);
   ~DispatchItem();
+  void Process();
+  void HealthCb(const std::shared_ptr<std_msgs::msg::Empty>);
 
 private slots:
 
@@ -29,6 +33,7 @@ private:
   std::string node_namespace_;
   std::string cmd_;
   int index_ = -1;
+  std::vector<rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr> health_sub_;
 
 signals:
 };

@@ -3,6 +3,9 @@ nodes:
     namespace: kuka
     node_name: kuka
     cmd: ros2 run kuka kuka --ros-args -p kuka_rsi_config_path:=storm_launch/cfg/kuka/kuka_offline.yaml
+    topics:
+      - kuka/state/module_state
+      - /joint_states
   - name: kuka-simulator
     namespace: kuka
     node_name: kuka_rsi_simulator

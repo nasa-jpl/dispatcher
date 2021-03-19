@@ -21,11 +21,21 @@
 */
 dispatcher::DispatchItem::DispatchItem(QWidget* parent, const YAML::Node& node)
   : QWidget(parent) {
-  dispatcher_ = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
+  
   name_ = node["name"].as<std::string>();
   node_namespace_ = node["namespace"].as<std::string>();
   node_name_ = node["node_name"].as<std::string>();
   cmd_ = node["cmd"].as<std::string>();
+
+  rclcpp::Node* ros_node = dynamic_cast<rclcpp::Node*>(parent);
+  if(node["topics"]) {
+    for(auto& topic : node["topics"]) {
+      CFW_INFO("Subscribing to topic: %s", topic.as<std::string>().c_str());
+        ros_node->create_subscription<std_msgs::msg::Empty>(
+          topic.as<std::string>(), 32, std::bind(&DispatchItem::HealthCb, 
+          this, std::placeholders::_1));
+    }
+  }  
 
   QGridLayout* layout = dispatcher_->getLayout();
   index_ = layout->rowCount();
@@ -57,4 +67,8 @@ dispatcher::DispatchItem::DispatchItem(QWidget* parent, const YAML::Node& node)
 */
 dispatcher::DispatchItem::~DispatchItem() {}
 
+void dispatcher::DispatchItem::Process() {}
 
+void dispatcher::DispatchItem::HealthCb(const std::shared_ptr<std_msgs::msg::Empty>) {
+  std::cout << "health cb" << std::endl;
+}

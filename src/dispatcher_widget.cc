@@ -38,55 +38,11 @@ std::string dispatcher::commit() {
   return std::string(DISPATCHER_GIT_COMMIT);
 }
 
-#if 0
-static int setup_unix_signal_handlers() {
-  struct sigaction hup, term;
-
-  hup.sa_handler = dispatcher::DispatcherWidget::hupSignalHandler;
-  sigemptyset(&hup.sa_mask);
-  hup.sa_flags = 0;
-  hup.sa_flags |= SA_RESTART;
-
-  if (sigaction(SIGHUP, &hup, 0)) {
-    return 1;
-  }
-
-  term.sa_handler = dispatcher::DispatcherWidget::termSignalHandler;
-  sigemptyset(&term.sa_mask);
-  term.sa_flags = 0;
-  term.sa_flags |= SA_RESTART;
-
-  if (sigaction(SIGTERM, &term, 0)) {
-    return 2;
-  }
-
-  return 0;
-}
-#endif
-
 /*!
 @brief class constructor for DispatcherWidget application
 */
 dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   : QWidget(parent), CasahNode("dispatcher", "dispatcher", 2.0, "/logs", "INFO") {
-
-#if 0
-  setup_unix_signal_handlers();
-
-  // set up signal handling
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
-    qFatal("Couldn't create HUP socketpair");
-  }
-
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sigtermFd)) {
-     qFatal("Couldn't create TERM socketpair");
-  }
-
-  snHup = new QSocketNotifier(sighupFd[1], QSocketNotifier::Read, this);
-  connect(snHup, SIGNAL(activated(QSocketDescriptor)), this, SLOT(handleSigHup()));
-  snTerm = new QSocketNotifier(sigtermFd[1], QSocketNotifier::Read, this);
-  connect(snTerm, SIGNAL(activated(QSocketDescriptor)), this, SLOT(handleSigTerm()));
-#endif
 
   // declare ros parameters
   this->declare_parameter<std::string>("dispatcher_config_path", "");
@@ -100,10 +56,11 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   layout_ = new QGridLayout(main_box);
   setLayout(layout_);
 
-  CFW_INFO("Parsing config file: %s", dispatcher_config_path_.c_str());
-  parseConfig(dispatcher_config_path_);
+  CFW_INFO("Parsing dispatcher_config_path: %s", dispatcher_config_path_.c_str());
+  ParseConfig(dispatcher_config_path_);
 
-  QSpacerItem* spacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+  QSpacerItem* spacer = 
+    new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
   layout_->addItem(spacer, layout_->rowCount(), 0);
 
    // setup signal and slot
@@ -117,7 +74,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
       this->get_node_base_interface().get());
 }
 
-void dispatcher::DispatcherWidget::parseConfig(const std::string& config) {
+void dispatcher::DispatcherWidget::ParseConfig(const std::string& config) {
 
   YAML::Node root = YAML::LoadFile(config.c_str());
   const YAML::Node& nodes = root["nodes"];
@@ -131,33 +88,6 @@ void dispatcher::DispatcherWidget::parseConfig(const std::string& config) {
 */
 dispatcher::DispatcherWidget::~DispatcherWidget() {}
 
-
-void dispatcher::DispatcherWidget::handleSigTerm()
-{
-#if 0
-    snTerm->setEnabled(false);
-    char tmp;
-    read(sigtermFd[1], &tmp, sizeof(tmp));
-
-    // do Qt stuff
-
-    snTerm->setEnabled(true);
-#endif
-}
-
-
-void dispatcher::DispatcherWidget::handleSigHup()
-{
-#if 0
-    snHup->setEnabled(false);
-    char tmp;
-    read(sighupFd[1], &tmp, sizeof(tmp));
-
-    // do Qt stuff
-
-    snHup->setEnabled(true);
-#endif
-}
 
 void dispatcher::DispatcherWidget::Process() {
   if(rclcpp::ok()) {

@@ -31,26 +31,14 @@ public:
   QGridLayout* getLayout() {
     return layout_;
   }
-  // Unix signal handlers.
-  static void hupSignalHandler(int unused);
-  static void termSignalHandler(int unused);
-
   const std::vector<std::pair<std::string, std::string>>& getOnlineNodes() {
     return online_nodes_;
   }
 
 public slots:
-  // Qt signal handlers.
-  void handleSigHup();
-  void handleSigTerm();
   virtual void Process() override;
 
 private:
-  static int sighupFd[2];
-  static int sigtermFd[2];
-
-  QSocketNotifier* snHup = nullptr;
-  QSocketNotifier* snTerm = nullptr;
 
   QTimer* timer_ = nullptr;
   QGridLayout* layout_ = nullptr;
@@ -66,8 +54,8 @@ private:
   QSize sizeHint() const {
     return QSize(30, 30);
   }
-  void initializeLayout();
-  void parseConfig(const std::string&);
+  void InitializeLayout();
+  void ParseConfig(const std::string&);
 
 signals:
 };
