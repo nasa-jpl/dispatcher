@@ -30,6 +30,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_srvs REQUIRED)
@@ -48,6 +50,8 @@ add_library(dispatcher_widget
     src/dispatcher_widget.h
     src/dispatch_item.cc
     src/dispatch_item.h
+    src/dispatcher_node.cc
+    src/dispatcher_node.h
 )
 qt5_use_modules(dispatcher_widget Core Widgets OpenGL Gui)
 
@@ -85,6 +89,7 @@ target_link_libraries(
 ament_target_dependencies(dispatcher_widget
     rclcpp
     std_srvs
+    sensor_msgs
     yaml_cpp_vendor
 )
 
@@ -99,4 +104,8 @@ target_link_libraries(
   dispatcher_widget
 )
 
+target_compile_options(
+    dispatcher PUBLIC
+    -ggdb3
+)
 ament_package()

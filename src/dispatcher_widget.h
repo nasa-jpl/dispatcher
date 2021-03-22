@@ -1,6 +1,9 @@
 #ifndef DISPATCHER_WIDGET_H_
 #define DISPATCHER_WIDGET_H_
 
+#include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_node.h"
+
 #include <map>
 #include <vector>
 
@@ -9,11 +12,13 @@
 #include <QWidget>
 #include <QTimer>
 #include <QSocketNotifier>
+#include <QCoreApplication>
 
 #include <casah_node/casah_node.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node_interfaces/node_graph.hpp>
 
-#include "dispatcher/dispatch_item.h"
+#include <sensor_msgs/msg/joint_state.hpp>
 
 namespace dispatcher {
 
@@ -21,24 +26,30 @@ namespace dispatcher {
   std::string branch();
   std::string commit();  
   
-class DispatcherWidget : public QWidget, CasahNode {
+class DispatcherWidget : public QWidget {
 
   Q_OBJECT // must be included to add qt meta information
 
 public:
   explicit DispatcherWidget(QWidget* parent = 0);
   ~DispatcherWidget();
-  QGridLayout* getLayout() {
+  QGridLayout* get_layout() {
     return layout_;
   }
-  const std::vector<std::pair<std::string, std::string>>& getOnlineNodes() {
+  const std::vector<std::pair<std::string, std::string>>& get_online_nodes() {
     return online_nodes_;
+  }
+  void Quit() {
+    QCoreApplication::quit();
   }
 
 public slots:
-  virtual void Process() override;
+  void Process();
 
 private:
+
+  std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
+  rclcpp::executors::SingleThreadedExecutor ros_executor_;
 
   QTimer* timer_ = nullptr;
   QGridLayout* layout_ = nullptr;
@@ -55,7 +66,6 @@ private:
     return QSize(30, 30);
   }
   void InitializeLayout();
-  void ParseConfig(const std::string&);
 
 signals:
 };
