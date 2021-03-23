@@ -6,6 +6,7 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QWidget>
+#include <QCheckBox>
 
 #include <yaml-cpp/yaml.h>
 
@@ -27,10 +28,12 @@ public:
   explicit DispatchItem(QWidget* parent, DispatcherNode*, const YAML::Node&);
   ~DispatchItem();
   
-  void Update();
   void Process();
+  bool is_checked();
 
-private slots:
+public slots:
+  void StartCb();
+  void StopCb();
 
 private:
 
@@ -43,7 +46,9 @@ private:
   int index_ = -1;
   bool online_ = false;
   QLabel* label_ = nullptr;
-
+  QPixmap red_status_icon_;
+  QPixmap green_status_icon_;
+  QCheckBox* check_box_ = nullptr;
 signals:
 };
 

@@ -17,6 +17,7 @@
 #include <QSpacerItem>
 #include <QSocketNotifier>
 #include <QCoreApplication>
+#include <QPushButton>
 
 #include <rclcpp/node_interfaces/node_base_interface.hpp>
 
@@ -53,11 +54,27 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   layout_ = new QGridLayout(main_box);
   setLayout(layout_);
 
-  QSpacerItem* spacer = 
-    new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  layout_->addItem(spacer, layout_->rowCount(), 0);
-
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
+  
+  int index = layout_->rowCount();
+  QPushButton *start = new QPushButton("start all checked", this);
+  start->setStyleSheet(QString("color: green"));
+  layout_->addWidget(start, index, 2);
+  connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
+
+  QPushButton *stop = new QPushButton("stop all checked", this);
+  stop->setStyleSheet(QString("color: red"));
+  layout_->addWidget(stop, index, 3);
+  connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
+
+  QSpacerItem *spacer =
+    new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  layout_->addItem(spacer, index, 4);
+
+  QSpacerItem* spacer2 = 
+    new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+  layout_->addItem(spacer2, layout_->rowCount(), 0);
+
 
   double loop_period_ms = 1.0 / ros_node_->get_target_loop_rate_hz() * 1000.0;
   CFW_INFO("Using loop period %f ms", loop_period_ms);
@@ -77,11 +94,22 @@ dispatcher::DispatcherWidget::~DispatcherWidget() {}
 void dispatcher::DispatcherWidget::Process() {
   if(rclcpp::ok()) {
     ros_node_->Process();
-    // auto online_nodes = ros_node_->get_online_nodes();
-    // ros_executor_.spin_node_once(ros_node_);
+    ros_executor_.spin_node_once(ros_node_);
   } else {
     CFW_INFO("SHUTTING DOWN");
+    ros_node_->StopAll();
     rclcpp::shutdown();
     QCoreApplication::quit();
   }
 }
+
+
+void dispatcher::DispatcherWidget::StartAllCheckedCb() {
+  ros_node_->StartChecked();
+}
+
+
+void dispatcher::DispatcherWidget::StopAllCheckedCb() {
+  ros_node_->StopChecked();
+}
+

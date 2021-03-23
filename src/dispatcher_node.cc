@@ -48,23 +48,13 @@ void dispatcher::DispatcherNode::ParseConfig() {
 
   CFW_INFO("Parsing dispatcher_config_path: %s", dispatcher_config_path_.c_str());
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
+  
+  workspace_ = root["workspace"].as<std::string>();
   const YAML::Node& nodes = root["nodes"];
    
   for (const auto& node : nodes) {
     dispatch_items_.push_back(new dispatcher::DispatchItem(widget_, this, node));
   }
-}
-
-
-void dispatcher::DispatcherNode::InitializeSubscribers() {
-
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr sub1 = 
-      this->create_subscription<sensor_msgs::msg::JointState>(
-          "/joint_states", 32, 
-          std::bind(
-            &dispatcher::DispatcherNode::JointStatesCb, 
-            this, 
-            std::placeholders::_1));
 }
 
 
@@ -84,3 +74,28 @@ void dispatcher::DispatcherNode::Process() {
     widget_->Quit();
   }
 }
+
+
+void dispatcher::DispatcherNode::StartChecked() {
+  for(auto& item : dispatch_items_) {
+    if(item->is_checked()) {
+      item->StartCb();
+    }
+  }
+}
+
+
+void dispatcher::DispatcherNode::StopChecked() {
+  for(auto& item : dispatch_items_) {
+    if(item->is_checked()) {
+      item->StopCb();
+    }
+  }
+}
+
+void dispatcher::DispatcherNode::StopAll() {
+  for(auto& item : dispatch_items_) {
+    item->StopCb();
+  }
+}
+

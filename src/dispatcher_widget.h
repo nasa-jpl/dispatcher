@@ -45,6 +45,8 @@ public:
 
 public slots:
   void Process();
+  void StartAllCheckedCb();
+  void StopAllCheckedCb();
 
 private:
 

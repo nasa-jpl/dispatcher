@@ -24,18 +24,22 @@ public:
   double get_target_loop_rate_hz() {
     return target_loop_rate_hz_;
   }
-
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes() {
     return online_nodes_;
   }
-  void JointStatesCb(const std::shared_ptr<sensor_msgs::msg::JointState>) {
-    std::cout << "joint states" << std::endl;
+  const std::string& get_workspace() {
+    return workspace_;
   }
+
   virtual void Process() override;
+  void StartChecked();
+  void StopChecked();
+  void StopAll();
 
 private:
   std::string dispatcher_config_path_;
   std::vector<dispatcher::DispatchItem*> dispatch_items_;
+  std::string workspace_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_; 
   std::vector<std::pair<std::string, std::string>> online_nodes_;
