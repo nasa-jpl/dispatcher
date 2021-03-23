@@ -8,7 +8,7 @@ project(dispatcher
 include(FetchContent)
 FetchContent_Declare(cfw_cmake
     GIT_REPOSITORY git@fornat1.jpl.nasa.gov:casah/libs/cfw_cmake.git
-    GIT_TAG master
+    GIT_TAG v0.1.22
 )
 FetchContent_Populate(cfw_cmake)
 include(${cfw_cmake_SOURCE_DIR}/cfw_cmake.cmake)
@@ -19,8 +19,9 @@ cfw_install_project_headers(src)
 cfw_add_target_format(src)
 cfw_add_target_doc()
 cfw_add_target_tag()
+
 cfw_fetch_dependencies(
-    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git master
+    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.0.2
 )
 
 set(CMAKE_AUTOMOC ON)
@@ -53,6 +54,7 @@ add_library(dispatcher_widget
     src/dispatcher_node.cc
     src/dispatcher_node.h
 )
+
 qt5_use_modules(dispatcher_widget Core Widgets OpenGL Gui)
 
 add_library(icons STATIC icons/icons.qrc)
@@ -77,15 +79,18 @@ target_compile_options(dispatcher_widget PUBLIC
     -Wextra
     -ggdb3
 )
+
 target_include_directories(dispatcher_widget
     PUBLIC
     ${CMAKE_BINARY_DIR}/include
 )
+
 target_link_libraries(
     dispatcher_widget
     cfw
     icons
 )
+
 ament_target_dependencies(dispatcher_widget
     rclcpp
     std_srvs
@@ -99,9 +104,9 @@ add_executable(
 )
 
 target_link_libraries(
-  dispatcher
-  stdc++
-  dispatcher_widget
+    dispatcher
+    stdc++
+    dispatcher_widget
 )
 
 target_compile_options(
