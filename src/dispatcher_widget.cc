@@ -4,9 +4,7 @@
 
 #include "dispatcher/config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include <stdio.h>
 
 #include <string>
 #include <iostream>
@@ -42,11 +40,25 @@ std::string dispatcher::commit() {
 }
 
 
+static bool check_tmux_exists() {
+  return (system("which tmux") == 0) ? true : false;
+}
+
+
+static void check_tmux_exists_throw_exception() {
+  if(!check_tmux_exists()) {
+    throw dispatcher::DispatcherException(
+      "Program `tmux` not found on this system, terminating..."); 
+  }
+}
+
 /*!
 @brief class constructor for DispatcherWidget application
 */
 dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   : QWidget(parent) {
+
+  check_tmux_exists_throw_exception();
 
   QGroupBox* main_box = new QGroupBox;
   main_box->setContentsMargins(QMargins(0, 0, 0, 0));

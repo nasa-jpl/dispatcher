@@ -6,6 +6,7 @@
 
 #include <map>
 #include <vector>
+#include <exception>
 
 #include <QGroupBox>
 #include <QGridLayout>
@@ -25,7 +26,20 @@ namespace dispatcher {
   std::string version();
   std::string branch();
   std::string commit();  
-  
+
+
+class DispatcherException: public std::exception {
+private:
+    const char* message_;
+public:
+    explicit DispatcherException(const char* message) {
+      message_ = message; 
+    };
+    const char* what() const noexcept override {
+        return message_;
+    }
+};
+
 class DispatcherWidget : public QWidget {
 
   Q_OBJECT // must be included to add qt meta information
