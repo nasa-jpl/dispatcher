@@ -18,6 +18,7 @@
 #include <yaml-cpp/yaml.h>
 
 
+
 /*!
 @brief class constructor for DispatchItem
 */
@@ -121,10 +122,10 @@ void dispatcher::DispatchItem::StartCb() {
       node_name_.c_str(), name_.c_str());
     return;
   }
-  
+
   CFW_INFO("Starting node: %s in tmux session: %s", 
     node_name_.c_str(), name_.c_str());
- 
+
   // kill the tmux session if it exists, flushes out old
   // sessions that might have processes still running in them
   std::string system_call = "tmux kill-session -t " + name_;
