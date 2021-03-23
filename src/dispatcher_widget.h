@@ -64,6 +64,8 @@ public slots:
 
 private:
 
+  void closeEvent(QCloseEvent*);
+
   std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
   rclcpp::executors::SingleThreadedExecutor ros_executor_;
 

@@ -125,3 +125,9 @@ void dispatcher::DispatcherWidget::StopAllCheckedCb() {
   ros_node_->StopChecked();
 }
 
+void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*) {
+  CFW_INFO("SHUTTING DOWN");
+  ros_node_->StopAll();
+  rclcpp::shutdown();
+  QCoreApplication::quit();
+}
