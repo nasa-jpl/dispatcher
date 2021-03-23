@@ -13,4 +13,8 @@ nodes:
     node_name: /
     cmd: ros2 run kuka kuka_rsi_simulator
     start_checked: false
-
+  - name: commander
+    namespace: Commander
+    node_name: /
+    cmd: ros2 run commander commander
+    start_checked: true

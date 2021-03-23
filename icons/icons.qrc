@@ -4,5 +4,6 @@
     <file>green.png</file>
     <file>grey.png</file>
     <file>orange.png</file>
+    <file>terminal.png</file>
   </qresource>
 </RCC>

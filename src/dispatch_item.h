@@ -34,6 +34,7 @@ public:
 public slots:
   void StartCb();
   void StopCb();
+  void TerminalCb();
 
 private:
 

@@ -74,9 +74,15 @@ dispatcher::DispatchItem::DispatchItem(
   layout->addWidget(stop, index_, 3);
   connect(stop, SIGNAL(clicked()), this, SLOT(StopCb()));
 
+  QPushButton *terminal = new QPushButton(this);
+  terminal->setIcon(QIcon(":/icons/terminal.png"));
+  terminal->setIconSize(QSize(20, 20));
+  layout->addWidget(terminal, index_, 4);
+  connect(terminal, SIGNAL(clicked()), this, SLOT(TerminalCb()));
+
   QSpacerItem *spacer =
     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  layout->addItem(spacer, index_, 4);
+  layout->addItem(spacer, index_, 5);
 }
 
 bool dispatcher::DispatchItem::is_checked() {
@@ -100,6 +106,7 @@ void dispatcher::DispatchItem::Process() {
   bool previous_state = online_;
   online_ = false;
   for(auto& online_node : online_nodes_) {
+    // std::cout << online_node.first << online_node.second << std::endl;
     if(node_namespace_ == online_node.first && 
        node_name_ == online_node.second) {
       online_ = true;
@@ -173,4 +180,17 @@ void dispatcher::DispatchItem::StopCb() {
   std::string system_call = "tmux kill-session -t " + name_;
   int result = system(system_call.c_str());
   (void)result;
+}
+
+
+void dispatcher::DispatchItem::TerminalCb() {
+  if(online_) {
+    CFW_INFO("Attaching to tmux session: %s", name_.c_str());
+    std::string system_call = "gnome-terminal -- tmux a -t " + name_;
+    int result = system(system_call.c_str());
+    (void)result;
+  } else {
+    CFW_WARN("Not attempting to attach to tmux session %s when node has offline status", 
+        name_.c_str());
+  }
 }

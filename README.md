@@ -1,2 +1,46 @@
 # Dispatcher
 
+A dynamically reconfigurable widget for starting, stopping and monitoring ROS2 nodes
+
+![dispatcher](doc/dispatcher.png)
+
+This package provides a Qt Widget with buttons dynamically configured from a yaml input file. Nodes are launched in a detached tmux session. You can attach to the tmux session from any terminal, or from
+multiple terminals.
+
+The yaml config file contains the workspace location and settings for a number of ros2 nodes
+
+Consider the following `example.yaml` config:
+```yaml
+workspace: /opt/testbed_ws
+nodes:
+  - name: kuka       # name used for the button and for the tmux session, each one must be unique
+    namespace: kuka  # namespace of ros2 node to monitor
+    node_name: /kuka # name of ros2 node to monitor
+    cmd: ros2 run kuka kuka --ros-args -p kuka_rsi_config_path:=storm_launch/cfg/kuka/kuka_offline.yaml 
+    # command to launch node, you can also use ros2 launch to bring up launch files or call the executable directly
+    start_checked: true
+  - name: commander
+    namespace: Commander
+    node_name: /
+    cmd: ros2 run commander commander
+    start_checked: true
+```
+
+Start `dispatcher` in your workspace by running:
+```bash
+cd /opt/testbed_ws
+source install/setup.bash
+ros2 run dispatcher dispatcher --ros-args -p dispatcher_config_path:=/path/to/example.yaml
+```
+
+Click on the start button to begin the node, or click "start all checked" to start all currently
+checked nodes.  A green light should appear next to each node. To attach to the commander session, you can run the following in a terminal:
+
+To attach to a running tmux session, you can click the terminal icon to the right of the stop button. This button launches a new gnome-terminal session and attaches to a tmux session:
+
+```bash
+gnome-terminal -- tmux a -t commander 
+```
+
+
+
