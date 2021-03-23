@@ -1,0 +1,43 @@
+image: ros:foxy-ros-core-focal
+
+before_script:
+  - DEBIAN_FRONTEND=noninteractive apt update
+  - DEBIAN_FRONTEND=noninteractive apt install -y
+      curl
+      gpg
+      python3-pip 
+      git 
+      python3-colcon-common-extensions 
+      python3-vcstool 
+      libyaml-cpp-dev 
+      libgetdata-dev 
+      libreadline-dev
+      git-lfs
+      libyaml-cpp-dev
+      openssh-client
+      git
+      build-essential
+      cmake 
+  - DEBIAN_FRONTEND=noninteractive apt -y clean 
+  - echo "source /usr/share/vcstool-completion/vcs.bash" >> ~/.bashrc
+  - pip3 install conan cogapp argcomplete
+  - git config --global user.email "casah@jpl.nasa.gov"
+  - git config --global user.name "Casah Gitlab Runner"
+  - eval $(ssh-agent -s)
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+  - ssh-keyscan fornat1.jpl.nasa.gov >> ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+
+deploy:
+  stage: deploy
+  only:
+    - master
+  script:
+    - echo "Deploying..."
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make tag
+
