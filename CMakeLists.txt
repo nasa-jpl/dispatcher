@@ -108,4 +108,10 @@ target_compile_options(
     dispatcher PUBLIC
     -ggdb3
 )
+
+install(TARGETS
+    dispatcher
+    DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()

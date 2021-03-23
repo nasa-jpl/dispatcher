@@ -64,14 +64,9 @@ void dispatcher::DispatcherNode::ParseConfig() {
 dispatcher::DispatcherNode::~DispatcherNode() {}
 
 void dispatcher::DispatcherNode::Process() {
-  if(rclcpp::ok()) {
-    online_nodes_ = node_graph_->get_node_names_and_namespaces();
-    for(auto& item : dispatch_items_) {
-      item->Process();
-    }
-  } else {
-    CFW_INFO("SHUTTING DOWN");
-    widget_->Quit();
+  online_nodes_ = node_graph_->get_node_names_and_namespaces();
+  for(auto& item : dispatch_items_) {
+    item->Process();
   }
 }
 
