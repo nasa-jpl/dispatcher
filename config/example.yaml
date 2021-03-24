@@ -1,20 +1,20 @@
 workspace: /home/kristopher/Projects
 nodes:
   - name: kuka
-    namespace: kuka
-    node_name: /kuka
+    namespace: /kuka
+    node_name: kuka
     cmd: ros2 run kuka kuka --ros-args -p kuka_rsi_config_path:=storm_launch/cfg/kuka/kuka_offline.yaml
     start_checked: true
     topics:
       - /kuka/state/module_state
       - /joint_states
   - name: kuka-simulator
-    namespace: kuka_offline_state 
-    node_name: /
+    namespace: / 
+    node_name: kuka_offline_state
     cmd: ros2 run kuka kuka_rsi_simulator
     start_checked: false
   - name: commander
-    namespace: Commander
-    node_name: /
+    namespace: /
+    node_name: Commander
     cmd: ros2 run commander commander
     start_checked: true

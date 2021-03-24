@@ -106,9 +106,8 @@ void dispatcher::DispatchItem::Process() {
   bool previous_state = online_;
   online_ = false;
   for(auto& online_node : online_nodes_) {
-    // std::cout << online_node.first << online_node.second << std::endl;
-    if(node_namespace_ == online_node.first && 
-       node_name_ == online_node.second) {
+    if(node_name_ == online_node.first && 
+       node_namespace_ == online_node.second) {
       online_ = true;
     }
   }
