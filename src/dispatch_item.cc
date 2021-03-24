@@ -18,6 +18,10 @@
 #include <yaml-cpp/yaml.h>
 
 
+static bool check_gnome_terminal_exists() {
+  return (system("which gnome-terminal") == 0) ? true : false;
+}
+
 
 /*!
 @brief class constructor for DispatchItem
@@ -183,6 +187,13 @@ void dispatcher::DispatchItem::StopCb() {
 
 
 void dispatcher::DispatchItem::TerminalCb() {
+  if(!check_gnome_terminal_exists()) {
+    CFW_WARN(
+        "Cannot attach to tmux session because 'gnome-terminal' does not exist on this "
+        "system; you can attach to this session by running `tmux a -t %s` "
+        "from any terminal", name_.c_str());
+    return;
+  }
   if(online_) {
     CFW_INFO("Attaching to tmux session: %s", name_.c_str());
     std::string system_call = "gnome-terminal -- tmux a -t " + name_;
