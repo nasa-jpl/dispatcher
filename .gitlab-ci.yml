@@ -5,7 +5,7 @@ before_script:
   - DEBIAN_FRONTEND=noninteractive apt install -y
       curl
       gpg
-      python3-pip 
+      python3-requests
       python3-vcstool 
       openssh-client
       qt5-default
