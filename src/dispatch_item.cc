@@ -190,7 +190,7 @@ void dispatcher::DispatchItem::TerminalCb() {
   if(!check_gnome_terminal_exists()) {
     CFW_WARN(
         "Cannot attach to tmux session because 'gnome-terminal' does not exist on this "
-        "system; you can attach to this session by running `tmux a -t %s` "
+        "system; you can attach to the session by running `tmux a -t %s` "
         "from any terminal", name_.c_str());
     return;
   }
