@@ -1,4 +1,4 @@
-image: ros:foxy-ros-core-focal
+image: ros:foxy-ros-base-focal
 
 before_script:
   - DEBIAN_FRONTEND=noninteractive apt update
@@ -6,21 +6,8 @@ before_script:
       curl
       gpg
       python3-pip 
-      git 
-      python3-colcon-common-extensions 
       python3-vcstool 
-      libyaml-cpp-dev 
-      libgetdata-dev 
-      libreadline-dev
-      git-lfs
-      libyaml-cpp-dev
       openssh-client
-      git
-      build-essential
-      cmake 
-      ros-foxy-qt-gui-core
-      ros-foxy-qt-gui-cpp
-      ros-foxy-libyaml-vendor
   - DEBIAN_FRONTEND=noninteractive apt -y clean 
   - echo "source /usr/share/vcstool-completion/vcs.bash" >> ~/.bashrc
   - pip3 install conan cogapp argcomplete
