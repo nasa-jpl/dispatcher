@@ -8,9 +8,9 @@ before_script:
       python3-pip 
       python3-vcstool 
       openssh-client
+      qt5-default
   - DEBIAN_FRONTEND=noninteractive apt -y clean 
   - echo "source /usr/share/vcstool-completion/vcs.bash" >> ~/.bashrc
-  - pip3 install conan cogapp argcomplete
   - git config --global user.email "casah@jpl.nasa.gov"
   - git config --global user.name "Casah Gitlab Runner"
   - eval $(ssh-agent -s)
