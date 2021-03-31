@@ -41,10 +41,9 @@ find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(yaml_cpp_vendor)
 if(yaml_cpp_vendor_FOUND)
-    set(YAML_LIBS ${yaml_cpp_vendor})
-else()
-    find_package(yaml-cpp REQUIRED)
-    set(YAML_LIBS ${YAML_CPP_LIBRARIES})
+    cfw_fetch_dependencies(
+        yaml_cpp_vendor https://github.com/ros2/yaml_cpp_vendor foxy)
+    find_package(yaml_cpp_vendor REQUIRED)
 endif()
 
 if(BUILD_TESTING)
