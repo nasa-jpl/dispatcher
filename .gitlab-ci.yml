@@ -16,6 +16,7 @@ build:
   stage: build
   script:
     - echo "Building..."
+    - ls
     - colcon build
 
 deploy:
