@@ -6,6 +6,7 @@ before_script:
   - eval $(ssh-agent -s)
   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
   - ssh-keyscan fornat1.jpl.nasa.gov >> ~/.ssh/known_hosts
+  - git clone https://github.com/ros2/yaml_cpp_vendor -b foxy
 
 stages:
   - build
