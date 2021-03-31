@@ -98,11 +98,6 @@ ament_target_dependencies(dispatcher_widget
     yaml_cpp_vendor
 )
 
-if(NOT yaml_cpp_vendor_FOUND)
-    target_link_dependencies(dispatcher_widget PRIVATE
-    ${YAML_CPP_LIBRARIES}
-)
-
 add_executable(
     dispatcher
     src/dispatcher.cc
