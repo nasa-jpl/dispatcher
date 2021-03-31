@@ -11,38 +11,35 @@
 
 #include <casah_node/casah_node.hpp>
 
-namespace dispatcher {
-
+namespace dispatcher
+{
 class DispatcherWidget;
 
-class DispatcherNode : public CasahNode {
-
-public:
+class DispatcherNode : public CasahNode
+{
+ public:
   DispatcherNode(DispatcherWidget*);
   ~DispatcherNode();
-  
-  double get_target_loop_rate_hz() {
-    return target_loop_rate_hz_;
-  }
-  const std::vector<std::pair<std::string, std::string>>& get_online_nodes() {
+
+  double get_target_loop_rate_hz() { return target_loop_rate_hz_; }
+  const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
+  {
     return online_nodes_;
   }
-  const std::string& get_workspace() {
-    return workspace_;
-  }
+  const std::string& get_workspace() { return workspace_; }
 
   virtual void Process() override;
-  void StartChecked();
-  void StopChecked();
-  void StopAll();
+  void         StartChecked();
+  void         StopChecked();
+  void         StopAll();
 
-private:
-  std::string dispatcher_config_path_;
+ private:
+  std::string                            dispatcher_config_path_;
   std::vector<dispatcher::DispatchItem*> dispatch_items_;
-  std::string workspace_;
+  std::string                            workspace_;
 
-  std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_; 
-  std::vector<std::pair<std::string, std::string>> online_nodes_;
+  std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
+  std::vector<std::pair<std::string, std::string>>    online_nodes_;
 
   void ParseConfig();
   void InitializeSubscribers();
@@ -50,6 +47,6 @@ private:
   DispatcherWidget* widget_ = nullptr;
 };
 
-}
+}  // namespace dispatcher
 
 #endif

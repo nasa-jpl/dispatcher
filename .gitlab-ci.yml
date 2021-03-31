@@ -1,24 +1,26 @@
-image: ros:foxy-ros-base-focal
+image: casah347rms/casah:ros2
 
 before_script:
-  - DEBIAN_FRONTEND=noninteractive apt update
   - DEBIAN_FRONTEND=noninteractive apt install -y
-      curl
-      gpg
-      python3-requests
-      python3-vcstool 
-      openssh-client
       qt5-default
-  - DEBIAN_FRONTEND=noninteractive apt -y clean 
-  - echo "source /usr/share/vcstool-completion/vcs.bash" >> ~/.bashrc
-  - git config --global user.email "casah@jpl.nasa.gov"
-  - git config --global user.name "Casah Gitlab Runner"
   - eval $(ssh-agent -s)
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
   - ssh-keyscan fornat1.jpl.nasa.gov >> ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
+  - cd .. && rm -rf yaml_cpp_vendor
+  - git clone https://github.com/ros2/yaml_cpp_vendor -b foxy
+
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script:
+    - echo "Building..."
+    - ls
+    - cd .. && colcon build --packages-select yaml_cpp_vendor
+    - source install/setup.bash
+    - colcon build --packages-select dispatcher
 
 deploy:
   stage: deploy
@@ -30,4 +32,3 @@ deploy:
     - cd build
     - cmake ..
     - make tag
-
