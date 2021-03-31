@@ -1,21 +1,21 @@
 #include "dispatcher/dispatcher_node.h"
-#include "dispatcher/dispatcher_widget.h"
-#include "dispatcher/dispatch_item.h"
 #include "dispatcher/config.h"
+#include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_widget.h"
 
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-#include <string>
 #include <iostream>
+#include <string>
 
-#include <QWidget>
+#include <QCoreApplication>
 #include <QGridLayout>
 #include <QGroupBox>
-#include <QSpacerItem>
 #include <QSocketNotifier>
-#include <QCoreApplication>
+#include <QSpacerItem>
+#include <QWidget>
 
 #include <rclcpp/node_interfaces/node_base_interface.hpp>
 
@@ -27,70 +27,72 @@
 @brief class constructor for DispatcherNode application
 */
 dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
-  : CasahNode("dispatcher", "dispatcher", 2.0, "/logs", "INFO") {
-
+    : CasahNode("dispatcher", "dispatcher", 2.0, "/logs", "INFO")
+{
   widget_ = widget;
 
   // declare ros parameters
   this->declare_parameter<std::string>("dispatcher_config_path", "");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
 
-  node_graph_ = 
-    std::make_shared<rclcpp::node_interfaces::NodeGraph>(
+  node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
   ParseConfig();
   InitializeTimer();
 }
 
-
-void dispatcher::DispatcherNode::ParseConfig() {
-
-  CFW_INFO("Parsing dispatcher_config_path: %s", dispatcher_config_path_.c_str());
+void dispatcher::DispatcherNode::ParseConfig()
+{
+  CFW_INFO("Parsing dispatcher_config_path: %s",
+           dispatcher_config_path_.c_str());
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
-  
-  workspace_ = root["workspace"].as<std::string>();
-  const YAML::Node& nodes = root["nodes"];
-   
-  for (const auto& node : nodes) {
-    dispatch_items_.push_back(new dispatcher::DispatchItem(widget_, this, node));
-  }
-}
 
+  workspace_              = root["workspace"].as<std::string>();
+  const YAML::Node& nodes = root["nodes"];
+
+  for (const auto& node : nodes) {
+    dispatch_items_.push_back(
+        new dispatcher::DispatchItem(widget_, this, node));
+  }
+
+  widget_->setWindowTitle("dispatcher - " + QString(workspace_.c_str()));
+}
 
 /*!
 @brief class destructor
 */
 dispatcher::DispatcherNode::~DispatcherNode() {}
 
-void dispatcher::DispatcherNode::Process() {
+void dispatcher::DispatcherNode::Process()
+{
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
-  for(auto& item : dispatch_items_) {
+  for (auto& item : dispatch_items_) {
     item->Process();
   }
 }
 
-
-void dispatcher::DispatcherNode::StartChecked() {
-  for(auto& item : dispatch_items_) {
-    if(item->is_checked()) {
+void dispatcher::DispatcherNode::StartChecked()
+{
+  for (auto& item : dispatch_items_) {
+    if (item->is_checked()) {
       item->StartCb();
     }
   }
 }
 
-
-void dispatcher::DispatcherNode::StopChecked() {
-  for(auto& item : dispatch_items_) {
-    if(item->is_checked()) {
+void dispatcher::DispatcherNode::StopChecked()
+{
+  for (auto& item : dispatch_items_) {
+    if (item->is_checked()) {
       item->StopCb();
     }
   }
 }
 
-void dispatcher::DispatcherNode::StopAll() {
-  for(auto& item : dispatch_items_) {
+void dispatcher::DispatcherNode::StopAll()
+{
+  for (auto& item : dispatch_items_) {
     item->StopCb();
   }
 }
-
