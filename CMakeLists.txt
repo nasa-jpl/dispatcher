@@ -39,7 +39,13 @@ find_package(std_srvs REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
-find_package(yaml_cpp_vendor REQUIRED)
+find_package(yaml_cpp_vendor)
+if(yaml_cpp_vendor_FOUND)
+    set(YAML_LIBS ${yaml_cpp_vendor})
+else()
+    find_package(yaml-cpp REQUIRED)
+    set(YAML_LIBS ${YAML_CPP_LIBRARIES})
+endif()
 
 if(BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
@@ -96,6 +102,11 @@ ament_target_dependencies(dispatcher_widget
     std_srvs
     sensor_msgs
     yaml_cpp_vendor
+)
+
+if(NOT yaml_cpp_vendor_FOUND)
+    target_link_dependencies(dispatcher_widget PRIVATE
+    ${YAML_CPP_LIBRARIES}
 )
 
 add_executable(
