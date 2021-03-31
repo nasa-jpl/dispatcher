@@ -17,7 +17,6 @@ build:
   stage: build
   script:
     - echo "Building..."
-    - ls
     - cd .. && colcon build --packages-select yaml_cpp_vendor
     - source install/setup.bash
     - colcon build --packages-select dispatcher
@@ -28,7 +27,8 @@ deploy:
     - master
   script:
     - echo "Deploying..."
-    - mkdir -p build
-    - cd build
-    - cmake ..
+    - cd .. && colcon build --packages-select yaml_cpp_vendor
+    - source install/setup.bash
+    - colcon build --packages-select dispatcher
+    - cd build/dispatcher 
     - make tag
