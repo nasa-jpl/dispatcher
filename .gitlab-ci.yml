@@ -17,7 +17,7 @@ build:
   script:
     - echo "Building..."
     - ls
-    - colcon build
+    - colcon build --packages-select yaml_cpp_vendor dispatcher
 
 deploy:
   stage: deploy
