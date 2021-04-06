@@ -2,6 +2,7 @@
 #define DISPATCHER_NODE_H_
 
 #include "dispatcher/dispatch_item.h"
+#include "dispatcher/script_item.h"
 
 #include <map>
 #include <vector>
@@ -36,6 +37,7 @@ class DispatcherNode : public CasahNode
  private:
   std::string                            dispatcher_config_path_;
   std::vector<dispatcher::DispatchItem*> dispatch_items_;
+  std::vector<dispatcher::ScriptItem*>   script_items_;
   std::string                            workspace_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
