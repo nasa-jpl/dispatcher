@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 project(dispatcher
     DESCRIPTION "Casah node dispatcher"
-    VERSION 0.0.6
+    VERSION 0.0.7
     LANGUAGES C CXX
 )
 
