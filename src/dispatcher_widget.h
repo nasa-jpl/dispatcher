@@ -14,6 +14,7 @@
 #include <QSocketNotifier>
 #include <QTimer>
 #include <QWidget>
+#include <QVBoxLayout>
 
 #include <casah_node/casah_node.hpp>
 #include <rclcpp/node_interfaces/node_graph.hpp>
@@ -43,7 +44,8 @@ class DispatcherWidget : public QWidget
 
       public : explicit DispatcherWidget(QWidget* parent = 0);
   ~DispatcherWidget();
-  QGridLayout* get_layout() { return layout_; }
+  QGridLayout* get_layout() { return grid_layout_; }
+  QGridLayout* get_script_layout() { return script_layout_; }
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
   {
     return online_nodes_;
@@ -54,7 +56,8 @@ class DispatcherWidget : public QWidget
   void Process();
   void StartAllCheckedCb();
   void StopAllCheckedCb();
-
+  void EnableScripts(bool);
+ 
  private:
   void closeEvent(QCloseEvent*);
 
@@ -62,7 +65,10 @@ class DispatcherWidget : public QWidget
   rclcpp::executors::SingleThreadedExecutor   ros_executor_;
 
   QTimer*                                timer_  = nullptr;
-  QGridLayout*                           layout_ = nullptr;
+  QVBoxLayout*                           layout_ = nullptr;
+  QGridLayout*                           grid_layout_ = nullptr;
+  QGroupBox*                             script_group_box_ = nullptr;
+  QGridLayout*                           script_layout_ = nullptr;
   std::string                            dispatcher_config_path_;
   std::vector<dispatcher::DispatchItem*> dispatch_items_;
 
