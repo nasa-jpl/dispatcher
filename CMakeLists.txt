@@ -53,6 +53,8 @@ add_library(dispatcher_widget
     src/dispatch_item.h
     src/dispatcher_node.cc
     src/dispatcher_node.h
+    src/script_item.cc
+    src/script_item.h
 )
 
 qt5_use_modules(dispatcher_widget Core Widgets OpenGL Gui)

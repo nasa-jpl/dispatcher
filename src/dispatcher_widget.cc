@@ -49,6 +49,14 @@ static void check_tmux_exists_throw_exception()
   }
 }
 
+void dispatcher::DispatcherWidget::EnableScripts(bool enable) {
+  std::cout << script_group_box_ << std::endl;
+  if(script_group_box_ == nullptr) {
+    std::cerr << "nullptr" << std::endl;
+  }
+  script_group_box_->setVisible(enable);
+}
+
 /*!
 @brief class constructor for DispatcherWidget application
 */
@@ -57,32 +65,50 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
 {
   check_tmux_exists_throw_exception();
 
-  QGroupBox* main_box = new QGroupBox;
-  main_box->setContentsMargins(QMargins(0, 0, 0, 0));
-
-  layout_ = new QGridLayout(main_box);
+  QVBoxLayout* layout_ = new QVBoxLayout(parent);
+  layout_->setSpacing(0);
+  layout_->setContentsMargins(QMargins(0, 0, 0, 0));
   setLayout(layout_);
+  
+  // upper group box / grid
+  QGroupBox* upper_box = new QGroupBox();
+  upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
+  upper_box->setContentsMargins(QMargins(0, 0, 0, 0));
+  grid_layout_ = new QGridLayout(upper_box);
+  layout_->addWidget(upper_box);
+  
+  // layout_->addSpacing(50);
+  
+  // lower group box / grid
+  script_group_box_ = new QGroupBox();
+  script_group_box_->setStyleSheet(QString("QGroupBox {border:0}"));
+  script_group_box_->setContentsMargins(QMargins(0, 0, 0, 0));
+  script_layout_ = new QGridLayout(script_group_box_);
+  layout_->addWidget(script_group_box_);
+
+  layout_->addStretch(-1);
 
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
 
-  int          index = layout_->rowCount();
+  int          index = grid_layout_->rowCount();
   QPushButton* start = new QPushButton("start all checked", this);
   start->setStyleSheet(QString("color: green"));
-  layout_->addWidget(start, index, 2);
+  start->setFlat(false);
+  grid_layout_->addWidget(start, index, 2);
   connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
 
   QPushButton* stop = new QPushButton("stop all checked", this);
   stop->setStyleSheet(QString("color: red"));
-  layout_->addWidget(stop, index, 3);
+  grid_layout_->addWidget(stop, index, 3);
   connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
 
   QSpacerItem* spacer =
       new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  layout_->addItem(spacer, index, 4);
+  grid_layout_->addItem(spacer, index, 4);
 
   QSpacerItem* spacer2 =
       new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  layout_->addItem(spacer2, layout_->rowCount(), 0);
+  grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
 
   double loop_period_ms = 1.0 / ros_node_->get_target_loop_rate_hz() * 1000.0;
   CFW_INFO("Using loop period %f ms", loop_period_ms);

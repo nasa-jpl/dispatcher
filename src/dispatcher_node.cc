@@ -49,11 +49,20 @@ void dispatcher::DispatcherNode::ParseConfig()
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
 
   workspace_              = root["workspace"].as<std::string>();
-  const YAML::Node& nodes = root["nodes"];
-
-  for (const auto& node : nodes) {
+  for (const auto& node : root["nodes"]) {
     dispatch_items_.push_back(
         new dispatcher::DispatchItem(widget_, this, node));
+  }
+
+  auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
+  if(root["scripts"]) {
+    dispatcher->EnableScripts(true);
+  } else {
+    dispatcher->EnableScripts(false);
+  }
+  for (const auto& script : root["scripts"]) {
+    script_items_.push_back(
+        new dispatcher::ScriptItem(widget_, script));
   }
 
   widget_->setWindowTitle("dispatcher - " + QString(workspace_.c_str()));
