@@ -40,6 +40,7 @@ class DispatchItem : public QWidget
   bool TmuxNewSession();
   void TmuxSendKeys(std::string cmd_str);
   int  SystemCall(std::string cmd);
+  bool TmuxHasSession();
 
  private:
   DispatcherWidget* dispatcher_ = nullptr;

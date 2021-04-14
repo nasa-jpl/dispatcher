@@ -70,7 +70,6 @@ class DispatcherWidget : public QWidget
   QGroupBox*                             script_group_box_ = nullptr;
   QGridLayout*                           script_layout_ = nullptr;
   std::string                            dispatcher_config_path_;
-  //std::vector<dispatcher::DispatchItem*> dispatch_items_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
@@ -78,7 +77,6 @@ class DispatcherWidget : public QWidget
   QSize minimumSizeHint() const { return QSize(30, 30); }
   QSize sizeHint() const { return QSize(30, 30); }
   void  InitializeLayout();
-  void  SetupTmuxSessions();
 
  signals:
 };

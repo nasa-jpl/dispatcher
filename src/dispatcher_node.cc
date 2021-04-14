@@ -72,7 +72,15 @@ void dispatcher::DispatcherNode::ParseConfig()
 /*!
 @brief class destructor
 */
-dispatcher::DispatcherNode::~DispatcherNode() {}
+dispatcher::DispatcherNode::~DispatcherNode() {
+
+  CFW_DEBUG("Destroying Tmux session for all Dispatch Items...");
+  for(auto item = dispatch_items_.begin(); item != dispatch_items_.end(); item++){
+    (*item)->TmuxSendKeys("C-C");
+    (*item)->TmuxKillSession();
+  }
+  CFW_DEBUG("Destroyed Tmux session for all Dispatch Items.");
+}
 
 void dispatcher::DispatcherNode::Process()
 {

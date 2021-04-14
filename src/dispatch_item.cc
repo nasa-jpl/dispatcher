@@ -140,12 +140,9 @@ void dispatcher::DispatchItem::StartCb()
            name_.c_str());
   CFW_INFO("system cmd: %s", cmd_.c_str());
 
-  // kill the tmux session if it exists, flushes out old
-  // sessions that might have processes still running in them
-  //(void)TmuxKillSession();
-
-  // generate a new tmux session using 'name' key in yaml config
-  //(void)TmuxNewSession();
+  if(!TmuxHasSession()){
+    (void)TmuxNewSession();
+  }
 
   // cd to workspace directory
   TmuxSendKeys("cd" + ros_node_->get_workspace());
@@ -165,7 +162,6 @@ void dispatcher::DispatchItem::StopCb()
              name_.c_str());
     TmuxSendKeys("C-C");
   }
-  //(void)TmuxKillSession();
 }
 
 void dispatcher::DispatchItem::TerminalCb()
@@ -179,16 +175,9 @@ void dispatcher::DispatchItem::TerminalCb()
         name_.c_str());
     return;
   }
-  if (!online_) {
 
-    CFW_WARN( "Attempting to attach to offline tmux session: %s", name_.c_str());
-
-    // kill the tmux session if it exists, flushes out old
-    // sessions that might have processes still running in them
-    //(void)TmuxKillSession(); 
-
-    // generate a new tmux session using 'name' key in yaml config
-    //(void)TmuxNewSession();
+  if(!TmuxHasSession()){
+    (void)TmuxNewSession();
   }
 
   // Start a gnome session and attach a tmux session
@@ -228,4 +217,14 @@ int dispatcher::DispatchItem::SystemCall(std::string cmd){
   int result = system(cmd.c_str());
   CFW_DEBUG("Subprocess call `%s` returned result %d", cmd.c_str(), result); 
   return result;
+}
+
+bool dispatcher::DispatchItem::TmuxHasSession(){
+
+  std::string cmd = "tmux has-session -t " + name_;
+  int result = SystemCall(cmd);
+  if (result != 0) {
+    return false;
+  }
+  return true;
 }
