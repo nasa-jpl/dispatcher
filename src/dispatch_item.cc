@@ -27,11 +27,12 @@ static bool check_gnome_terminal_exists()
 */
 dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
                                        dispatcher::DispatcherNode* ros_node,
-                                       const YAML::Node&           node)
+                                       const YAML::Node&           node,
+                                       int                         index)
     : QWidget(parent)
 {
   ros_node_          = ros_node;
-  name_              = node["name"].as<std::string>();
+  name_              = std::to_string(index) + node["name"].as<std::string>();
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
   cmd_               = node["cmd"].as<std::string>();
@@ -141,6 +142,8 @@ void dispatcher::DispatchItem::StartCb()
   CFW_INFO("system cmd: %s", cmd_.c_str());
 
   if(!TmuxHasSession()){
+    CFW_INFO("Tmux Session was closed for %s, restarting session now", 
+        name_.c_str());
     (void)TmuxNewSession();
   }
 
@@ -177,16 +180,18 @@ void dispatcher::DispatchItem::TerminalCb()
   }
 
   if(!TmuxHasSession()){
+    CFW_INFO("Tmux Session was closed for %s, restarting session now", 
+        name_.c_str());
     (void)TmuxNewSession();
   }
 
   // Start a gnome session and attach a tmux session
-  SystemCall("gnome-terminal -- tmux a -t " + name_);
+  SystemCall("gnome-terminal -- tmux a -t " + name_ + ":0");
 }
 
 bool dispatcher::DispatchItem::TmuxKillSession(){
 
-  std::string cmd = "tmux kill-session -t " + name_;
+  std::string cmd = "tmux kill-session -t " + name_ + ":0";
   int result = SystemCall(cmd);
   if(result == 1){
     CFW_WARN("tmux session %s could not be killed", name_.c_str());
@@ -221,10 +226,12 @@ int dispatcher::DispatchItem::SystemCall(std::string cmd){
 
 bool dispatcher::DispatchItem::TmuxHasSession(){
 
-  std::string cmd = "tmux has-session -t " + name_;
+  std::string cmd = "tmux has-session -t " + name_ + ":0 2>/dev/null";
   int result = SystemCall(cmd);
   if (result != 0) {
+    CFW_DEBUG("Tmux does not have active session for %s", name_.c_str());
     return false;
   }
+  CFW_DEBUG("Tmux has active session for %s", name_.c_str());
   return true;
 }

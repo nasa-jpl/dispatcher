@@ -25,7 +25,7 @@ class DispatchItem : public QWidget
   Q_OBJECT  // must be included to add qt meta information
 
       public : explicit DispatchItem(QWidget* parent, DispatcherNode*,
-                                     const YAML::Node&);
+                                     const YAML::Node&, int index);
   ~DispatchItem();
 
   void Process();

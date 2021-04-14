@@ -50,9 +50,11 @@ void dispatcher::DispatcherNode::ParseConfig()
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
 
   workspace_              = root["workspace"].as<std::string>();
+  int dispatch_item_index = 1;
   for (const auto& node : root["nodes"]) {
     dispatch_items_.push_back(
-        new dispatcher::DispatchItem(widget_, this, node));
+        new dispatcher::DispatchItem(widget_, this, node, dispatch_item_index));
+    dispatch_item_index++;
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
