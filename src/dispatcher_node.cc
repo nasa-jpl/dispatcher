@@ -39,6 +39,7 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
       this->get_node_base_interface().get());
 
   ParseConfig();
+  SetupTmuxSessions();
   InitializeTimer();
 }
 
@@ -104,4 +105,14 @@ void dispatcher::DispatcherNode::StopAll()
   for (auto& item : dispatch_items_) {
     item->StopCb();
   }
+}
+
+void dispatcher::DispatcherNode::SetupTmuxSessions(){
+  CFW_DEBUG("Creating Tmux session for all Dispatch Items...");
+  for(auto item = dispatch_items_.begin(); item != dispatch_items_.end(); item++){
+    (*item)->TmuxKillSession();
+    (*item)->TmuxNewSession();
+  }
+  CFW_DEBUG("Created Tmux session for all Dispatch Items.");
+
 }

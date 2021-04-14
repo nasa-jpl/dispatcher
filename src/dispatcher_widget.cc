@@ -153,3 +153,4 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
   rclcpp::shutdown();
   QCoreApplication::quit();
 }
+

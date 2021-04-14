@@ -142,10 +142,10 @@ void dispatcher::DispatchItem::StartCb()
 
   // kill the tmux session if it exists, flushes out old
   // sessions that might have processes still running in them
-  (void)TmuxKillSession();
+  //(void)TmuxKillSession();
 
   // generate a new tmux session using 'name' key in yaml config
-  (void)TmuxNewSession();
+  //(void)TmuxNewSession();
 
   // cd to workspace directory
   TmuxSendKeys("cd" + ros_node_->get_workspace());
@@ -165,7 +165,7 @@ void dispatcher::DispatchItem::StopCb()
              name_.c_str());
     TmuxSendKeys("C-C");
   }
-  (void)TmuxKillSession();
+  //(void)TmuxKillSession();
 }
 
 void dispatcher::DispatchItem::TerminalCb()
@@ -185,10 +185,10 @@ void dispatcher::DispatchItem::TerminalCb()
 
     // kill the tmux session if it exists, flushes out old
     // sessions that might have processes still running in them
-    (void)TmuxKillSession(); 
+    //(void)TmuxKillSession(); 
 
     // generate a new tmux session using 'name' key in yaml config
-    (void)TmuxNewSession();
+    //(void)TmuxNewSession();
   }
 
   // Start a gnome session and attach a tmux session
