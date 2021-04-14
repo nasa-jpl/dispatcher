@@ -36,6 +36,11 @@ class DispatchItem : public QWidget
   void StopCb();
   void TerminalCb();
 
+  bool TmuxKillSession();
+  bool TmuxNewSession();
+  void TmuxSendKeys(std::string cmd_str);
+  int  SystemCall(std::string cmd);
+
  private:
   DispatcherWidget* dispatcher_ = nullptr;
   DispatcherNode*   ros_node_   = nullptr;
