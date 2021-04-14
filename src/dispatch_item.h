@@ -46,6 +46,7 @@ class DispatchItem : public QWidget
   DispatcherWidget* dispatcher_ = nullptr;
   DispatcherNode*   ros_node_   = nullptr;
   std::string       name_;
+  std::string       tmux_name_;
   std::string       node_name_;
   std::string       node_namespace_;
   std::string       cmd_;

@@ -32,7 +32,8 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
     : QWidget(parent)
 {
   ros_node_          = ros_node;
-  name_              = std::to_string(index) + node["name"].as<std::string>();
+  name_              = node["name"].as<std::string>();
+  tmux_name_         = std::to_string(index) + node["name"].as<std::string>();
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
   cmd_               = node["cmd"].as<std::string>();
@@ -162,7 +163,7 @@ void dispatcher::DispatchItem::StopCb()
 {
   if (online_) {
     CFW_INFO("Stopping node: %s in tmux session: %s", node_name_.c_str(),
-             name_.c_str());
+             tmux_name_.c_str());
     TmuxSendKeys("C-C");
   }
 }
@@ -175,26 +176,26 @@ void dispatcher::DispatchItem::TerminalCb()
         "on this "
         "system; you can attach to the session by running `tmux a -t %s` "
         "from any terminal",
-        name_.c_str());
+        tmux_name_.c_str());
     return;
   }
 
   if(!TmuxHasSession()){
     CFW_INFO("Tmux Session was closed for %s, restarting session now", 
-        name_.c_str());
+        tmux_name_.c_str());
     (void)TmuxNewSession();
   }
 
   // Start a gnome session and attach a tmux session
-  SystemCall("gnome-terminal -- tmux a -t " + name_ + ":0");
+  SystemCall("gnome-terminal -t " + name_ + " -- tmux a -t " + tmux_name_);
 }
 
 bool dispatcher::DispatchItem::TmuxKillSession(){
 
-  std::string cmd = "tmux kill-session -t " + name_ + ":0";
+  std::string cmd = "tmux kill-session -t " + tmux_name_;
   int result = SystemCall(cmd);
   if(result == 1){
-    CFW_WARN("tmux session %s could not be killed", name_.c_str());
+    CFW_WARN("tmux session %s could not be killed", tmux_name_.c_str());
     return false;
   }
   return true;
@@ -202,10 +203,10 @@ bool dispatcher::DispatchItem::TmuxKillSession(){
 
 bool dispatcher::DispatchItem::TmuxNewSession(){
 
-  std::string cmd = "tmux new -d -s " + name_;
+  std::string cmd = "tmux new -d -s " + tmux_name_;
   int result = SystemCall(cmd);
   if (result == 1) {
-    CFW_WARN("tmux session %s could not be created", name_.c_str());
+    CFW_WARN("tmux session %s could not be created", tmux_name_.c_str());
     return false;
   }
   return true;
@@ -213,7 +214,7 @@ bool dispatcher::DispatchItem::TmuxNewSession(){
 
 void dispatcher::DispatchItem::TmuxSendKeys(std::string cmd_str){
 
-  std::string cmd = "tmux send-keys -t " + name_ + ":0 '" + cmd_str + "' Enter";
+  std::string cmd = "tmux send-keys -t " + tmux_name_ + " '" + cmd_str + "' Enter";
   (void)system(cmd.c_str());
 }
 
@@ -226,12 +227,12 @@ int dispatcher::DispatchItem::SystemCall(std::string cmd){
 
 bool dispatcher::DispatchItem::TmuxHasSession(){
 
-  std::string cmd = "tmux has-session -t " + name_ + ":0 2>/dev/null";
+  std::string cmd = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
   int result = SystemCall(cmd);
   if (result != 0) {
-    CFW_DEBUG("Tmux does not have active session for %s", name_.c_str());
+    CFW_DEBUG("Tmux does not have active session for %s", tmux_name_.c_str());
     return false;
   }
-  CFW_DEBUG("Tmux has active session for %s", name_.c_str());
+  CFW_DEBUG("Tmux has active session for %s", tmux_name_.c_str());
   return true;
 }
