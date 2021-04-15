@@ -52,9 +52,8 @@ void dispatcher::DispatcherNode::ParseConfig()
   workspace_              = root["workspace"].as<std::string>();
   int dispatch_item_index = 1;
   for (const auto& node : root["nodes"]) {
-    dispatch_items_.push_back(
-        new dispatcher::DispatchItem(widget_, this, node, dispatch_item_index));
-    dispatch_item_index++;
+    dispatch_items_.push_back(new dispatcher::DispatchItem(
+        widget_, this, node, dispatch_item_index++));
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
@@ -120,12 +119,13 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
     // start it back up from scratch
     if (item->TmuxHasSession()) {
       CFW_WARN(
-          "Prior Tmux session for %s detected, Attempting to clean up the "
+          "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
+          "up the "
           "process safely",
-          item->tmux_name_.c_str());
+          item->GetTmuxName().c_str(), item->GetName().c_str());
       CFW_WARN(
           "If you consistently see this warning, contact your SW support "
-          "Developer");
+          "developer");
 
       item->TmuxSendKeys("C-C");  // SIGINT
       item->TmuxKillSession();
