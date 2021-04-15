@@ -1,6 +1,6 @@
+#include "dispatcher/dispatcher_widget.h"
 #include "dispatcher/dispatch_item.h"
 #include "dispatcher/dispatcher_node.h"
-#include "dispatcher/dispatcher_widget.h"
 
 #include "dispatcher/config.h"
 
@@ -49,9 +49,10 @@ static void check_tmux_exists_throw_exception()
   }
 }
 
-void dispatcher::DispatcherWidget::EnableScripts(bool enable) {
+void dispatcher::DispatcherWidget::EnableScripts(bool enable)
+{
   std::cout << script_group_box_ << std::endl;
-  if(script_group_box_ == nullptr) {
+  if (script_group_box_ == nullptr) {
     std::cerr << "nullptr" << std::endl;
   }
   script_group_box_->setVisible(enable);
@@ -69,16 +70,16 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   layout_->setSpacing(0);
   layout_->setContentsMargins(QMargins(0, 0, 0, 0));
   setLayout(layout_);
-  
+
   // upper group box / grid
   QGroupBox* upper_box = new QGroupBox();
   upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
   upper_box->setContentsMargins(QMargins(0, 0, 0, 0));
   grid_layout_ = new QGridLayout(upper_box);
   layout_->addWidget(upper_box);
-  
+
   // layout_->addSpacing(50);
-  
+
   // lower group box / grid
   script_group_box_ = new QGroupBox();
   script_group_box_->setStyleSheet(QString("QGroupBox {border:0}"));
@@ -153,4 +154,3 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
   rclcpp::shutdown();
   QCoreApplication::quit();
 }
-

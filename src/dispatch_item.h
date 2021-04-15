@@ -31,7 +31,7 @@ class DispatchItem : public QWidget
   void Process();
   bool is_checked();
 
-  std::string       tmux_name_;
+  std::string tmux_name_;
 
   bool TmuxKillSession();
   bool TmuxNewSession();
