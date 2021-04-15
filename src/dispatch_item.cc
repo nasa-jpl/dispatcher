@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <string>
 
 #include <QCheckBox>
@@ -30,9 +31,13 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
                                        const YAML::Node& node, int index)
     : QWidget(parent)
 {
-  ros_node_  = ros_node;
-  name_      = node["name"].as<std::string>();
-  tmux_name_ = std::to_string(index) + "_" + node["name"].as<std::string>();
+  // Convert any spaces to underscores in YAML Name parameter
+  std::string rep_str = node["name"].as<std::string>();
+  std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
+
+  ros_node_          = ros_node;
+  name_              = rep_str;
+  tmux_name_         = std::to_string(index) + "_" + rep_str;
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
   cmd_               = node["cmd"].as<std::string>();
