@@ -16,14 +16,13 @@
 
 namespace dispatcher
 {
-
 class ScriptItem : public QWidget
 {
   Q_OBJECT  // must be included to add qt meta information
 
-  public: 
-    
-  explicit ScriptItem(QWidget* parent, const YAML::Node&);
+      public :
+
+      explicit ScriptItem(QWidget* parent, const YAML::Node&);
   ~ScriptItem();
 
   bool is_checked();
@@ -32,12 +31,12 @@ class ScriptItem : public QWidget
   void StartCb();
 
  private:
-  std::string       name_;
-  std::string       cmd_;
-  std::string       icon_;
-  int               index_  = -1;
-  QLabel*           label_  = nullptr;
-  bool use_terminal_ = true;
+  std::string name_;
+  std::string cmd_;
+  std::string icon_;
+  int         index_        = -1;
+  QLabel*     label_        = nullptr;
+  bool        use_terminal_ = true;
  signals:
 };
 

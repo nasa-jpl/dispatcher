@@ -24,8 +24,8 @@ dispatcher::ScriptItem::ScriptItem(QWidget* parent, const YAML::Node& node)
     : QWidget(parent)
 {
   auto dispatcher = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
-  name_ = node["name"].as<std::string>();
-  cmd_  = node["cmd"].as<std::string>();
+  name_           = node["name"].as<std::string>();
+  cmd_            = node["cmd"].as<std::string>();
   if (node["icon"]) {
     icon_ = node["icon"].as<std::string>();
   } else {
@@ -34,7 +34,7 @@ dispatcher::ScriptItem::ScriptItem(QWidget* parent, const YAML::Node& node)
   if (node["use_terminal"]) {
     use_terminal_ = node["use_terminal"].as<bool>();
   }
-  int row = node["row"].as<int>();
+  int row    = node["row"].as<int>();
   int column = node["column"].as<int>();
 
   QGridLayout* layout = dispatcher->get_script_layout();
@@ -57,7 +57,7 @@ dispatcher::ScriptItem::~ScriptItem() {}
 void dispatcher::ScriptItem::StartCb()
 {
   std::string system_call;
-  if(use_terminal_) {
+  if (use_terminal_) {
     system_call = "gnome-terminal -- " + cmd_;
   } else {
     system_call = cmd_;

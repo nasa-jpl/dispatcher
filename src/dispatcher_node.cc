@@ -39,6 +39,7 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
       this->get_node_base_interface().get());
 
   ParseConfig();
+  SetupTmuxSessions();
   InitializeTimer();
 }
 
@@ -49,20 +50,20 @@ void dispatcher::DispatcherNode::ParseConfig()
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
 
   workspace_              = root["workspace"].as<std::string>();
+  int dispatch_item_index = 1;
   for (const auto& node : root["nodes"]) {
-    dispatch_items_.push_back(
-        new dispatcher::DispatchItem(widget_, this, node));
+    dispatch_items_.push_back(new dispatcher::DispatchItem(
+        widget_, this, node, dispatch_item_index++));
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
-  if(root["scripts"]) {
+  if (root["scripts"]) {
     dispatcher->EnableScripts(true);
   } else {
     dispatcher->EnableScripts(false);
   }
   for (const auto& script : root["scripts"]) {
-    script_items_.push_back(
-        new dispatcher::ScriptItem(widget_, script));
+    script_items_.push_back(new dispatcher::ScriptItem(widget_, script));
   }
 
   widget_->setWindowTitle("dispatcher - " + QString(workspace_.c_str()));
@@ -101,7 +102,36 @@ void dispatcher::DispatcherNode::StopChecked()
 
 void dispatcher::DispatcherNode::StopAll()
 {
+  CFW_DEBUG("Stopping all dispatch items and killing tmux sessions...");
   for (auto& item : dispatch_items_) {
     item->StopCb();
+    item->TmuxKillSession();
   }
+  CFW_DEBUG("Stoped all dispatch items and killing tmux sessions");
+}
+
+void dispatcher::DispatcherNode::SetupTmuxSessions()
+{
+  CFW_DEBUG("Creating Tmux session for all Dispatch Items...");
+
+  for (auto& item : dispatch_items_) {
+    // If the tmux session is already exists, try to clean it up and
+    // start it back up from scratch
+    if (item->TmuxHasSession()) {
+      CFW_WARN(
+          "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
+          "up the "
+          "process safely",
+          item->GetTmuxName().c_str(), item->GetName().c_str());
+      CFW_WARN(
+          "If you consistently see this warning, contact your SW support "
+          "developer");
+
+      item->TmuxSendKeys("C-C");  // SIGINT
+      item->TmuxKillSession();
+    }
+
+    item->TmuxNewSession();
+  }
+  CFW_DEBUG("Created Tmux session for all Dispatch Items.");
 }

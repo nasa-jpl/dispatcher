@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <string>
 
 #include <QCheckBox>
@@ -27,11 +28,16 @@ static bool check_gnome_terminal_exists()
 */
 dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
                                        dispatcher::DispatcherNode* ros_node,
-                                       const YAML::Node&           node)
+                                       const YAML::Node& node, int index)
     : QWidget(parent)
 {
+  // Convert any spaces to underscores in YAML Name parameter
+  std::string rep_str = node["name"].as<std::string>();
+  std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
+
   ros_node_          = ros_node;
   name_              = node["name"].as<std::string>();
+  tmux_name_         = std::to_string(index) + "_" + rep_str;
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
   cmd_               = node["cmd"].as<std::string>();
@@ -138,62 +144,31 @@ void dispatcher::DispatchItem::StartCb()
 
   CFW_INFO("Starting node: %s in tmux session: %s", node_name_.c_str(),
            name_.c_str());
+  CFW_INFO("system cmd: %s", cmd_.c_str());
 
-  // kill the tmux session if it exists, flushes out old
-  // sessions that might have processes still running in them
-  std::string system_call = "tmux kill-session -t " + name_;
-  CFW_INFO("Issuing subprocess call `%s`", system_call.c_str());
-  int         result      = system(system_call.c_str());
-  CFW_INFO("Subprocess call `%s` returned result %d", system_call.c_str(), result); 
-
-  // generate a new tmux session using 'name' key in yaml config
-  
-  CFW_INFO("Issuing subprocess call `%s`", system_call.c_str());
-  system_call = "tmux new -d -s " + name_;
-  result      = system(system_call.c_str());
-  CFW_INFO("Subprocess call `%s` returned result %d", system_call.c_str(), result); 
-  if (result == 1) {
-    CFW_WARN("tmux session %s already exists, could not create new session",
+  if (!TmuxHasSession()) {
+    CFW_INFO("Tmux Session was closed for %s, restarting session now",
              name_.c_str());
+    (void)TmuxNewSession();
   }
 
-  // cd to workspace directory
-  system_call = "tmux send-keys -t " + name_ + ":0 'cd " +
-                ros_node_->get_workspace() + "' Enter";
-  CFW_INFO("Issuing subprocess call `%s`", system_call.c_str());
-  result = system(system_call.c_str());
-  CFW_INFO("Subprocess call `%s` returned result %d", system_call.c_str(), result); 
-
-  // source ros environment
-  system_call =
-      "tmux send-keys -t " + name_ + ":0 'source install/setup.bash' Enter";
-  CFW_INFO("Issuing subprocess call `%s`", system_call.c_str());
-  result = system(system_call.c_str());
-  CFW_INFO("Subprocess call `%s` returned result %d", system_call.c_str(), result); 
-  
+  // cd to workspace directory and source ros environment
+  TmuxSendKeys("C-U");  // Clears the line of any text
+  TmuxSendKeys("cd " + ros_node_->get_workspace());
+  TmuxSendKeys("source install/setup.bash");
 
   // run user-supplied command, you can call an executable directly, start a
   // node or launch script
-  system_call = "tmux send-keys -t " + name_ + ":0 '" + cmd_ + "' Enter";
-  CFW_INFO("Issuing subprocess call `%s`", system_call.c_str());
-  result      = system(system_call.c_str());
-  CFW_INFO("Subprocess call `%s` returned result %d", system_call.c_str(), result); 
+  TmuxSendKeys(cmd_);
 }
 
 void dispatcher::DispatchItem::StopCb()
 {
   if (online_) {
     CFW_INFO("Stopping node: %s in tmux session: %s", node_name_.c_str(),
-             name_.c_str());
-    std::string system_call = "tmux send-keys -t " + name_ + ":0 'C-C' Enter";
-    CFW_INFO("Issuing subprocess call: `%s`", system_call.c_str());
-    int         result      = system(system_call.c_str());
-    CFW_INFO("Subprocess call `%s` returned result: %d", system_call.c_str(), result);
+             tmux_name_.c_str());
+    TmuxSendKeys("C-C");  // SIGINT
   }
-  std::string system_call = "tmux kill-session -t " + name_;
-  CFW_INFO("Issuing subprocess call: `%s`", system_call.c_str());
-  int         result      = system(system_call.c_str());
-  CFW_INFO("Subprocess call `%s` returned result: %d", system_call.c_str(), result);
 }
 
 void dispatcher::DispatchItem::TerminalCb()
@@ -204,19 +179,65 @@ void dispatcher::DispatchItem::TerminalCb()
         "on this "
         "system; you can attach to the session by running `tmux a -t %s` "
         "from any terminal",
-        name_.c_str());
+        tmux_name_.c_str());
     return;
   }
-  if (online_) {
-    CFW_INFO("Attaching to tmux session: %s", name_.c_str());
-    std::string system_call = "gnome-terminal -- tmux a -t " + name_;
-    CFW_INFO("Issuing subprocess call: `%s`", system_call.c_str());
-    int         result      = system(system_call.c_str());
-    CFW_INFO("Subprocess call `%s` returned result: %d", system_call.c_str(), result);
-  } else {
-    CFW_WARN(
-        "Not attempting to attach to tmux session %s when node has offline "
-        "status",
-        name_.c_str());
+
+  if (!TmuxHasSession()) {
+    CFW_INFO("Tmux Session was closed for %s, restarting session now",
+             tmux_name_.c_str());
+    (void)TmuxNewSession();
   }
+
+  // Start a gnome session and attach a tmux session
+  SystemCall("gnome-terminal -t " + name_ + " -- tmux a -t " + tmux_name_);
+}
+
+bool dispatcher::DispatchItem::TmuxKillSession()
+{
+  std::string cmd    = "tmux kill-session -t " + tmux_name_;
+  int         result = SystemCall(cmd);
+  if (result == 1) {
+    CFW_WARN("tmux session %s could not be killed", tmux_name_.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool dispatcher::DispatchItem::TmuxNewSession()
+{
+  std::string cmd    = "tmux new -d -s " + tmux_name_;
+  int         result = SystemCall(cmd);
+  if (result == 1) {
+    CFW_WARN("tmux session %s could not be created", tmux_name_.c_str());
+    return false;
+  }
+  return true;
+}
+
+void dispatcher::DispatchItem::TmuxSendKeys(std::string cmd_str)
+{
+  std::string cmd =
+      "tmux send-keys -t " + tmux_name_ + " '" + cmd_str + "' Enter";
+  (void)system(cmd.c_str());
+}
+
+int dispatcher::DispatchItem::SystemCall(std::string cmd)
+{
+  CFW_DEBUG("Issuing subprocess call `%s`", cmd.c_str());
+  int result = system(cmd.c_str());
+  CFW_DEBUG("Subprocess call `%s` returned result %d", cmd.c_str(), result);
+  return result;
+}
+
+bool dispatcher::DispatchItem::TmuxHasSession()
+{
+  std::string cmd    = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
+  int         result = SystemCall(cmd);
+  if (result != 0) {
+    CFW_DEBUG("Tmux does not have active session for %s", tmux_name_.c_str());
+    return false;
+  }
+  CFW_DEBUG("Tmux has active session for %s", tmux_name_.c_str());
+  return true;
 }

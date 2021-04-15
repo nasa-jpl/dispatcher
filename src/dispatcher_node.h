@@ -45,6 +45,7 @@ class DispatcherNode : public CasahNode
 
   void ParseConfig();
   void InitializeSubscribers();
+  void SetupTmuxSessions();
 
   DispatcherWidget* widget_ = nullptr;
 };

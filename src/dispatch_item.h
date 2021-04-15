@@ -25,11 +25,21 @@ class DispatchItem : public QWidget
   Q_OBJECT  // must be included to add qt meta information
 
       public : explicit DispatchItem(QWidget* parent, DispatcherNode*,
-                                     const YAML::Node&);
+                                     const YAML::Node&, int index);
   ~DispatchItem();
 
   void Process();
   bool is_checked();
+
+  bool TmuxKillSession();
+  bool TmuxNewSession();
+  void TmuxSendKeys(std::string cmd_str);
+  int  SystemCall(std::string cmd);
+  bool TmuxHasSession();
+
+  std::string GetTmuxName() { return tmux_name_; };
+  std::string GetNodeName() { return node_name_; };
+  std::string GetName() { return name_; };
 
  public slots:
   void StartCb();
@@ -41,6 +51,7 @@ class DispatchItem : public QWidget
   DispatcherNode*   ros_node_   = nullptr;
   std::string       name_;
   std::string       node_name_;
+  std::string       tmux_name_;
   std::string       node_namespace_;
   std::string       cmd_;
   int               index_  = -1;
