@@ -31,10 +31,7 @@ class DispatchItem : public QWidget
   void Process();
   bool is_checked();
 
- public slots:
-  void StartCb();
-  void StopCb();
-  void TerminalCb();
+  std::string       tmux_name_;
 
   bool TmuxKillSession();
   bool TmuxNewSession();
@@ -42,11 +39,15 @@ class DispatchItem : public QWidget
   int  SystemCall(std::string cmd);
   bool TmuxHasSession();
 
+ public slots:
+  void StartCb();
+  void StopCb();
+  void TerminalCb();
+
  private:
   DispatcherWidget* dispatcher_ = nullptr;
   DispatcherNode*   ros_node_   = nullptr;
   std::string       name_;
-  std::string       tmux_name_;
   std::string       node_name_;
   std::string       node_namespace_;
   std::string       cmd_;

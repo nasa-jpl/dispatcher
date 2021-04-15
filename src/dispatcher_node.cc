@@ -74,15 +74,7 @@ void dispatcher::DispatcherNode::ParseConfig()
 /*!
 @brief class destructor
 */
-dispatcher::DispatcherNode::~DispatcherNode() {
-
-  CFW_DEBUG("Destroying Tmux session for all Dispatch Items...");
-  for(auto item = dispatch_items_.begin(); item != dispatch_items_.end(); item++){
-    (*item)->TmuxSendKeys("C-C");
-    (*item)->TmuxKillSession();
-  }
-  CFW_DEBUG("Destroyed Tmux session for all Dispatch Items.");
-}
+dispatcher::DispatcherNode::~DispatcherNode() { }
 
 void dispatcher::DispatcherNode::Process()
 {
@@ -112,16 +104,33 @@ void dispatcher::DispatcherNode::StopChecked()
 
 void dispatcher::DispatcherNode::StopAll()
 {
+
+  CFW_DEBUG("Stopping all dispatch items and killing tmux sessions...");
   for (auto& item : dispatch_items_) {
     item->StopCb();
+    item->TmuxKillSession();
   }
+  CFW_DEBUG("Stoped all dispatch items and killing tmux sessions");
 }
 
 void dispatcher::DispatcherNode::SetupTmuxSessions(){
+
   CFW_DEBUG("Creating Tmux session for all Dispatch Items...");
-  for(auto item = dispatch_items_.begin(); item != dispatch_items_.end(); item++){
-    (*item)->TmuxKillSession();
-    (*item)->TmuxNewSession();
+
+  for(auto& item : dispatch_items_) {
+
+    // If the tmux session is already exists, try to clean it up and 
+    // start it back up from scratch
+    if(item->TmuxHasSession()){
+
+      CFW_WARN("Prior Tmux session for %s detected, Attempting to clean up the process safely", item->tmux_name_.c_str());
+      CFW_WARN("If you consistently see this warning, contact your SW support Developer"); 
+
+      item->TmuxSendKeys("C-C"); // SIGINT
+      item->TmuxKillSession();
+    }
+
+    item->TmuxNewSession();
   }
   CFW_DEBUG("Created Tmux session for all Dispatch Items.");
 

@@ -33,7 +33,7 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
 {
   ros_node_          = ros_node;
   name_              = node["name"].as<std::string>();
-  tmux_name_         = std::to_string(index) + node["name"].as<std::string>();
+  tmux_name_         = std::to_string(index) + "_" + node["name"].as<std::string>();
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
   cmd_               = node["cmd"].as<std::string>();
@@ -148,10 +148,9 @@ void dispatcher::DispatchItem::StartCb()
     (void)TmuxNewSession();
   }
 
-  // cd to workspace directory
-  TmuxSendKeys("cd" + ros_node_->get_workspace());
-
-  // source ros environment
+  // cd to workspace directory and source ros environment
+  TmuxSendKeys("C-U"); // Clears the line of any text
+  TmuxSendKeys("cd " + ros_node_->get_workspace());
   TmuxSendKeys("source install/setup.bash");
 
   // run user-supplied command, you can call an executable directly, start a
@@ -164,7 +163,7 @@ void dispatcher::DispatchItem::StopCb()
   if (online_) {
     CFW_INFO("Stopping node: %s in tmux session: %s", node_name_.c_str(),
              tmux_name_.c_str());
-    TmuxSendKeys("C-C");
+    TmuxSendKeys("C-C"); // SIGINT
   }
 }
 
