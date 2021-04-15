@@ -36,7 +36,7 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
 
   ros_node_          = ros_node;
-  name_              = rep_str;
+  name_              = node["name"].as<std::string>();
   tmux_name_         = std::to_string(index) + "_" + rep_str;
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
