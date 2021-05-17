@@ -42,15 +42,20 @@ class DispatcherWidget : public QWidget
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public : explicit DispatcherWidget(QWidget* parent = 0);
+ public: 
+  explicit DispatcherWidget(QWidget* parent = 0);
   ~DispatcherWidget();
   QGridLayout* get_layout() { return grid_layout_; }
   QGridLayout* get_script_layout() { return script_layout_; }
+  std::shared_ptr<dispatcher::DispatcherNode> get_ros_node() {
+    return ros_node_;
+  }
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
   {
     return online_nodes_;
   }
   void Quit() { QCoreApplication::quit(); }
+  
 
  public slots:
   void Process();

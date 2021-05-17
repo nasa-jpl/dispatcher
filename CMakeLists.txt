@@ -21,7 +21,7 @@ cfw_add_target_doc()
 cfw_add_target_tag()
 
 cfw_fetch_dependencies(
-    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.1.0
+    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.1.1
 )
 
 set(CMAKE_AUTOMOC ON)
@@ -32,6 +32,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(casah_msgs REQUIRED)
 
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
@@ -96,6 +97,7 @@ ament_target_dependencies(dispatcher_widget
     rclcpp
     std_srvs
     sensor_msgs
+    casah_msgs
     yaml_cpp_vendor
 )
 

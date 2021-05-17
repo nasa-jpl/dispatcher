@@ -6,10 +6,11 @@ before_script:
   - eval $(ssh-agent -s)
   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
   - ssh-keyscan fornat1.jpl.nasa.gov >> ~/.ssh/known_hosts
-  - cd .. && rm -rf yaml_cpp_vendor
-  - git clone https://github.com/ros2/yaml_cpp_vendor -b foxy
   - echo "$FORNAT1_CRT" >> /usr/local/share/ca-certificates/fornat1.jpl.nasa.gov.crt
   - update-ca-certificates
+  - cd .. && rm -rf yaml_cpp_vendor casah_msgs
+  - git clone https://github.com/ros2/yaml_cpp_vendor -b foxy
+  - git clone git@fornat1.jpl.nasa.gov:casah/ros2/casah_msgs.git
 
 stages:
   - build
@@ -19,7 +20,7 @@ build:
   stage: build
   script:
     - echo "Building..."
-    - cd .. && colcon build --packages-select yaml_cpp_vendor
+    - cd .. && colcon build --packages-select yaml_cpp_vendor casah_msgs
     - source install/setup.bash
     - colcon build --packages-select dispatcher
 
@@ -29,7 +30,7 @@ deploy:
     - master
   script:
     - echo "Deploying..."
-    - cd .. && colcon build --packages-select yaml_cpp_vendor
+    - cd .. && colcon build --packages-select yaml_cpp_vendor casah_msgs
     - source install/setup.bash
     - colcon build --packages-select dispatcher
     - cd build/dispatcher 
