@@ -51,9 +51,8 @@ static void check_tmux_exists_throw_exception()
 
 void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 {
-  std::cout << script_group_box_ << std::endl;
   if (script_group_box_ == nullptr) {
-    std::cerr << "nullptr" << std::endl;
+    EVR_FATAL_PTR(ros_node_, "script_group_box_ was not correctly initialized");
   }
   script_group_box_->setVisible(enable);
 }
@@ -112,7 +111,8 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
 
   double loop_period_ms = 1.0 / ros_node_->get_target_loop_rate_hz() * 1000.0;
-  CFW_INFO("Using loop period %f ms", loop_period_ms);
+  EVR_DIAGNOSTIC_PTR(
+    ros_node_, "Using loop period %f ms", loop_period_ms);
 
   timer_ = new QTimer;
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
@@ -130,7 +130,7 @@ void dispatcher::DispatcherWidget::Process()
     ros_node_->Process();
     ros_executor_.spin_node_once(ros_node_);
   } else {
-    CFW_INFO("SHUTTING DOWN");
+    EVR_ACTIVITY_HI_PTR(ros_node_, "Shutting down");
     ros_node_->StopAll();
     rclcpp::shutdown();
     QCoreApplication::quit();
@@ -149,7 +149,7 @@ void dispatcher::DispatcherWidget::StopAllCheckedCb()
 
 void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
 {
-  CFW_INFO("SHUTTING DOWN");
+  EVR_ACTIVITY_HI_PTR(ros_node_, "Shutting down");
   ros_node_->StopAll();
   rclcpp::shutdown();
   QCoreApplication::quit();

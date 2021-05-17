@@ -24,6 +24,7 @@ dispatcher::ScriptItem::ScriptItem(QWidget* parent, const YAML::Node& node)
     : QWidget(parent)
 {
   auto dispatcher = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
+  ros_node_ = dispatcher->get_ros_node();
   name_           = node["name"].as<std::string>();
   cmd_            = node["cmd"].as<std::string>();
   if (node["icon"]) {
@@ -63,7 +64,12 @@ void dispatcher::ScriptItem::StartCb()
     system_call = cmd_;
   }
 
-  CFW_INFO("Issuing subprocess call: `%s`", system_call.c_str());
+  EVR_DIAGNOSTIC_PTR(
+    ros_node_, 
+    "Issuing subprocess call: `%s`", system_call.c_str());
   int result = system(system_call.c_str());
-  CFW_INFO("Subprocess call: `%s` returned %d", system_call.c_str(), result);
+  EVR_DIAGNOSTIC_PTR(
+    ros_node_, 
+    "Subprocess call: `%s` returned %d", system_call.c_str(),
+    result);
 }

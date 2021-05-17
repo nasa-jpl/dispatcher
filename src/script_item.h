@@ -37,6 +37,8 @@ class ScriptItem : public QWidget
   int         index_        = -1;
   QLabel*     label_        = nullptr;
   bool        use_terminal_ = true;
+  std::shared_ptr<dispatcher::DispatcherNode> ros_node_; 
+
  signals:
 };
 

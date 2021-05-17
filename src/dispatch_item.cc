@@ -50,7 +50,8 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   //
   if (node["topics"]) {
     for (auto &topic : node["topics"]) {
-      CFW_INFO("Subscribing to topic: %s", topic.as<std::string>().c_str());
+      EVR_DIAGNOSTIC_PTR(ros_node_, "Subscribing to topic: %s", 
+                     topic.as<std::string>().c_str());
     }
   }
 #endif
@@ -135,20 +136,26 @@ void dispatcher::DispatchItem::Process()
 void dispatcher::DispatchItem::StartCb()
 {
   if (online_) {
-    CFW_WARN(
-        "Refusing to start node %s in tmux session: %s "
-        "because node was detected as already running on ROS2 message bus",
-        node_name_.c_str(), name_.c_str());
+    EVR_WARNING_HI_PTR(
+      ros_node_,
+      "Refusing to start node %s in tmux session: %s "
+      "because node was detected as already running on ROS2 message bus",
+      node_name_.c_str(), name_.c_str());
     return;
   }
 
-  CFW_INFO("Starting node: %s in tmux session: %s", node_name_.c_str(),
-           name_.c_str());
-  CFW_INFO("system cmd: %s", cmd_.c_str());
+  EVR_ACTIVITY_HI_PTR(ros_node_, 
+      "Starting node: %s in tmux session: %s", node_name_.c_str(),
+      name_.c_str());
+  EVR_DIAGNOSTIC_PTR(
+      ros_node_,
+      "system cmd: %s", cmd_.c_str());
 
   if (!TmuxHasSession()) {
-    CFW_INFO("Tmux Session was closed for %s, restarting session now",
-             name_.c_str());
+    EVR_ACTIVITY_LO_PTR(
+      ros_node_,
+      "Tmux Session was closed for %s, restarting session now",
+      name_.c_str());
     (void)TmuxNewSession();
   }
 
@@ -165,8 +172,10 @@ void dispatcher::DispatchItem::StartCb()
 void dispatcher::DispatchItem::StopCb()
 {
   if (online_) {
-    CFW_INFO("Stopping node: %s in tmux session: %s", node_name_.c_str(),
-             tmux_name_.c_str());
+    EVR_ACTIVITY_LO_PTR(
+      ros_node_,
+      "Stopping node: %s in tmux session: %s", 
+      node_name_.c_str(), tmux_name_.c_str());
     TmuxSendKeys("C-C");  // SIGINT
   }
 }
@@ -174,18 +183,21 @@ void dispatcher::DispatchItem::StopCb()
 void dispatcher::DispatchItem::TerminalCb()
 {
   if (!check_gnome_terminal_exists()) {
-    CFW_WARN(
-        "Cannot attach to tmux session because 'gnome-terminal' does not exist "
-        "on this "
-        "system; you can attach to the session by running `tmux a -t %s` "
-        "from any terminal",
-        tmux_name_.c_str());
+    EVR_WARNING_HI_PTR(
+      ros_node_,
+      "Cannot attach to tmux session because 'gnome-terminal' does not exist "
+      "on this "
+      "system; you can attach to the session by running `tmux a -t %s` "
+      "from any terminal",
+      tmux_name_.c_str());
     return;
   }
 
   if (!TmuxHasSession()) {
-    CFW_INFO("Tmux Session was closed for %s, restarting session now",
-             tmux_name_.c_str());
+    EVR_DIAGNOSTIC_PTR(
+      ros_node_,
+      "Tmux Session was closed for %s, restarting session now",
+      tmux_name_.c_str());
     (void)TmuxNewSession();
   }
 
@@ -198,7 +210,9 @@ bool dispatcher::DispatchItem::TmuxKillSession()
   std::string cmd    = "tmux kill-session -t " + tmux_name_;
   int         result = SystemCall(cmd);
   if (result == 1) {
-    CFW_WARN("tmux session %s could not be killed", tmux_name_.c_str());
+    EVR_WARNING_HI_PTR(
+      ros_node_, 
+      "tmux session %s could not be killed", tmux_name_.c_str());
     return false;
   }
   return true;
@@ -209,7 +223,9 @@ bool dispatcher::DispatchItem::TmuxNewSession()
   std::string cmd    = "tmux new -d -s " + tmux_name_;
   int         result = SystemCall(cmd);
   if (result == 1) {
-    CFW_WARN("tmux session %s could not be created", tmux_name_.c_str());
+    EVR_WARNING_HI_PTR(
+      ros_node_,
+      "tmux session %s could not be created", tmux_name_.c_str());
     return false;
   }
   return true;
@@ -224,9 +240,13 @@ void dispatcher::DispatchItem::TmuxSendKeys(std::string cmd_str)
 
 int dispatcher::DispatchItem::SystemCall(std::string cmd)
 {
-  CFW_DEBUG("Issuing subprocess call `%s`", cmd.c_str());
+  EVR_DIAGNOSTIC_PTR(
+    ros_node_,
+    "Issuing subprocess call `%s`", cmd.c_str());
   int result = system(cmd.c_str());
-  CFW_DEBUG("Subprocess call `%s` returned result %d", cmd.c_str(), result);
+  EVR_DIAGNOSTIC_PTR(
+    ros_node_,
+    "Subprocess call `%s` returned result %d", cmd.c_str(), result);
   return result;
 }
 
@@ -235,9 +255,13 @@ bool dispatcher::DispatchItem::TmuxHasSession()
   std::string cmd    = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
   int         result = SystemCall(cmd);
   if (result != 0) {
-    CFW_DEBUG("Tmux does not have active session for %s", tmux_name_.c_str());
+    EVR_DIAGNOSTIC_PTR(
+      ros_node_,
+      "Tmux does not have active session for %s", tmux_name_.c_str());
     return false;
   }
-  CFW_DEBUG("Tmux has active session for %s", tmux_name_.c_str());
+  EVR_DIAGNOSTIC_PTR(
+    ros_node_,
+    "Tmux has active session for %s", tmux_name_.c_str());
   return true;
 }

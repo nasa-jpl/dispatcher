@@ -45,8 +45,8 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
 
 void dispatcher::DispatcherNode::ParseConfig()
 {
-  CFW_INFO("Parsing dispatcher_config_path: %s",
-           dispatcher_config_path_.c_str());
+  EVR_DIAGNOSTIC("Parsing dispatcher_config_path: %s",
+                 dispatcher_config_path_.c_str());
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
 
   workspace_              = root["workspace"].as<std::string>();
@@ -102,28 +102,29 @@ void dispatcher::DispatcherNode::StopChecked()
 
 void dispatcher::DispatcherNode::StopAll()
 {
-  CFW_DEBUG("Stopping all dispatch items and killing tmux sessions...");
+  EVR_ACTIVITY_HI( 
+    "Stopping all dispatch items and killing tmux sessions...");
   for (auto& item : dispatch_items_) {
     item->StopCb();
     item->TmuxKillSession();
   }
-  CFW_DEBUG("Stoped all dispatch items and killing tmux sessions");
+  EVR_ACTIVITY_LO("Stoped all dispatch items and killing tmux sessions");
 }
 
 void dispatcher::DispatcherNode::SetupTmuxSessions()
 {
-  CFW_DEBUG("Creating Tmux session for all Dispatch Items...");
+  EVR_ACTIVITY_HI("Creating tmux session for all Dispatch Items...");
 
   for (auto& item : dispatch_items_) {
     // If the tmux session is already exists, try to clean it up and
     // start it back up from scratch
     if (item->TmuxHasSession()) {
-      CFW_WARN(
+      EVR_WARNING_HI(
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the "
           "process safely",
           item->GetTmuxName().c_str(), item->GetName().c_str());
-      CFW_WARN(
+      EVR_WARNING_LO(
           "If you consistently see this warning, contact your SW support "
           "developer");
 
@@ -133,5 +134,5 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
 
     item->TmuxNewSession();
   }
-  CFW_DEBUG("Created Tmux session for all Dispatch Items.");
+  EVR_ACTIVITY_LO("Created Tmux session for all Dispatch Items.");
 }
