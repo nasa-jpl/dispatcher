@@ -1,6 +1,7 @@
 image: casah347rms/casah:ros2
 
 before_script:
+  - DEBIAN_FRONTEND=noninteractive apt update
   - DEBIAN_FRONTEND=noninteractive apt install -y
       qt5-default
   - eval $(ssh-agent -s)
