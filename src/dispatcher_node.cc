@@ -63,7 +63,7 @@ void dispatcher::DispatcherNode::ParseConfig()
     dispatcher->EnableScripts(false);
   }
   for (const auto& script : root["scripts"]) {
-    script_items_.push_back(new dispatcher::ScriptItem(widget_, script));
+    script_items_.push_back(new dispatcher::ScriptItem(widget_, this, script));
   }
 
   widget_->setWindowTitle("dispatcher - " + QString(workspace_.c_str()));

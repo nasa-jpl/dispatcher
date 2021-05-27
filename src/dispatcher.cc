@@ -9,16 +9,9 @@
 int main(int argc, char* argv[])
 {
   rclcpp::init(argc, argv);
-
   QApplication app(argc, argv);
   Q_INIT_RESOURCE(icons);
-
-  std::cout << "dispatcher v" << dispatcher::version()
-            << " commit: " << dispatcher::commit()
-            << " branch: " << dispatcher::branch() << std::endl;
-
   dispatcher::DispatcherWidget w;
   w.show();
-
   return app.exec();
 }
