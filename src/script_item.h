@@ -22,7 +22,9 @@ class ScriptItem : public QWidget
 
       public :
 
-      explicit ScriptItem(QWidget* parent, const YAML::Node&);
+      explicit ScriptItem(QWidget* parent, 
+                          dispatcher::DispatcherNode* ros_node_, 
+                          const YAML::Node&);
   ~ScriptItem();
 
   bool is_checked();
@@ -37,7 +39,7 @@ class ScriptItem : public QWidget
   int         index_        = -1;
   QLabel*     label_        = nullptr;
   bool        use_terminal_ = true;
-  std::shared_ptr<dispatcher::DispatcherNode> ros_node_; 
+  dispatcher::DispatcherNode* ros_node_; 
 
  signals:
 };

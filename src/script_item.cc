@@ -20,11 +20,13 @@
 /*!
 @brief class constructor for ScriptItem
 */
-dispatcher::ScriptItem::ScriptItem(QWidget* parent, const YAML::Node& node)
+dispatcher::ScriptItem::ScriptItem(QWidget* parent, 
+                                   DispatcherNode* ros_node, 
+                                   const YAML::Node& node)
     : QWidget(parent)
 {
   auto dispatcher = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
-  ros_node_ = dispatcher->get_ros_node();
+  ros_node_ = ros_node;
   name_           = node["name"].as<std::string>();
   cmd_            = node["cmd"].as<std::string>();
   if (node["icon"]) {
@@ -63,7 +65,6 @@ void dispatcher::ScriptItem::StartCb()
   } else {
     system_call = cmd_;
   }
-
   EVR_DIAGNOSTIC_PTR(
     ros_node_, 
     "Issuing subprocess call: `%s`", system_call.c_str());
