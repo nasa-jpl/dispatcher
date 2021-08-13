@@ -43,6 +43,12 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   cmd_               = node["cmd"].as<std::string>();
   bool start_checked = node["start_checked"].as<bool>();
 
+  if(!node["stop_tmux_cmd"]){
+    stop_tmux_cmd_ = std::string("C-C");
+  }else{
+    stop_tmux_cmd_ = node["stop_tmux_cmd"].as<std::string>();
+  }
+
 #if 0
   // TODO @kwehage subscribe to Health topics 
   // using std_msgs::msg::Empty or diagnostic_msgs::msg::DiagnosticStatus
@@ -176,7 +182,7 @@ void dispatcher::DispatchItem::StopCb()
       ros_node_,
       "Stopping node: %s in tmux session: %s", 
       node_name_.c_str(), tmux_name_.c_str());
-    TmuxSendKeys("C-C");  // SIGINT
+    TmuxSendKeys(stop_tmux_cmd_);
   }
 }
 

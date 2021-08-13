@@ -27,6 +27,7 @@ nodes:
     node_name: Commander
     cmd: ros2 run commander commander
     start_checked: true
+    stop_tmux_keys: "C-D" # Issues a Ctrl+D to close the Python interpreter
 ```
 
 Start `dispatcher` in your workspace by running:
