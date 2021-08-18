@@ -54,6 +54,7 @@ class DispatchItem : public QWidget
   std::string       tmux_name_;
   std::string       node_namespace_;
   std::string       cmd_;
+  std::string       stop_tmux_cmd_;
   int               index_  = -1;
   bool              online_ = false;
   QLabel*           label_  = nullptr;
