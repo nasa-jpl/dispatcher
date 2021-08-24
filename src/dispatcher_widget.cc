@@ -66,30 +66,23 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   check_tmux_exists_throw_exception();
 
   QVBoxLayout* layout_ = new QVBoxLayout(parent);
-  layout_->setSpacing(0);
-  layout_->setContentsMargins(QMargins(0, 0, 0, 0));
-  setLayout(layout_);
 
   // upper group box / grid
   QGroupBox* upper_box = new QGroupBox();
   upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
-  upper_box->setContentsMargins(QMargins(0, 0, 0, 0));
+  upper_box->setContentsMargins(QMargins(-1, -1, -1, 0));
   grid_layout_ = new QGridLayout(upper_box);
   layout_->addWidget(upper_box);
-
-  // layout_->addSpacing(50);
 
   // lower group box / grid
   script_group_box_ = new QGroupBox();
   script_group_box_->setStyleSheet(QString("QGroupBox {border:0}"));
-  script_group_box_->setContentsMargins(QMargins(0, 0, 0, 0));
+  script_group_box_->setContentsMargins(QMargins(-1, -1, -1, 0));
   script_layout_ = new QGridLayout(script_group_box_);
   layout_->addWidget(script_group_box_);
 
-  layout_->addStretch(-1);
-
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
-
+  
   int          index = grid_layout_->rowCount();
   QPushButton* start = new QPushButton("start all checked", this);
   start->setStyleSheet(QString("color: green"));
@@ -117,6 +110,10 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   timer_ = new QTimer;
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
   timer_->start(loop_period_ms);
+
+  layout_->setSizeConstraint(QLayout::SetFixedSize);
+  layout_->setSpacing(0);
+  setLayout(layout_);
 }
 
 /*!

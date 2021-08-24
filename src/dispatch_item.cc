@@ -28,7 +28,7 @@ static bool check_gnome_terminal_exists()
 */
 dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
                                        dispatcher::DispatcherNode* ros_node,
-                                       const YAML::Node& node, int index)
+                                       const YAML::Node& node)
     : QWidget(parent)
 {
   // Convert any spaces to underscores in YAML Name parameter
@@ -36,50 +36,47 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
 
   ros_node_          = ros_node;
+
+  dispatcher_         = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
+  QGridLayout* layout = dispatcher_->get_layout();
+  assert(layout);
+  
   name_              = node["name"].as<std::string>();
-  tmux_name_         = std::to_string(index) + "_" + rep_str;
   node_namespace_    = node["namespace"].as<std::string>();
   node_name_         = node["node_name"].as<std::string>();
   cmd_               = node["cmd"].as<std::string>();
   bool start_checked = node["start_checked"].as<bool>();
-
+  index_ = layout->rowCount();
+  tmux_name_         = std::to_string(index_) + "_" + rep_str;
+ 
   if(!node["stop_tmux_cmd"]){
     stop_tmux_cmd_ = std::string("C-C");
   }else{
     stop_tmux_cmd_ = node["stop_tmux_cmd"].as<std::string>();
   }
 
-#if 0
-  // TODO @kwehage subscribe to Health topics 
-  // using std_msgs::msg::Empty or diagnostic_msgs::msg::DiagnosticStatus
-  // message types
-  //
-  if (node["topics"]) {
-    for (auto &topic : node["topics"]) {
-      EVR_DIAGNOSTIC_PTR(ros_node_, "Subscribing to topic: %s", 
-                     topic.as<std::string>().c_str());
-    }
-  }
-#endif
 
-  dispatcher_         = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
-  QGridLayout* layout = dispatcher_->get_layout();
-  assert(layout);
-  index_ = layout->rowCount();
+  std::cout << index_ << std::endl;
 
   red_status_icon_ =
       QPixmap::fromImage(QImage(":/icons/red.png").scaledToHeight(20));
   green_status_icon_ =
       QPixmap::fromImage(QImage(":/icons/green.png").scaledToHeight(20));
 
-  label_ = new QLabel("");
-  label_->setPixmap(red_status_icon_);
-  layout->addWidget(label_, index_, 1);
+  // QSpacerItem* spacer_left =
+  //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  // layout->addItem(spacer_left, index_, 0);
 
   check_box_                 = new QCheckBox(QString(name_.c_str()), this);
   Qt::CheckState check_state = start_checked ? Qt::Checked : Qt::Unchecked;
-  check_box_->setChecked(check_state);
   layout->addWidget(check_box_, index_, 0);
+  check_box_->setChecked(check_state);
+  check_box_->setAttribute(Qt::WA_TransparentForMouseEvents, false);
+  check_box_->setFocusPolicy(Qt::StrongFocus);
+  
+  label_ = new QLabel("");
+  label_->setPixmap(red_status_icon_);
+  layout->addWidget(label_, index_, 1);
 
   QPushButton* start = new QPushButton("start", this);
   start->setStyleSheet(QString("color: green"));
@@ -97,9 +94,9 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   layout->addWidget(terminal, index_, 4);
   connect(terminal, SIGNAL(clicked()), this, SLOT(TerminalCb()));
 
-  QSpacerItem* spacer =
-      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  layout->addItem(spacer, index_, 5);
+  // QSpacerItem* spacer =
+  //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  // layout->addItem(spacer, index_, 5);
 }
 
 bool dispatcher::DispatchItem::is_checked()
