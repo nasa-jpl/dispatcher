@@ -127,7 +127,7 @@ class DispatcherNode : public CasahNode
   std::vector<dispatcher::DispatchItem*> dispatch_items_;
   std::vector<dispatcher::ScriptItem*>   script_items_;
   std::string                            workspace_;
-
+  std::string                            config_;
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
 

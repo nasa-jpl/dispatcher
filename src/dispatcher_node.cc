@@ -49,11 +49,13 @@ void dispatcher::DispatcherNode::ParseConfig()
                  dispatcher_config_path_.c_str());
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
 
-  workspace_              = root["workspace"].as<std::string>();
-  int dispatch_item_index = 1;
+  workspace_ = root["workspace"].as<std::string>();
+  if(root["config"]) {
+    config_ = root["config"].as<std::string>();
+  }
   for (const auto& node : root["nodes"]) {
     dispatch_items_.push_back(new dispatcher::DispatchItem(
-        widget_, this, node, dispatch_item_index++));
+      widget_, this, node));
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
@@ -66,7 +68,11 @@ void dispatcher::DispatcherNode::ParseConfig()
     script_items_.push_back(new dispatcher::ScriptItem(widget_, this, script));
   }
 
-  widget_->setWindowTitle("dispatcher - " + QString(workspace_.c_str()));
+  QString title = "dispatcher - " + QString(workspace_.c_str());
+  if (!config_.empty()) {
+    title += " - " + QString(config_.c_str());
+  }
+  widget_->setWindowTitle(title);
 }
 
 /*!
