@@ -4,14 +4,8 @@ project(dispatcher
     VERSION 0.0.18
     LANGUAGES C CXX
 )
-
-include(FetchContent)
-FetchContent_Declare(cfw_cmake
-    GIT_REPOSITORY git@fornat1.jpl.nasa.gov:casah/libs/cfw_cmake.git
-    GIT_TAG v0.1.27
-)
-FetchContent_Populate(cfw_cmake)
-include(${cfw_cmake_SOURCE_DIR}/cfw_cmake.cmake)
+set(CMAKE_PREFIX_PATH $ENV{HOME}/.cmake/packages)
+find_package(CfwCmake)
 
 cfw_configure_project()
 cfw_get_project_default_options()
@@ -21,7 +15,7 @@ cfw_add_target_doc()
 cfw_add_target_tag()
 
 cfw_fetch_dependencies(
-    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.1.5
+    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.1.11
 )
 
 set(CMAKE_AUTOMOC ON)

@@ -9,9 +9,12 @@ before_script:
   - ssh-keyscan fornat1.jpl.nasa.gov >> ~/.ssh/known_hosts
   - echo "$FORNAT1_CRT" >> /usr/local/share/ca-certificates/fornat1.jpl.nasa.gov.crt
   - update-ca-certificates
+  - rm -rf ~/.casah ~/.cmake cfw_cmake # remove cached packages and previous cfw_cmake version
+  - git clone git@fornat1.jpl.nasa.gov:casah/libs/cfw_cmake.git
+  - mkdir -p cfw_cmake/build && cd cfw_cmake/build && cmake .. && make && make install && cd -
   - cd .. && rm -rf yaml_cpp_vendor casah_msgs
   - git clone https://github.com/ros2/yaml_cpp_vendor -b foxy
-  - git clone git@fornat1.jpl.nasa.gov:casah/ros2/casah_msgs.git
+  - git clone git@fornat1.jpl.nasa.gov:casah/rosx/casah_msgs.git
 
 stages:
   - build
