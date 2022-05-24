@@ -1,25 +1,20 @@
 workspace: .
 config: offline
 nodes:
-  - name: kuka
-    namespace: /kuka
-    node_name: kuka
-    cmd: ros2 run kuka kuka --ros-args -p kuka_rsi_config_path:=storm_launch/cfg/kuka/kuka_offline.yaml
+
+  - name: arm
+    namespace: /arm
+    node_name: arm
+    cmd: ros2 launch install/bringup/share/bringup/launch/arm.py
     start_checked: true
-    topics:
-      - /kuka/state/module_state
-      - /joint_states
-  - name: kuka-simulator
-    namespace: / 
-    node_name: kuka_offline_state
-    cmd: ros2 run kuka kuka_rsi_simulator
-    start_checked: false
+
   - name: commander
-    namespace: /
+    namespace: /commander
     node_name: commander
     cmd: ros2 run commander commander
     start_checked: true
     stop_tmux_cmd: "C-D"
+
 
 scripts:
     - name: kst

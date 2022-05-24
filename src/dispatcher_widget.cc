@@ -23,27 +23,14 @@
 
 #include <cfw/cfw.h>
 
-std::string dispatcher::version()
-{
-  std::string version_major = std::to_string(DISPATCHER_VERSION_MAJOR);
-  std::string version_minor = std::to_string(DISPATCHER_VERSION_MINOR);
-  std::string version_patch = std::to_string(DISPATCHER_VERSION_PATCH);
-  return version_major + std::string(".") + version_minor + std::string(".") +
-         version_patch;
-}
-
-std::string dispatcher::branch() { return std::string(DISPATCHER_GIT_BRANCH); }
-
-std::string dispatcher::commit() { return std::string(DISPATCHER_GIT_COMMIT); }
-
-static bool check_tmux_exists()
+static bool CheckTmuxExists()
 {
   return (system("which tmux") == 0) ? true : false;
 }
 
-static void check_tmux_exists_throw_exception()
+static void CheckTmuxExistsThrowException()
 {
-  if (!check_tmux_exists()) {
+  if (!CheckTmuxExists()) {
     throw dispatcher::DispatcherException(
         "Program `tmux` not found on this system, terminating...");
   }
@@ -63,7 +50,7 @@ void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
     : QWidget(parent)
 {
-  check_tmux_exists_throw_exception();
+  CheckTmuxExistsThrowException();
 
   QVBoxLayout* layout_ = new QVBoxLayout(parent);
 
@@ -103,9 +90,9 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
       new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
   grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
 
-  double loop_period_ms = 1.0 / ros_node_->get_target_loop_rate_hz() * 1000.0;
+  double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
   EVR_DIAGNOSTIC_PTR(
-    ros_node_, "Using loop period %f ms", loop_period_ms);
+     ros_node_, "Using loop period %f ms", loop_period_ms);
 
   timer_ = new QTimer;
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
@@ -125,7 +112,9 @@ void dispatcher::DispatcherWidget::Process()
 {
   if (rclcpp::ok()) {
     ros_node_->Process();
-    ros_executor_.spin_node_once(ros_node_);
+    ros_executor_.spin_node_some(
+      ros_node_
+    );
   } else {
     EVR_ACTIVITY_HI_PTR(ros_node_, "Shutting down");
     ros_node_->StopAll();
