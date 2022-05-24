@@ -4,12 +4,28 @@ A dynamically reconfigurable widget for starting, stopping and monitoring ROS2 n
 
 ![dispatcher](doc/dispatcher.png)
 
-This package provides a Qt Widget with buttons dynamically configured from a yaml input file. Nodes are launched in a detached tmux session. You can attach to the tmux session from any terminal, or from
-multiple terminals.
+This package provides a Qt Widget with buttons dynamically configured from a yaml input file. Nodes are launched in a detached tmux session. You can attach to the tmux session from any terminal, or from multiple terminals.
 
 The yaml config file contains the workspace location and settings for a number of ros2 nodes
 
-Consider the following `example.yaml` config:
+## Interfaces
+| Type | Interface Name | Description |
+| --- | --- | --- | 
+| GetVersionCmd.srv | `commander/srv/get_version` | Used to obtain semantic version information embedded in executable |
+
+
+## Parameters
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| `casah_logs_dir` | string | Location of log files | "/logs" | 
+| `casah_verbosity_level` | string | One of {`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`} | "INFO" |
+| `target_loop_rate_hz` | double | Process loop rate | 100 | 
+| `dispacher_config_path` | string | Path to dispatcher configuration yaml | '' |
+
+
+## Example configuration
+The following `example.yaml` config illustrates how to set up the dispatcher tool.
+
 ```yaml
 workspace: /opt/testbed_ws
 
@@ -23,8 +39,8 @@ nodes:
     start_checked: true
 
   - name: commander
-    namespace: /
-    node_name: Commander
+    namespace: /commander
+    node_name: commander
     cmd: ros2 run commander commander
     start_checked: true
     stop_tmux_keys: "C-D" # Issues a Ctrl+D to close the Python interpreter

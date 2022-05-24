@@ -104,7 +104,6 @@ class DispatcherNode : public CasahNode
   DispatcherNode(DispatcherWidget*);
   ~DispatcherNode();
 
-  double get_target_loop_rate_hz() { return target_loop_rate_hz_; }
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
   {
     return online_nodes_;
@@ -132,7 +131,6 @@ class DispatcherNode : public CasahNode
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
 
   void ParseConfig();
-  void InitializeSubscribers();
   void SetupTmuxSessions();
 
   DispatcherWidget* widget_ = nullptr;

@@ -27,20 +27,20 @@
 @brief class constructor for DispatcherNode application
 */
 dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
-    : CasahNode("dispatcher", "dispatcher", 2.0, "/logs", "INFO")
+    : CasahNode("dispatcher", "dispatcher")
 {
   widget_ = widget;
-
-  // declare ros parameters
-  this->declare_parameter<std::string>("dispatcher_config_path", "");
-  this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
 
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
+  InitializeTimerRate();
+  DeclareInitParameterString(
+    "dispatcher_config_path", "", "Path to dispatcher configuration file"
+  );
+  this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
   ParseConfig();
   SetupTmuxSessions();
-  InitializeTimer();
 }
 
 void dispatcher::DispatcherNode::ParseConfig()
