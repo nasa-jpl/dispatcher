@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 project(dispatcher
   DESCRIPTION "Casah node dispatcher"
-  VERSION 0.0.20
+  VERSION 0.0.21
   LANGUAGES C CXX
 )
 set(CMAKE_PREFIX_PATH $ENV{HOME}/.cmake/packages)
