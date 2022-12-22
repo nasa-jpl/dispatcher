@@ -1,6 +1,6 @@
-#include "dispatcher/dispatcher_node.h"
 #include "dispatcher/config.h"
 #include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_node.h"
 #include "dispatcher/dispatcher_widget.h"
 
 #include <sys/socket.h>
@@ -35,9 +35,8 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
       this->get_node_base_interface().get());
 
   InitializeTimerRate();
-  DeclareInitParameterString(
-    "dispatcher_config_path", "", "Path to dispatcher configuration file"
-  );
+  DeclareInitParameterString("dispatcher_config_path", "",
+                             "Path to dispatcher configuration file");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
   ParseConfig();
   SetupTmuxSessions();
@@ -49,13 +48,27 @@ void dispatcher::DispatcherNode::ParseConfig()
                  dispatcher_config_path_.c_str());
   YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
 
+  auto combo_box = widget_->get_configuration_combo_box();
+  if (root["configurations"]) {
+    for (const auto& configuration : root["configurations"]) {
+      combo_box->addItem(
+          QString::fromStdString(configuration.as<std::string>()));
+    }
+  } else {
+    combo_box->addItem("default");
+  }
+
+  if (root["cmd_prefix"]) {
+    cmd_prefix_ = root["cmd_prefix"].as<std::string>();
+  }
+
   workspace_ = root["workspace"].as<std::string>();
-  if(root["config"]) {
+  if (root["config"]) {
     config_ = root["config"].as<std::string>();
   }
   for (const auto& node : root["nodes"]) {
-    dispatch_items_.push_back(new dispatcher::DispatchItem(
-      widget_, this, node));
+    dispatch_items_.push_back(
+       new dispatcher::DispatchItem(widget_, this, node));
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
@@ -83,8 +96,35 @@ dispatcher::DispatcherNode::~DispatcherNode() {}
 void dispatcher::DispatcherNode::Process()
 {
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
+
+  bool online = false;
+  for (auto& item : dispatch_items_) {
+    if (item->is_online()) {
+      online = true;
+      break;
+    }
+  }
+  if (online != last_online_state_) {
+    widget_->get_configuration_combo_box()->setEnabled(!online);
+  }
+  last_online_state_ = online;
+
   for (auto& item : dispatch_items_) {
     item->Process();
+  }
+}
+
+void dispatcher::DispatcherNode::UpdateConfiguration()
+{
+  EVR_ACTIVITY_HI("Updating configuration to: %s",
+                  widget_->get_configuration_combo_box()
+                      ->currentText()
+                      .toStdString()
+                      .c_str());
+
+  online_nodes_ = node_graph_->get_node_names_and_namespaces();
+  for (auto& item : dispatch_items_) {
+    item->UpdateConfiguration();
   }
 }
 
@@ -108,8 +148,7 @@ void dispatcher::DispatcherNode::StopChecked()
 
 void dispatcher::DispatcherNode::StopAll()
 {
-  EVR_ACTIVITY_HI( 
-    "Stopping all dispatch items and killing tmux sessions...");
+  EVR_ACTIVITY_HI("Stopping all dispatch items and killing tmux sessions...");
   for (auto& item : dispatch_items_) {
     item->StopCb();
     item->TmuxKillSession();
@@ -129,7 +168,7 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the "
           "process safely",
-          item->GetTmuxName().c_str(), item->GetName().c_str());
+          item->get_tmux_name().c_str(), item->get_name().c_str());
       EVR_WARNING_LO(
           "If you consistently see this warning, contact your SW support "
           "developer");

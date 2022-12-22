@@ -20,13 +20,12 @@
 /*!
 @brief class constructor for ScriptItem
 */
-dispatcher::ScriptItem::ScriptItem(QWidget* parent, 
-                                   DispatcherNode* ros_node, 
+dispatcher::ScriptItem::ScriptItem(QWidget* parent, DispatcherNode* ros_node,
                                    const YAML::Node& node)
     : QWidget(parent)
 {
   auto dispatcher = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
-  ros_node_ = ros_node;
+  ros_node_       = ros_node;
   name_           = node["name"].as<std::string>();
   cmd_            = node["cmd"].as<std::string>();
   if (node["icon"]) {
@@ -36,6 +35,10 @@ dispatcher::ScriptItem::ScriptItem(QWidget* parent,
   }
   if (node["use_terminal"]) {
     use_terminal_ = node["use_terminal"].as<bool>();
+  }
+  use_cmd_prefix_ = true;
+  if (node["use_cmd_prefix"]) {
+    use_cmd_prefix_ = node["use_cmd_prefix"].as<bool>();
   }
   int row    = node["row"].as<int>();
   int column = node["column"].as<int>();
@@ -60,17 +63,21 @@ dispatcher::ScriptItem::~ScriptItem() {}
 void dispatcher::ScriptItem::StartCb()
 {
   std::string system_call;
-  if (use_terminal_) {
-    system_call = "gnome-terminal -- " + cmd_;
+  std::string cmd_with_prefix;
+  if (use_cmd_prefix_) {
+    cmd_with_prefix =
+        "bash -c \"" + ros_node_->get_cmd_prefix() + " " + cmd_ + "\"";
   } else {
-    system_call = cmd_;
+    cmd_with_prefix = "bash -c \"" + cmd_ + "\"";
   }
-  EVR_DIAGNOSTIC_PTR(
-    ros_node_, 
-    "Issuing subprocess call: `%s`", system_call.c_str());
+  if (use_terminal_) {
+    system_call = "gnome-terminal -- " + cmd_with_prefix;
+  } else {
+    system_call = cmd_with_prefix;
+  }
+  EVR_DIAGNOSTIC_REF(ros_node_, "Issuing subprocess call: `%s`",
+                     system_call.c_str());
   int result = system(system_call.c_str());
-  EVR_DIAGNOSTIC_PTR(
-    ros_node_, 
-    "Subprocess call: `%s` returned %d", system_call.c_str(),
-    result);
+  EVR_DIAGNOSTIC_REF(ros_node_, "Subprocess call: `%s` returned %d",
+                     system_call.c_str(), result);
 }

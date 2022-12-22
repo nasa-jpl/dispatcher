@@ -1,6 +1,6 @@
-#include "dispatcher/dispatcher_widget.h"
 #include "dispatcher/dispatch_item.h"
 #include "dispatcher/dispatcher_node.h"
+#include "dispatcher/dispatcher_widget.h"
 
 #include "dispatcher/config.h"
 
@@ -39,7 +39,7 @@ static void CheckTmuxExistsThrowException()
 void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 {
   if (script_group_box_ == nullptr) {
-    EVR_FATAL_PTR(ros_node_, "script_group_box_ was not correctly initialized");
+    EVR_FATAL_REF(ros_node_, "script_group_box_ was not correctly initialized");
   }
   script_group_box_->setVisible(enable);
 }
@@ -53,6 +53,10 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   CheckTmuxExistsThrowException();
 
   QVBoxLayout* layout_ = new QVBoxLayout(parent);
+
+  // combo box
+  configuration_combo_box_ = new QComboBox();
+  layout_->addWidget(configuration_combo_box_);
 
   // upper group box / grid
   QGroupBox* upper_box = new QGroupBox();
@@ -69,7 +73,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   layout_->addWidget(script_group_box_);
 
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
-  
+
   int          index = grid_layout_->rowCount();
   QPushButton* start = new QPushButton("start all checked", this);
   start->setStyleSheet(QString("color: green"));
@@ -91,8 +95,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
 
   double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
-  EVR_DIAGNOSTIC_PTR(
-     ros_node_, "Using loop period %f ms", loop_period_ms);
+  EVR_DIAGNOSTIC_REF(ros_node_, "Using loop period %f ms", loop_period_ms);
 
   timer_ = new QTimer;
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
@@ -101,6 +104,9 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   layout_->setSizeConstraint(QLayout::SetFixedSize);
   layout_->setSpacing(0);
   setLayout(layout_);
+
+  connect(configuration_combo_box_, SIGNAL(currentTextChanged(QString)), this,
+          SLOT(UpdateConfiguration()));
 }
 
 /*!
@@ -108,15 +114,18 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
 */
 dispatcher::DispatcherWidget::~DispatcherWidget() {}
 
+void dispatcher::DispatcherWidget::UpdateConfiguration()
+{
+  ros_node_->UpdateConfiguration();
+}
+
 void dispatcher::DispatcherWidget::Process()
 {
   if (rclcpp::ok()) {
     ros_node_->Process();
-    ros_executor_.spin_node_some(
-      ros_node_
-    );
+    ros_executor_.spin_node_some(ros_node_);
   } else {
-    EVR_ACTIVITY_HI_PTR(ros_node_, "Shutting down");
+    EVR_ACTIVITY_HI_REF(ros_node_, "Shutting down");
     ros_node_->StopAll();
     rclcpp::shutdown();
     QCoreApplication::quit();
@@ -135,7 +144,7 @@ void dispatcher::DispatcherWidget::StopAllCheckedCb()
 
 void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
 {
-  EVR_ACTIVITY_HI_PTR(ros_node_, "Shutting down");
+  EVR_ACTIVITY_HI_REF(ros_node_, "Shutting down");
   ros_node_->StopAll();
   rclcpp::shutdown();
   QCoreApplication::quit();
