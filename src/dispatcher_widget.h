@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -42,26 +43,36 @@ class DispatcherWidget : public QWidget
 {
   Q_OBJECT  // must be included to add qt meta information
 
- public: 
-  explicit DispatcherWidget(QWidget* parent = 0);
+      public : explicit DispatcherWidget(QWidget* parent = 0);
   ~DispatcherWidget();
-  QGridLayout* get_layout() { return grid_layout_; }
+
+  // get methods
+  QGridLayout* get_grid_layout() { return grid_layout_; }
   QGridLayout* get_script_layout() { return script_layout_; }
-  std::shared_ptr<dispatcher::DispatcherNode> get_ros_node() {
+  std::shared_ptr<dispatcher::DispatcherNode> get_ros_node()
+  {
     return ros_node_;
   }
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
   {
     return online_nodes_;
   }
+  QComboBox*  get_configuration_combo_box() { return configuration_combo_box_; }
+  std::string get_current_configuration()
+  {
+    return configuration_combo_box_->currentText().toStdString();
+  }
+
+  // utility methods
+  bool IsOnline() { return (!online_nodes_.empty()); }
   void Quit() { QCoreApplication::quit(); }
-  
 
  public slots:
   void Process();
   void StartAllCheckedCb();
   void StopAllCheckedCb();
   void EnableScripts(bool);
+  void UpdateConfiguration();
 
  private:
   void closeEvent(QCloseEvent*);
@@ -69,11 +80,12 @@ class DispatcherWidget : public QWidget
   std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
   rclcpp::executors::SingleThreadedExecutor   ros_executor_;
 
-  QTimer*      timer_            = nullptr;
-  QVBoxLayout* layout_           = nullptr;
-  QGridLayout* grid_layout_      = nullptr;
-  QGroupBox*   script_group_box_ = nullptr;
-  QGridLayout* script_layout_    = nullptr;
+  QComboBox*   configuration_combo_box_ = nullptr;
+  QTimer*      timer_                   = nullptr;
+  QVBoxLayout* layout_                  = nullptr;
+  QGridLayout* grid_layout_             = nullptr;
+  QGroupBox*   script_group_box_        = nullptr;
+  QGridLayout* script_layout_           = nullptr;
   std::string  dispatcher_config_path_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;

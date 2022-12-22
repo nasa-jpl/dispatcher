@@ -20,7 +20,7 @@
 
 static bool check_gnome_terminal_exists()
 {
-  return (system("which gnome-terminal") == 0) ? true : false;
+  return (system("which gnome-terminal > /dev/null 2>&1") == 0) ? true : false;
 }
 
 /*!
@@ -28,40 +28,89 @@ static bool check_gnome_terminal_exists()
 */
 dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
                                        dispatcher::DispatcherNode* ros_node,
-                                       const YAML::Node& node)
+                                       const YAML::Node&           node)
     : QWidget(parent)
 {
+  ros_node_           = ros_node;
+  dispatcher_         = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
+  QGridLayout* layout = dispatcher_->get_grid_layout();
+  assert(layout);
+  name_ = node["name"].as<std::string>();
+
+  if (node["namespace"] && node["node_name"]) {
+    RosNodeMonitorConfig monitor_config;
+    monitor_config.namespace_ = node["namespace"].as<std::string>();
+    monitor_config.name       = node["node_name"].as<std::string>();
+    ros_nodes_.push_back(monitor_config);
+  }
+  if (node["ros_nodes"]) {
+    for (const auto& ros_node : node["ros_nodes"]) {
+      RosNodeMonitorConfig monitor_config;
+      monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
+      monitor_config.name       = ros_node["name"].as<std::string>();
+      ros_nodes_.push_back(monitor_config);
+    }
+  }
+
+  if (node["cmd"] && node["configurations"]) {
+    EVR_FATAL_REF(ros_node_,
+                  "'cmd' and 'configurations' keys cannot be used together");
+    rclcpp::shutdown();
+  }
+  if (node["cmd"]) {
+    // user has specified a command at root level which applies to all
+    // configurations, so create a default 'all' configuration
+    DispatchItemConfig config;
+    config.configuration_name                  = "all";
+    config.cmd                                 = node["cmd"].as<std::string>();
+    configurations_[config.configuration_name] = config;
+  }
+
+  if (node["configurations"]) {
+    for (const auto& configuration : node["configurations"]) {
+      DispatchItemConfig config;
+      config.configuration_name = configuration["name"].as<std::string>();
+      config.cmd                = configuration["cmd"].as<std::string>();
+
+      if (configuration["ros_nodes"]) {
+        for (const auto& ros_node : configuration["ros_nodes"]) {
+          RosNodeMonitorConfig monitor_config;
+          monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
+          monitor_config.name       = ros_node["name"].as<std::string>();
+          config.ros_nodes.push_back(monitor_config);
+        }
+      }
+
+      configurations_[config.configuration_name] = config;
+    }
+  }
+
+  bool start_checked = node["start_checked"].as<bool>();
+  use_cmd_prefix_    = true;
+  if (node["use_cmd_prefix"]) {
+    use_cmd_prefix_ = node["use_cmd_prefix"].as<bool>();
+  }
+  index_ = layout->rowCount();
+
   // Convert any spaces to underscores in YAML Name parameter
   std::string rep_str = node["name"].as<std::string>();
   std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
+  tmux_name_ = std::to_string(index_) + "_" + rep_str;
 
-  ros_node_          = ros_node;
-
-  dispatcher_         = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
-  QGridLayout* layout = dispatcher_->get_layout();
-  assert(layout);
-  
-  name_              = node["name"].as<std::string>();
-  node_namespace_    = node["namespace"].as<std::string>();
-  node_name_         = node["node_name"].as<std::string>();
-  cmd_               = node["cmd"].as<std::string>();
-  bool start_checked = node["start_checked"].as<bool>();
-  index_ = layout->rowCount();
-  tmux_name_         = std::to_string(index_) + "_" + rep_str;
- 
-  if(!node["stop_tmux_cmd"]){
-    stop_tmux_cmd_ = std::string("C-C");
-  }else{
+  if (node["stop_tmux_cmd"]) {
     stop_tmux_cmd_ = node["stop_tmux_cmd"].as<std::string>();
+  } else {
+    stop_tmux_cmd_ = std::string("C-C");
   }
 
-
-  std::cout << index_ << std::endl;
-
+  grey_status_icon_ =
+      QPixmap::fromImage(QImage(":/icons/grey.png").scaledToHeight(20));
   red_status_icon_ =
       QPixmap::fromImage(QImage(":/icons/red.png").scaledToHeight(20));
   green_status_icon_ =
       QPixmap::fromImage(QImage(":/icons/green.png").scaledToHeight(20));
+  orange_status_icon_ =
+      QPixmap::fromImage(QImage(":/icons/orange.png").scaledToHeight(20));
 
   // QSpacerItem* spacer_left =
   //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -73,30 +122,32 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   check_box_->setChecked(check_state);
   check_box_->setAttribute(Qt::WA_TransparentForMouseEvents, false);
   check_box_->setFocusPolicy(Qt::StrongFocus);
-  
+
   label_ = new QLabel("");
   label_->setPixmap(red_status_icon_);
   layout->addWidget(label_, index_, 1);
 
-  QPushButton* start = new QPushButton("start", this);
-  start->setStyleSheet(QString("color: green"));
-  layout->addWidget(start, index_, 2);
-  connect(start, SIGNAL(clicked()), this, SLOT(StartCb()));
+  start_ = new QPushButton("start", this);
+  start_->setStyleSheet(QString("color: green"));
+  layout->addWidget(start_, index_, 2);
+  connect(start_, SIGNAL(clicked()), this, SLOT(StartCb()));
 
-  QPushButton* stop = new QPushButton("stop", this);
-  stop->setStyleSheet(QString("color: red"));
-  layout->addWidget(stop, index_, 3);
-  connect(stop, SIGNAL(clicked()), this, SLOT(StopCb()));
+  stop_ = new QPushButton("stop", this);
+  stop_->setStyleSheet(QString("color: red"));
+  layout->addWidget(stop_, index_, 3);
+  connect(stop_, SIGNAL(clicked()), this, SLOT(StopCb()));
 
-  QPushButton* terminal = new QPushButton(this);
-  terminal->setIcon(QIcon(":/icons/terminal.png"));
-  terminal->setIconSize(QSize(20, 20));
-  layout->addWidget(terminal, index_, 4);
-  connect(terminal, SIGNAL(clicked()), this, SLOT(TerminalCb()));
+  terminal_ = new QPushButton(this);
+  terminal_->setIcon(QIcon(":/icons/terminal.png"));
+  terminal_->setIconSize(QSize(20, 20));
+  layout->addWidget(terminal_, index_, 4);
+  connect(terminal_, SIGNAL(clicked()), this, SLOT(TerminalCb()));
 
   // QSpacerItem* spacer =
   //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
   // layout->addItem(spacer, index_, 5);
+
+  UpdateConfiguration();
 }
 
 bool dispatcher::DispatchItem::is_checked()
@@ -115,23 +166,104 @@ bool dispatcher::DispatchItem::is_checked()
 */
 dispatcher::DispatchItem::~DispatchItem() {}
 
+void dispatcher::DispatchItem::SetEnabled(bool enable)
+{
+  enabled_ = enable;
+  check_box_->setEnabled(enable);
+  terminal_->setEnabled(enable);
+  start_->setEnabled(enable);
+  stop_->setEnabled(enable);
+  if (enable) {
+    label_->setPixmap(red_status_icon_);
+  } else {
+    label_->setPixmap(grey_status_icon_);
+  }
+}
+
+void dispatcher::DispatchItem::UpdateConfiguration()
+{
+  SetEnabled(true);
+  std::string current_configuration = dispatcher_->get_current_configuration();
+  if (configurations_.find(current_configuration) == configurations_.end()) {
+    if (configurations_.find("all") == configurations_.end()) {
+      // if default 'all' configuration also not found, then disable node
+      SetEnabled(false);
+      EVR_ACTIVITY_LO_REF(
+          ros_node_,
+          "Neither 'all' or '%s' configuration found for node '%s'; disabling",
+          current_configuration.c_str(), name_.c_str());
+
+    } else {
+      // selected configuration not found, use default configuration
+      current_configuration_ = &configurations_["all"];
+      EVR_ACTIVITY_LO_REF(ros_node_,
+                          "No configurations specified for node '%s', "
+                          "using built-in configuration 'all'",
+                          name_.c_str());
+    }
+  } else {
+    current_configuration_ = &configurations_[current_configuration];
+    EVR_ACTIVITY_LO_REF(ros_node_, "Setting node '%s' to configuration '%s'",
+                        name_.c_str(), current_configuration.c_str());
+  }
+}
+
 void dispatcher::DispatchItem::Process()
 {
-  const auto& online_nodes_ = ros_node_->get_online_nodes();
+  if (!current_configuration_) {
+    return;
+  }
 
-  bool previous_state = online_;
-  online_             = false;
-  for (auto& online_node : online_nodes_) {
-    if (node_name_ == online_node.first &&
-        node_namespace_ == online_node.second) {
-      online_ = true;
+  if (!enabled_) {
+    return;
+  }
+
+  const auto& online_nodes_             = ros_node_->get_online_nodes();
+  size_t      num_online_nodes_found    = 0;
+  size_t      num_expected_online_nodes = 0;
+
+  // does current configuration have any ros nodes specified?
+  // if yes, then use current configuration:
+  if (current_configuration_->ros_nodes.size() > 0) {
+    num_expected_online_nodes = current_configuration_->ros_nodes.size();
+    // for each ros node in the current configuration:
+    for (auto& ros_node : current_configuration_->ros_nodes) {
+      // check if node exists in list of online nodes
+      for (auto& online_node : online_nodes_) {
+        if (ros_node.name == online_node.first &&
+            ros_node.namespace_ == online_node.second) {
+          num_online_nodes_found++;
+          break;
+        }
+      }
+    }
+  } else {
+    // for each ros node in the default configuration:
+    num_expected_online_nodes = ros_nodes_.size();
+    for (auto& ros_node : ros_nodes_) {
+      // check if node exists in list of online nodes
+      for (auto& online_node : online_nodes_) {
+        if (ros_node.name == online_node.first &&
+            ros_node.namespace_ == online_node.second) {
+          num_online_nodes_found++;
+          break;
+        }
+      }
     }
   }
-  if (online_ != previous_state) {
-    if (online_) {
-      label_->setPixmap(green_status_icon_);
-    } else {
+
+  online_ = (num_online_nodes_found > 0);
+  if (num_online_nodes_found != num_online_nodes_prev_) {
+    EVR_ACTIVITY_LO_REF(
+        ros_node_, "Status change for node %s, %ld/%ld nodes online",
+        name_.c_str(), num_online_nodes_found, num_expected_online_nodes);
+    num_online_nodes_prev_ = num_online_nodes_found;
+    if (num_online_nodes_found == 0) {
       label_->setPixmap(red_status_icon_);
+    } else if (num_online_nodes_found < num_expected_online_nodes) {
+      label_->setPixmap(orange_status_icon_);
+    } else if (num_online_nodes_found == num_expected_online_nodes) {
+      label_->setPixmap(green_status_icon_);
     }
   }
 }
@@ -139,26 +271,25 @@ void dispatcher::DispatchItem::Process()
 void dispatcher::DispatchItem::StartCb()
 {
   if (online_) {
-    EVR_WARNING_HI_PTR(
-      ros_node_,
-      "Refusing to start node %s in tmux session: %s "
-      "because node was detected as already running on ROS2 message bus",
-      node_name_.c_str(), name_.c_str());
+    EVR_WARNING_HI_REF(
+        ros_node_,
+        "Refusing to start node %s in tmux session: %s "
+        "because node was detected as already running on ROS2 message bus",
+        name_.c_str(), tmux_name_.c_str());
     return;
   }
 
-  EVR_ACTIVITY_HI_PTR(ros_node_, 
-      "Starting node: %s in tmux session: %s", node_name_.c_str(),
-      name_.c_str());
-  EVR_DIAGNOSTIC_PTR(
-      ros_node_,
-      "system cmd: %s", cmd_.c_str());
+  EVR_ACTIVITY_HI_REF(ros_node_, "Starting node: %s in tmux session: %s",
+                      name_.c_str(), tmux_name_.c_str());
+
+  assert(current_configuration_);
+  EVR_DIAGNOSTIC_REF(ros_node_, "system cmd: %s",
+                     current_configuration_->cmd.c_str());
 
   if (!TmuxHasSession()) {
-    EVR_ACTIVITY_LO_PTR(
-      ros_node_,
-      "Tmux Session was closed for %s, restarting session now",
-      name_.c_str());
+    EVR_ACTIVITY_LO_REF(
+        ros_node_, "Tmux Session was closed for %s, restarting session now",
+        name_.c_str());
     (void)TmuxNewSession();
   }
 
@@ -167,18 +298,21 @@ void dispatcher::DispatchItem::StartCb()
   TmuxSendKeys("cd " + ros_node_->get_workspace());
   TmuxSendKeys("source install/setup.bash");
 
-  // run user-supplied command, you can call an executable directly, start a
+  // run user-supplied command, you can call an executable directly to start a
   // node or launch script
-  TmuxSendKeys(cmd_);
+  if (use_cmd_prefix_) {
+    TmuxSendKeys(ros_node_->get_cmd_prefix() + " " +
+                 current_configuration_->cmd);
+  } else {
+    TmuxSendKeys(current_configuration_->cmd);
+  }
 }
 
 void dispatcher::DispatchItem::StopCb()
 {
-  if (online_) {
-    EVR_ACTIVITY_LO_PTR(
-      ros_node_,
-      "Stopping node: %s in tmux session: %s", 
-      node_name_.c_str(), tmux_name_.c_str());
+  if (num_online_nodes_prev_ > 0) {
+    EVR_ACTIVITY_LO_REF(ros_node_, "Stopping node: %s in tmux session: %s",
+                        name_.c_str(), tmux_name_.c_str());
     TmuxSendKeys(stop_tmux_cmd_);
   }
 }
@@ -186,21 +320,20 @@ void dispatcher::DispatchItem::StopCb()
 void dispatcher::DispatchItem::TerminalCb()
 {
   if (!check_gnome_terminal_exists()) {
-    EVR_WARNING_HI_PTR(
-      ros_node_,
-      "Cannot attach to tmux session because 'gnome-terminal' does not exist "
-      "on this "
-      "system; you can attach to the session by running `tmux a -t %s` "
-      "from any terminal",
-      tmux_name_.c_str());
+    EVR_WARNING_HI_REF(
+        ros_node_,
+        "Cannot attach to tmux session because 'gnome-terminal' does not exist "
+        "on this "
+        "system; you can attach to the session by running `tmux a -t %s` "
+        "from any terminal",
+        tmux_name_.c_str());
     return;
   }
 
   if (!TmuxHasSession()) {
-    EVR_DIAGNOSTIC_PTR(
-      ros_node_,
-      "Tmux Session was closed for %s, restarting session now",
-      tmux_name_.c_str());
+    EVR_DIAGNOSTIC_REF(ros_node_,
+                       "Tmux Session was closed for %s, restarting session now",
+                       tmux_name_.c_str());
     (void)TmuxNewSession();
   }
 
@@ -213,9 +346,8 @@ bool dispatcher::DispatchItem::TmuxKillSession()
   std::string cmd    = "tmux kill-session -t " + tmux_name_;
   int         result = SystemCall(cmd);
   if (result == 1) {
-    EVR_WARNING_HI_PTR(
-      ros_node_, 
-      "tmux session %s could not be killed", tmux_name_.c_str());
+    EVR_WARNING_HI_REF(ros_node_, "tmux session %s could not be killed",
+                       tmux_name_.c_str());
     return false;
   }
   return true;
@@ -226,9 +358,8 @@ bool dispatcher::DispatchItem::TmuxNewSession()
   std::string cmd    = "tmux new -d -s " + tmux_name_;
   int         result = SystemCall(cmd);
   if (result == 1) {
-    EVR_WARNING_HI_PTR(
-      ros_node_,
-      "tmux session %s could not be created", tmux_name_.c_str());
+    EVR_WARNING_HI_REF(ros_node_, "tmux session %s could not be created",
+                       tmux_name_.c_str());
     return false;
   }
   return true;
@@ -243,13 +374,10 @@ void dispatcher::DispatchItem::TmuxSendKeys(std::string cmd_str)
 
 int dispatcher::DispatchItem::SystemCall(std::string cmd)
 {
-  EVR_DIAGNOSTIC_PTR(
-    ros_node_,
-    "Issuing subprocess call `%s`", cmd.c_str());
+  EVR_DIAGNOSTIC_REF(ros_node_, "Issuing subprocess call `%s`", cmd.c_str());
   int result = system(cmd.c_str());
-  EVR_DIAGNOSTIC_PTR(
-    ros_node_,
-    "Subprocess call `%s` returned result %d", cmd.c_str(), result);
+  EVR_DIAGNOSTIC_REF(ros_node_, "Subprocess call `%s` returned result %d",
+                     cmd.c_str(), result);
   return result;
 }
 
@@ -258,13 +386,11 @@ bool dispatcher::DispatchItem::TmuxHasSession()
   std::string cmd    = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
   int         result = SystemCall(cmd);
   if (result != 0) {
-    EVR_DIAGNOSTIC_PTR(
-      ros_node_,
-      "Tmux does not have active session for %s", tmux_name_.c_str());
+    EVR_DIAGNOSTIC_REF(ros_node_, "Tmux does not have active session for %s",
+                       tmux_name_.c_str());
     return false;
   }
-  EVR_DIAGNOSTIC_PTR(
-    ros_node_,
-    "Tmux has active session for %s", tmux_name_.c_str());
+  EVR_DIAGNOSTIC_REF(ros_node_, "Tmux has active session for %s",
+                     tmux_name_.c_str());
   return true;
 }

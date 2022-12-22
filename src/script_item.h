@@ -22,8 +22,8 @@ class ScriptItem : public QWidget
 
       public :
 
-      explicit ScriptItem(QWidget* parent, 
-                          dispatcher::DispatcherNode* ros_node_, 
+      explicit ScriptItem(QWidget*                    parent,
+                          dispatcher::DispatcherNode* ros_node_,
                           const YAML::Node&);
   ~ScriptItem();
 
@@ -33,13 +33,14 @@ class ScriptItem : public QWidget
   void StartCb();
 
  private:
-  std::string name_;
-  std::string cmd_;
-  std::string icon_;
-  int         index_        = -1;
-  QLabel*     label_        = nullptr;
-  bool        use_terminal_ = true;
-  dispatcher::DispatcherNode* ros_node_; 
+  std::string                 name_;
+  std::string                 cmd_;
+  std::string                 icon_;
+  int                         index_          = -1;
+  QLabel*                     label_          = nullptr;
+  bool                        use_terminal_   = true;
+  bool                        use_cmd_prefix_ = true;
+  dispatcher::DispatcherNode* ros_node_;
 
  signals:
 };

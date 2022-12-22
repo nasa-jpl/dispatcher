@@ -1,20 +1,4 @@
-image: casah347rms/casah:ros2
-
-before_script:
-  - DEBIAN_FRONTEND=noninteractive apt update
-  - DEBIAN_FRONTEND=noninteractive apt install -y
-      qt5-default
-  - eval $(ssh-agent -s)
-  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-  - ssh-keyscan fornat1.jpl.nasa.gov >> ~/.ssh/known_hosts
-  - echo "$FORNAT1_CRT" >> /usr/local/share/ca-certificates/fornat1.jpl.nasa.gov.crt
-  - update-ca-certificates
-  - rm -rf ~/.casah ~/.cmake cfw_cmake # remove cached packages and previous cfw_cmake version
-  - git clone git@fornat1.jpl.nasa.gov:casah/libs/cfw_cmake.git
-  - mkdir -p cfw_cmake/build && cd cfw_cmake/build && cmake .. && make && make install && cd -
-  - cd .. && rm -rf yaml_cpp_vendor casah_msgs
-  - git clone https://github.com/ros2/yaml_cpp_vendor -b foxy
-  - git clone git@fornat1.jpl.nasa.gov:casah/rosx/casah_msgs.git
+image: casah347rms/ros-foxy-base:latest
 
 stages:
   - build
@@ -24,9 +8,12 @@ build:
   stage: build
   script:
     - echo "Building..."
-    - cd .. && colcon build --packages-select yaml_cpp_vendor casah_msgs
-    - source install/setup.bash
-    - colcon build --packages-select dispatcher
+    - rm -rf /ros2 && mkdir -p /ros2/src
+    - git clone git@fornat1.jpl.nasa.gov:casah/rosx/casah_msgs.git /ros2/src/casah_msgs
+    - cd ..
+    - cp -r dispatcher /ros2/src
+    - cd /ros2
+    - colcon build 
 
 deploy:
   stage: deploy
@@ -34,8 +21,7 @@ deploy:
     - master
   script:
     - echo "Deploying..."
-    - cd .. && colcon build --packages-select yaml_cpp_vendor casah_msgs
-    - source install/setup.bash
-    - colcon build --packages-select dispatcher
-    - cd build/dispatcher 
+    - mkdir -p build
+    - cd build
+    - cmake -DBUILD=OFF ..
     - make tag

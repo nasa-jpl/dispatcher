@@ -1,11 +1,26 @@
 <RCC>
   <qresource prefix="/icons">
-    <file>red.png</file>
+    <file>application.png</file>
+    <file>apriltag.png</file>
+    <file>build.png</file>
+    <file>circle.png</file>
+    <file>cloud_sync.png</file>
+    <file>database.png</file>
+    <file>dump.png</file>
+    <file>exit.png</file>
     <file>green.png</file>
     <file>grey.png</file>
+    <file>home.png</file>
+    <file>line.png</file>
     <file>orange.png</file>
-    <file>terminal.png</file>
     <file>plot.png</file>
-    <file>application.png</file>
+    <file>red.png</file>
+    <file>reset.png</file>
+    <file>save.png</file>
+    <file>source_code.png</file>
+    <file>stop_square.png</file>
+    <file>terminal.png</file>
+    <file>warehouse.png</file>
+    <file>waste.png</file>
   </qresource>
 </RCC>
