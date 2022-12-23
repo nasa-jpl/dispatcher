@@ -4,16 +4,30 @@ stages:
   - build
   - deploy
 
-build:
+build-foxy:
   stage: build
   script:
     - echo "Building..."
-    - rm -rf /ros2 && mkdir -p /ros2/src
-    - git clone git@fornat1.jpl.nasa.gov:casah/rosx/casah_msgs.git /ros2/src/casah_msgs
+    - rm -rf /ros2-foxy && mkdir -p /ros2-foxy/src
+    - git clone git@fornat1.jpl.nasa.gov:casah/rosx/casah_msgs.git /ros2-foxy/src/casah_msgs
     - cd ..
-    - cp -r dispatcher /ros2/src
-    - cd /ros2
+    - cp -r dispatcher /ros2-foxy/src
+    - cd /ros2-foxy
     - colcon build 
+
+build-humble:
+  stage: build
+  image:
+    name: casah347rms/ros-humble-base:latest
+  script:
+    - echo "Building..."
+    - rm -rf /ros2-humble && mkdir -p /ros2-humble/src
+    - git clone git@fornat1.jpl.nasa.gov:casah/rosx/casah_msgs.git /ros2-humble/src/casah_msgs
+    - cd ..
+    - cp -r dispatcher /ros2-humble/src
+    - cd /ros2-humble
+    - colcon build 
+
 
 deploy:
   stage: deploy
