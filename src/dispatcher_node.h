@@ -6,6 +6,7 @@
 
 #include <map>
 #include <vector>
+#include <unordered_map>
 
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -28,6 +29,7 @@ class DispatcherNode : public CasahNode
   }
   const std::string& get_workspace() { return workspace_; }
   const std::string& get_cmd_prefix() { return cmd_prefix_; }
+  const std::map<std::string, std::string>& get_environment_variables() { return environment_variables_; }
 
   virtual void Process() override;
   void         StartChecked();
@@ -54,6 +56,7 @@ class DispatcherNode : public CasahNode
   std::string                            config_;
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
+  std::map<std::string, std::string> environment_variables_;
 
   void ParseConfig();
   void SetupTmuxSessions();
