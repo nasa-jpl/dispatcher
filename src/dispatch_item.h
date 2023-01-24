@@ -1,7 +1,7 @@
 #ifndef DISPATCH_ITEM_H_
 #define DISPATCH_ITEM_H_
 
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include <QCheckBox>
@@ -30,6 +30,8 @@ typedef struct {
   std::string                       configuration_name;
   std::vector<RosNodeMonitorConfig> ros_nodes;
   std::string                       cmd;
+  std::string hostname;
+  std::string user;
 } DispatchItemConfig;
 
 class DispatchItem : public QWidget
@@ -69,7 +71,7 @@ class DispatchItem : public QWidget
   // if not overridden with configuration specific nodes to monitor
   std::vector<RosNodeMonitorConfig> ros_nodes_;
 
-  std::unordered_map<std::string, DispatchItemConfig> configurations_;
+  std::map<std::string, DispatchItemConfig> configurations_;
   DispatchItemConfig* current_configuration_ = nullptr;
 
   bool         enabled_ = true;
@@ -79,6 +81,7 @@ class DispatchItem : public QWidget
   bool         online_ = false;
   size_t       num_online_nodes_prev_;
   bool         use_cmd_prefix_ = true;
+  bool         use_environment_variables_ = true;
   QLabel*      label_          = nullptr;
   QPixmap      red_status_icon_;
   QPixmap      orange_status_icon_;

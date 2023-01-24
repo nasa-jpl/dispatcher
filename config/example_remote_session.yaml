@@ -1,0 +1,60 @@
+workspace: .
+
+environment_variables:
+  RMW_IMPLEMENTATION: rmw_cyclonedds_cpp 
+  CYCLONEDDS_URI: /etc/cyclonedds.xml
+
+configurations:
+  - online-test-no-config-available
+  - online
+  - offline
+
+nodes:
+
+  - name: fcat
+    ros_nodes:
+    - namespace: /fcat
+      name: fcat
+    configurations:
+    - name: online
+      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py
+      hostname: asimov-dev.jpl.nasa.gov 
+      # user: casah-admin <- optionally specify username, if username is specified, dispatcher
+      # issues ssh commands as 'ssh username@hostname "command"'; otherwise dispatcher
+      # uses the syntax 'ssh hostname "command"'
+    - name: offline
+      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
+      hostname: asimov-dev.jpl.nasa.gov
+      user: casah-admin
+    start_checked: true
+
+  - name: commander
+    namespace: /commander
+    node_name: commander
+    cmd: ros2 run commander commander
+    start_checked: true
+    stop_tmux_cmd: "C-D"
+
+
+scripts:
+
+  - name: kst
+    cmd: kst2 &
+    icon: :/icons/plot.png
+    row: 0
+    column: 0
+    use_terminal: false
+
+  - name: htop
+    cmd: htop
+    icon: :/icons/terminal.png
+    row: 0
+    column: 1
+    use_terminal: true
+
+  - name: rqt_graph
+    cmd: ros2 run rqt_graph rqt_graph &
+    row: 1
+    column: 0
+    use_terminal: false
+

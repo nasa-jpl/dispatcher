@@ -62,6 +62,14 @@ void dispatcher::DispatcherNode::ParseConfig()
     cmd_prefix_ = root["cmd_prefix"].as<std::string>();
   }
 
+  if (root["environment_variables"]) {
+    for(const auto& item : root["environment_variables"]) {
+      std::string key = item.first.as<std::string>();
+      std::string value = item.second.as<std::string>();
+      environment_variables_[key] = value;
+    }
+  }
+
   workspace_ = root["workspace"].as<std::string>();
   if (root["config"]) {
     config_ = root["config"].as<std::string>();
@@ -153,7 +161,7 @@ void dispatcher::DispatcherNode::StopAll()
     item->StopCb();
     item->TmuxKillSession();
   }
-  EVR_ACTIVITY_LO("Stoped all dispatch items and killing tmux sessions");
+  EVR_ACTIVITY_LO("Stopped all dispatch items and killing tmux sessions");
 }
 
 void dispatcher::DispatcherNode::SetupTmuxSessions()
