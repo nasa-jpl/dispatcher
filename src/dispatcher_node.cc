@@ -38,6 +38,11 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   DeclareInitParameterString("dispatcher_config_path", "",
                              "Path to dispatcher configuration file");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
+  
+  DeclareInitParameterInt(
+    "ssh_timeout_sec", 10, "Default timeout for initiating remote ssh sessions"
+  );
+  this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
   ParseConfig();
   SetupTmuxSessions();
 }

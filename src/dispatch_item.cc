@@ -230,12 +230,13 @@ void dispatcher::DispatchItem::UpdateConfiguration()
   }
   
   std::string cmd_tmp;
+  const int ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
   if (current_configuration_->hostname != "localhost") {
     if(current_configuration_->user.empty()) {
-      cmd_tmp = "ssh " + current_configuration_->hostname + " \"" + 
+      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->hostname + " \"" + 
 	current_configuration_->cmd + "\"";
     } else {
-      cmd_tmp = "ssh " + current_configuration_->user + "@" + 
+      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->user + "@" + 
 	current_configuration_->hostname + " \"" + 
 	current_configuration_->cmd + "\"";
     }
@@ -384,12 +385,14 @@ void dispatcher::DispatchItem::TerminalCb()
 
   // Start a gnome session and attach a tmux session
   std::string cmd = "tmux a -t " + tmux_name_;
+  const int ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
   if (current_configuration_->hostname != "localhost") {
     if(current_configuration_->user.empty()) {
-      cmd = "ssh -t " + current_configuration_->hostname + " \"" + cmd + "\"";
+      cmd = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " -t " + current_configuration_->hostname + " \"" + cmd + "\"";
      } else {
-      cmd = "ssh -t " + current_configuration_->user + "@" + 
-	current_configuration_->hostname + " \"" + cmd + "\"";
+      cmd = "ssh -o ConnectTimeout-" + std::to_string(ssh_timeout_sec) + " -t " 
+        + current_configuration_->user + "@" 
+        + current_configuration_->hostname + " \"" + cmd + "\"";
      }
   }
   EVR_ACTIVITY_LO_REF(
@@ -433,11 +436,12 @@ int dispatcher::DispatchItem::SystemCall(std::string cmd)
 {
   EVR_DIAGNOSTIC_REF(ros_node_, "Issuing subprocess call `%s`", cmd.c_str());
   std::string cmd_tmp = cmd;
+  const int ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
   if (current_configuration_ && current_configuration_->hostname != "localhost") {
     if(current_configuration_->user.empty()) {
-      cmd_tmp = "ssh " + current_configuration_->hostname + " \"" + cmd + "\"";
+      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->hostname + " \"" + cmd + "\"";
     } else {
-      cmd_tmp = "ssh " + current_configuration_->user + "@" + 
+      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->user + "@" + 
 	      current_configuration_->hostname + " \"" + cmd + "\"";
     }
   }
