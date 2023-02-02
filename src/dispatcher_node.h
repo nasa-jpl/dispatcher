@@ -30,7 +30,7 @@ class DispatcherNode : public CasahNode
   const std::string& get_workspace() { return workspace_; }
   const std::string& get_cmd_prefix() { return cmd_prefix_; }
   const std::map<std::string, std::string>& get_environment_variables() { return environment_variables_; }
-
+  int get_ssh_timeout_sec() { return ssh_timeout_sec_; }
   virtual void Process() override;
   void         StartChecked();
   void         StopChecked();
@@ -48,6 +48,7 @@ class DispatcherNode : public CasahNode
  private:
   bool                                   last_online_state_ = false;
   std::string                            dispatcher_config_path_;
+  int                                    ssh_timeout_sec_ = 10;
   std::vector<dispatcher::DispatchItem*> dispatch_items_;
   std::vector<dispatcher::ScriptItem*>   script_items_;
   std::vector<std::string>               configurations_;
