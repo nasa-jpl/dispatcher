@@ -1,5 +1,5 @@
-#ifndef DISPATCH_ITEM_H_
-#define DISPATCH_ITEM_H_
+#ifndef DISPATCHER_ITEM_H_
+#define DISPATCHER_ITEM_H_
 
 #include <map>
 #include <vector>
@@ -32,15 +32,15 @@ typedef struct {
   std::string                       cmd;
   std::string hostname;
   std::string user;
-} DispatchItemConfig;
+} DispatcherItemConfig;
 
-class DispatchItem : public QWidget
+class DispatcherItem : public QWidget
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public : explicit DispatchItem(QWidget* parent, DispatcherNode*,
+      public : explicit DispatcherItem(QWidget* parent, DispatcherNode*,
                                      const YAML::Node&);
-  ~DispatchItem();
+  ~DispatcherItem();
 
   // get/set methods
   bool        is_online() { return online_; }
@@ -56,6 +56,7 @@ class DispatchItem : public QWidget
   void TmuxSendKeys(std::string cmd_str);
   int  SystemCall(std::string cmd);
   bool TmuxHasSession();
+  bool TmuxHasLocalSession();
 
  public slots:
   void StartCb();
@@ -71,9 +72,11 @@ class DispatchItem : public QWidget
   // if not overridden with configuration specific nodes to monitor
   std::vector<RosNodeMonitorConfig> ros_nodes_;
 
-  std::map<std::string, DispatchItemConfig> configurations_;
-  DispatchItemConfig* current_configuration_ = nullptr;
+  std::map<std::string, DispatcherItemConfig> configurations_;
+  DispatcherItemConfig* current_configuration_ = nullptr;
 
+  bool         attach_on_start_ = false;
+  bool         tmux_initialized_ = false;
   bool         enabled_ = true;
   std::string  tmux_name_;
   std::string  stop_tmux_cmd_;

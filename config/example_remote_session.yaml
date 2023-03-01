@@ -1,16 +1,23 @@
 workspace: .
 
+configurations:
+  - name: online
+    environment_variables:
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp 
+      CYCLONEDDS_URI: /etc/cyclonedds_online.xml
+  - name: offline
+    environment_variables:
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp 
+      CYCLONEDDS_URI: /etc/cyclonedds_offline.xml
+
+# default environment variables used for all configurations if not provided
+# in configurations block above, a hidden configuration called 'all' will be used
+# as a fallback when configuration specific environment variables are not provided
 environment_variables:
   RMW_IMPLEMENTATION: rmw_cyclonedds_cpp 
   CYCLONEDDS_URI: /etc/cyclonedds.xml
 
-configurations:
-  - online-test-no-config-available
-  - online
-  - offline
-
 nodes:
-
   - name: fcat
     ros_nodes:
     - namespace: /fcat
@@ -24,8 +31,6 @@ nodes:
       # uses the syntax 'ssh hostname "command"'
     - name: offline
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
-      hostname: asimov-dev.jpl.nasa.gov
-      user: casah-admin
     start_checked: true
 
   - name: commander

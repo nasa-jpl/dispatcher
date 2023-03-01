@@ -1,4 +1,4 @@
-#include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
 #include <stdlib.h>
@@ -24,11 +24,11 @@ static bool check_gnome_terminal_exists()
 }
 
 /*!
-@brief class constructor for DispatchItem
+@brief class constructor for DispatcherItem
 */
-dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
-                                       dispatcher::DispatcherNode* ros_node,
-                                       const YAML::Node&           node)
+dispatcher::DispatcherItem::DispatcherItem(QWidget*                    parent,
+                                           dispatcher::DispatcherNode* ros_node,
+                                           const YAML::Node&           node)
     : QWidget(parent)
 {
   ros_node_           = ros_node;
@@ -36,7 +36,8 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   QGridLayout* layout = dispatcher_->get_grid_layout();
   assert(layout);
   name_ = node["name"].as<std::string>();
-
+  EVR_ACTIVITY_LO_REF(ros_node_, "Loading properties for node '%s'",
+                      name_.c_str());
 
   if (node["use_environment_variables"]) {
     use_environment_variables_ = node["use_environment_variables"].as<bool>();
@@ -56,6 +57,9 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
       ros_nodes_.push_back(monitor_config);
     }
   }
+  if (node["attach_on_start"]) {
+    attach_on_start_ = node["attach_on_start"].as<bool>();
+  }
 
   if (node["cmd"] && node["configurations"]) {
     EVR_FATAL_REF(ros_node_,
@@ -65,9 +69,9 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   if (node["cmd"]) {
     // user has specified a command at root level which applies to all
     // configurations, so create a default 'all' configuration
-    DispatchItemConfig config;
-    config.configuration_name                  = "all";
-    config.cmd                                 = node["cmd"].as<std::string>();
+    DispatcherItemConfig config;
+    config.configuration_name = "all";
+    config.cmd                = node["cmd"].as<std::string>();
 
     if (node["hostname"]) {
       config.hostname = node["hostname"].as<std::string>();
@@ -84,24 +88,24 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
 
   if (node["configurations"]) {
     for (const auto& configuration : node["configurations"]) {
-      DispatchItemConfig config;
+      DispatcherItemConfig config;
       config.configuration_name = configuration["name"].as<std::string>();
       config.cmd                = configuration["cmd"].as<std::string>();
       if (configuration["hostname"]) {
         config.hostname = configuration["hostname"].as<std::string>();
       } else {
         config.hostname = "localhost";
-      } 
+      }
       if (configuration["user"]) {
         config.user = configuration["user"].as<std::string>();
-      }      
+      }
 
       if (configuration["ros_nodes"]) {
         for (const auto& ros_node : configuration["ros_nodes"]) {
           RosNodeMonitorConfig monitor_config;
           monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
           monitor_config.name       = ros_node["name"].as<std::string>();
-	        config.ros_nodes.push_back(monitor_config);
+          config.ros_nodes.push_back(monitor_config);
         }
       }
 
@@ -170,7 +174,7 @@ dispatcher::DispatchItem::DispatchItem(QWidget*                    parent,
   UpdateConfiguration();
 }
 
-bool dispatcher::DispatchItem::is_checked()
+bool dispatcher::DispatcherItem::is_checked()
 {
   if (check_box_->checkState() == 0) {
     // unchecked case
@@ -184,9 +188,9 @@ bool dispatcher::DispatchItem::is_checked()
 /*!
 @brief class destructor
 */
-dispatcher::DispatchItem::~DispatchItem() {}
+dispatcher::DispatcherItem::~DispatcherItem() {}
 
-void dispatcher::DispatchItem::SetEnabled(bool enable)
+void dispatcher::DispatcherItem::SetEnabled(bool enable)
 {
   enabled_ = enable;
   check_box_->setEnabled(enable);
@@ -200,10 +204,13 @@ void dispatcher::DispatchItem::SetEnabled(bool enable)
   }
 }
 
-void dispatcher::DispatchItem::UpdateConfiguration()
+void dispatcher::DispatcherItem::UpdateConfiguration()
 {
   SetEnabled(true);
-  TmuxKillSession(); 
+
+  if (tmux_initialized_) {
+    TmuxKillSession();
+  }
 
   std::string current_configuration = dispatcher_->get_current_configuration();
   if (configurations_.find(current_configuration) == configurations_.end()) {
@@ -228,17 +235,21 @@ void dispatcher::DispatchItem::UpdateConfiguration()
     EVR_ACTIVITY_LO_REF(ros_node_, "Setting node '%s' to configuration '%s'",
                         name_.c_str(), current_configuration.c_str());
   }
-  
+
   std::string cmd_tmp;
-  const int ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
+  const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
   if (current_configuration_->hostname != "localhost") {
-    if(current_configuration_->user.empty()) {
-      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->hostname + " \"" + 
-	current_configuration_->cmd + "\"";
+    if (current_configuration_->user.empty()) {
+      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
+                std::to_string(ssh_timeout_sec) + " " +
+                current_configuration_->hostname + " \"" +
+                current_configuration_->cmd + "\"";
     } else {
-      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->user + "@" + 
-	current_configuration_->hostname + " \"" + 
-	current_configuration_->cmd + "\"";
+      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
+                std::to_string(ssh_timeout_sec) + " " +
+                current_configuration_->user + "@" +
+                current_configuration_->hostname + " \"" +
+                current_configuration_->cmd + "\"";
     }
   } else {
     cmd_tmp = current_configuration_->cmd;
@@ -246,8 +257,7 @@ void dispatcher::DispatchItem::UpdateConfiguration()
   start_->setToolTip(cmd_tmp.c_str());
 }
 
-
-void dispatcher::DispatchItem::Process()
+void dispatcher::DispatcherItem::Process()
 {
   if (!current_configuration_) {
     return;
@@ -307,7 +317,7 @@ void dispatcher::DispatchItem::Process()
   }
 }
 
-void dispatcher::DispatchItem::StartCb()
+void dispatcher::DispatcherItem::StartCb()
 {
   if (online_) {
     EVR_WARNING_HI_REF(
@@ -341,20 +351,30 @@ void dispatcher::DispatchItem::StartCb()
   // node or launch script
   std::string cmd_prefix;
   if (use_cmd_prefix_) {
-    cmd_prefix = ros_node_->get_cmd_prefix();
+    cmd_prefix =
+        ros_node_->get_cmd_prefix(current_configuration_->configuration_name);
   }
 
   std::string env_prefix;
   if (use_environment_variables_) {
-    for(auto& it : ros_node_->get_environment_variables()) {
+    for (auto& it : ros_node_->get_environment_variables(
+             current_configuration_->configuration_name)) {
       env_prefix += it.first + "=" + it.second + " ";
     }
   }
 
-  TmuxSendKeys(cmd_prefix + " " + env_prefix + " " + current_configuration_->cmd);
+  TmuxSendKeys(cmd_prefix + " " + env_prefix + " " +
+               current_configuration_->cmd);
+
+  if (attach_on_start_) {
+    // detach any existing clients and attach a new gnome terminal window
+    std::string cmd = "tmux detach-client -s " + tmux_name_;
+    (void)SystemCall(cmd);
+    TerminalCb();
+  }
 }
 
-void dispatcher::DispatchItem::StopCb()
+void dispatcher::DispatcherItem::StopCb()
 {
   if (num_online_nodes_prev_ > 0) {
     EVR_ACTIVITY_LO_REF(ros_node_, "Stopping node: %s in tmux session: %s",
@@ -363,7 +383,7 @@ void dispatcher::DispatchItem::StopCb()
   }
 }
 
-void dispatcher::DispatchItem::TerminalCb()
+void dispatcher::DispatcherItem::TerminalCb()
 {
   if (!check_gnome_terminal_exists()) {
     EVR_WARNING_HI_REF(
@@ -384,25 +404,26 @@ void dispatcher::DispatchItem::TerminalCb()
   }
 
   // Start a gnome session and attach a tmux session
-  std::string cmd = "tmux a -t " + tmux_name_;
-  const int ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
+  std::string cmd             = "tmux a -t " + tmux_name_;
+  const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
   if (current_configuration_->hostname != "localhost") {
-    if(current_configuration_->user.empty()) {
-      cmd = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " -t " + current_configuration_->hostname + " \"" + cmd + "\"";
-     } else {
-      cmd = "ssh -o ConnectTimeout-" + std::to_string(ssh_timeout_sec) + " -t " 
-        + current_configuration_->user + "@" 
-        + current_configuration_->hostname + " \"" + cmd + "\"";
-     }
+    if (current_configuration_->user.empty()) {
+      cmd = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
+            std::to_string(ssh_timeout_sec) + " -t " +
+            current_configuration_->hostname + " \"" + cmd + "\"";
+    } else {
+      cmd = "ssh -o PasswordAuthentication=no -o ConnectTimeout-" +
+            std::to_string(ssh_timeout_sec) + " -t " +
+            current_configuration_->user + "@" +
+            current_configuration_->hostname + " \"" + cmd + "\"";
+    }
   }
-  EVR_ACTIVITY_LO_REF(
-    ros_node_, "sending command: gnome-terminal -t %s -- %s", 
-    name_.c_str(), cmd.c_str()
-  );
+  EVR_ACTIVITY_LO_REF(ros_node_, "sending command: gnome-terminal -t %s -- %s",
+                      name_.c_str(), cmd.c_str());
   system(("gnome-terminal -t " + name_ + " -- " + cmd).c_str());
 }
 
-bool dispatcher::DispatchItem::TmuxKillSession()
+bool dispatcher::DispatcherItem::TmuxKillSession()
 {
   std::string cmd    = "tmux kill-session -t " + tmux_name_;
   int         result = SystemCall(cmd);
@@ -414,7 +435,7 @@ bool dispatcher::DispatchItem::TmuxKillSession()
   return true;
 }
 
-bool dispatcher::DispatchItem::TmuxNewSession()
+bool dispatcher::DispatcherItem::TmuxNewSession()
 {
   std::string cmd    = "tmux new -d -s " + tmux_name_;
   int         result = SystemCall(cmd);
@@ -423,26 +444,33 @@ bool dispatcher::DispatchItem::TmuxNewSession()
                        tmux_name_.c_str());
     return false;
   }
+  tmux_initialized_ = true;
   return true;
 }
 
-void dispatcher::DispatchItem::TmuxSendKeys(std::string cmd_str)
+void dispatcher::DispatcherItem::TmuxSendKeys(std::string cmd_str)
 {
-  std::string cmd = "tmux send-keys -t " + tmux_name_ + " '" + cmd_str + "' Enter";
+  std::string cmd =
+      "tmux send-keys -t " + tmux_name_ + " '" + cmd_str + "' Enter";
   (void)SystemCall(cmd);
 }
 
-int dispatcher::DispatchItem::SystemCall(std::string cmd)
+int dispatcher::DispatcherItem::SystemCall(std::string cmd)
 {
   EVR_DIAGNOSTIC_REF(ros_node_, "Issuing subprocess call `%s`", cmd.c_str());
-  std::string cmd_tmp = cmd;
-  const int ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-  if (current_configuration_ && current_configuration_->hostname != "localhost") {
-    if(current_configuration_->user.empty()) {
-      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->hostname + " \"" + cmd + "\"";
+  std::string cmd_tmp         = cmd;
+  const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
+  if (current_configuration_ &&
+      current_configuration_->hostname != "localhost") {
+    if (current_configuration_->user.empty()) {
+      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
+                std::to_string(ssh_timeout_sec) + " " +
+                current_configuration_->hostname + " \"" + cmd + "\"";
     } else {
-      cmd_tmp = "ssh -o ConnectTimeout=" + std::to_string(ssh_timeout_sec) + " " + current_configuration_->user + "@" + 
-	      current_configuration_->hostname + " \"" + cmd + "\"";
+      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
+                std::to_string(ssh_timeout_sec) + " " +
+                current_configuration_->user + "@" +
+                current_configuration_->hostname + " \"" + cmd + "\"";
     }
   }
   EVR_ACTIVITY_LO_REF(ros_node_, "SystemCall: %s", cmd_tmp.c_str());
@@ -452,10 +480,19 @@ int dispatcher::DispatchItem::SystemCall(std::string cmd)
   return result;
 }
 
-bool dispatcher::DispatchItem::TmuxHasSession()
+bool dispatcher::DispatcherItem::TmuxHasLocalSession()
+{
+  if (current_configuration_ &&
+      current_configuration_->hostname == "localhost") {
+    return TmuxHasSession();
+  }
+  return false;
+}
+
+bool dispatcher::DispatcherItem::TmuxHasSession()
 {
   std::string cmd    = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
-  int result = SystemCall(cmd);
+  int         result = SystemCall(cmd);
   if (result != 0) {
     EVR_DIAGNOSTIC_REF(ros_node_, "Tmux does not have active session for %s",
                        tmux_name_.c_str());

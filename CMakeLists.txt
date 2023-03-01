@@ -34,9 +34,15 @@ if(BUILD)
   find_package(builtin_interfaces REQUIRED)
   find_package(rosidl_default_generators REQUIRED)
   find_package(std_srvs REQUIRED)
-  find_package(Qt5Core REQUIRED)
-  find_package(Qt5Widgets REQUIRED)
-  find_package(Qt5Gui REQUIRED)
+  find_package(
+    Qt5
+    COMPONENTS
+    Core
+    Widgets
+    OpenGL
+    Gui
+    REQUIRED
+  )
   find_package(yaml_cpp_vendor REQUIRED)
 
   if(BUILD_TESTING)
@@ -47,15 +53,21 @@ if(BUILD)
   add_library(dispatcher_widget
     src/dispatcher_widget.cc
     src/dispatcher_widget.h
-    src/dispatch_item.cc
-    src/dispatch_item.h
+    src/dispatcher_item.cc
+    src/dispatcher_item.h
     src/dispatcher_node.cc
     src/dispatcher_node.h
     src/script_item.cc
     src/script_item.h
   )
 
-  qt5_use_modules(dispatcher_widget Core Widgets OpenGL Gui)
+  target_link_libraries(
+    dispatcher_widget
+    Qt5::Core
+    Qt5::Widgets
+    Qt5::OpenGL
+    Qt5::Gui
+  )
 
   add_library(icons STATIC icons/icons.qrc)
 
