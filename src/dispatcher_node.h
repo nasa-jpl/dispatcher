@@ -1,70 +1,91 @@
 #ifndef DISPATCHER_NODE_H_
 #define DISPATCHER_NODE_H_
 
-#include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/script_item.h"
 
 #include <map>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
 #include <casah_node/casah_node.hpp>
 
-namespace dispatcher
-{
+namespace dispatcher {
 class DispatcherWidget;
 
-class DispatcherNode : public CasahNode
-{
- public:
-  DispatcherNode(DispatcherWidget*);
+class DispatcherNode : public CasahNode {
+public:
+  DispatcherNode(DispatcherWidget *);
   ~DispatcherNode();
 
-  const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
-  {
+  struct Configuration {
+    std::map<std::string, std::string> environment_variables;
+    std::string cmd_prefix;
+  };
+
+  const std::vector<std::pair<std::string, std::string>> &get_online_nodes() {
     return online_nodes_;
   }
-  const std::string& get_workspace() { return workspace_; }
-  const std::string& get_cmd_prefix() { return cmd_prefix_; }
-  const std::map<std::string, std::string>& get_environment_variables() { return environment_variables_; }
+  const std::string &get_workspace() { return workspace_; }
+  const std::string &get_cmd_prefix(const std::string& configuration) { 
+     // check if configuration exists
+    if(configurations_.find(configuration) == configurations_.end()) {
+      // configuration was not found, return default 'all' configuration
+      return configurations_["all"].cmd_prefix; 
+    } else {
+      // check if specified configuration is empty
+      if(configurations_[configuration].cmd_prefix.empty()) {
+        // if empty, override with default 'all' configuration
+        return configurations_["all"].cmd_prefix; 
+      } else {
+        return configurations_[configuration].cmd_prefix;
+      }
+    }
+  }
+  const std::map<std::string, std::string> &get_environment_variables(
+      const std::string& configuration) {
+    // check if configuration exists
+    if(configurations_.find(configuration) == configurations_.end()) {
+      // configuration was not found, return default 'all' configuration
+      return configurations_["all"].environment_variables; 
+    } else {
+      // check if specified configuration is empty
+      if(configurations_[configuration].environment_variables.empty()) {
+        // if empty, override with default 'all' configuration
+        return configurations_["all"].environment_variables; 
+      } else {
+        return configurations_[configuration].environment_variables;
+      }
+    }
+  }
   int get_ssh_timeout_sec() { return ssh_timeout_sec_; }
   virtual void Process() override;
-  void         StartChecked();
-  void         StopChecked();
-  void         StopAll();
-  void         UpdateConfiguration();
+  void StartChecked();
+  void StopChecked();
+  void StopAll();
+  void UpdateConfiguration();
 
-  // adds public interface to PublishEvr_ message type, used with
-  // custom macros above that take a pointer as first argument
-  void PublishEvr_(uint8_t type, const char* file, const size_t line,
-                   const std::string& message)
-  {
-    PublishEvr(type, file, line, message);
-  }
-
- private:
-  bool                                   last_online_state_ = false;
-  std::string                            dispatcher_config_path_;
-  int                                    ssh_timeout_sec_ = 10;
-  std::vector<dispatcher::DispatchItem*> dispatch_items_;
-  std::vector<dispatcher::ScriptItem*>   script_items_;
-  std::vector<std::string>               configurations_;
-  std::string                            cmd_prefix_;
-  std::string                            workspace_;
-  std::string                            config_;
+private:
+  bool last_online_state_ = false;
+  bool tmux_sessions_configured_ = false;
+  std::string dispatcher_config_path_;
+  int ssh_timeout_sec_ = 10;
+  std::vector<dispatcher::DispatcherItem *> dispatcher_items_;
+  std::vector<dispatcher::ScriptItem *> script_items_;
+  std::string workspace_;
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
-  std::vector<std::pair<std::string, std::string>>    online_nodes_;
-  std::map<std::string, std::string> environment_variables_;
+  std::vector<std::pair<std::string, std::string>> online_nodes_;
+  std::map<std::string, Configuration> configurations_;
 
   void ParseConfig();
   void SetupTmuxSessions();
-
-  DispatcherWidget* widget_ = nullptr;
+  void CleanupTmuxSessions();
+  DispatcherWidget *widget_ = nullptr;
 };
 
-}  // namespace dispatcher
+} // namespace dispatcher
 
 #endif

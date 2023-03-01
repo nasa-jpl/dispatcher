@@ -1,5 +1,5 @@
 #include "dispatcher/config.h"
-#include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/dispatcher_node.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -44,7 +44,7 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   );
   this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
   ParseConfig();
-  SetupTmuxSessions();
+  CleanupTmuxSessions();
 }
 
 void dispatcher::DispatcherNode::ParseConfig()
@@ -55,33 +55,50 @@ void dispatcher::DispatcherNode::ParseConfig()
 
   auto combo_box = widget_->get_configuration_combo_box();
   if (root["configurations"]) {
-    for (const auto& configuration : root["configurations"]) {
-      combo_box->addItem(
-          QString::fromStdString(configuration.as<std::string>()));
+    for (const auto& yaml_config : root["configurations"]) {
+      std::string name;
+      if(yaml_config["name"]) {
+        name = yaml_config["name"].as<std::string>();
+        dispatcher::DispatcherNode::Configuration configuration;
+        if(yaml_config["environment_variables"]) {
+          for(const auto& item : root["environment_variables"]) {
+            std::string key = item.first.as<std::string>();
+            std::string value = item.second.as<std::string>();
+            configuration.environment_variables[key] = value;
+          }
+        }
+        if(yaml_config["cmd_prefix"]) {
+          configuration.cmd_prefix = yaml_config["cmd_prefix"].as<std::string>();
+        }
+        configurations_[name] = configuration;
+      } else {
+        name = yaml_config.as<std::string>();
+        configurations_[name] = dispatcher::DispatcherNode::Configuration();
+      }
+      combo_box->addItem(QString::fromStdString(name));
     }
   } else {
     combo_box->addItem("default");
   }
 
+  // add default 'all' configuration
+  dispatcher::DispatcherNode::Configuration configuration;
   if (root["cmd_prefix"]) {
-    cmd_prefix_ = root["cmd_prefix"].as<std::string>();
+    configuration.cmd_prefix = root["cmd_prefix"].as<std::string>();
   }
-
   if (root["environment_variables"]) {
     for(const auto& item : root["environment_variables"]) {
       std::string key = item.first.as<std::string>();
       std::string value = item.second.as<std::string>();
-      environment_variables_[key] = value;
+      configuration.environment_variables[key] = value;
     }
   }
+  configurations_["all"] = configuration;
 
   workspace_ = root["workspace"].as<std::string>();
-  if (root["config"]) {
-    config_ = root["config"].as<std::string>();
-  }
   for (const auto& node : root["nodes"]) {
-    dispatch_items_.push_back(
-       new dispatcher::DispatchItem(widget_, this, node));
+    dispatcher_items_.push_back(
+       new dispatcher::DispatcherItem(widget_, this, node));
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
@@ -95,9 +112,6 @@ void dispatcher::DispatcherNode::ParseConfig()
   }
 
   QString title = "dispatcher - " + QString(workspace_.c_str());
-  if (!config_.empty()) {
-    title += " - " + QString(config_.c_str());
-  }
   widget_->setWindowTitle(title);
 }
 
@@ -111,7 +125,7 @@ void dispatcher::DispatcherNode::Process()
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
 
   bool online = false;
-  for (auto& item : dispatch_items_) {
+  for (auto& item : dispatcher_items_) {
     if (item->is_online()) {
       online = true;
       break;
@@ -122,7 +136,7 @@ void dispatcher::DispatcherNode::Process()
   }
   last_online_state_ = online;
 
-  for (auto& item : dispatch_items_) {
+  for (auto& item : dispatcher_items_) {
     item->Process();
   }
 }
@@ -136,14 +150,17 @@ void dispatcher::DispatcherNode::UpdateConfiguration()
                       .c_str());
 
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
-  for (auto& item : dispatch_items_) {
+  for (auto& item : dispatcher_items_) {
+    item->UpdateConfiguration();
+  }
+  for (auto&item : script_items_) {
     item->UpdateConfiguration();
   }
 }
 
 void dispatcher::DispatcherNode::StartChecked()
 {
-  for (auto& item : dispatch_items_) {
+  for (auto& item : dispatcher_items_) {
     if (item->is_checked()) {
       item->StartCb();
     }
@@ -152,7 +169,7 @@ void dispatcher::DispatcherNode::StartChecked()
 
 void dispatcher::DispatcherNode::StopChecked()
 {
-  for (auto& item : dispatch_items_) {
+  for (auto& item : dispatcher_items_) {
     if (item->is_checked()) {
       item->StopCb();
     }
@@ -162,30 +179,48 @@ void dispatcher::DispatcherNode::StopChecked()
 void dispatcher::DispatcherNode::StopAll()
 {
   EVR_ACTIVITY_HI("Stopping all dispatch items and killing tmux sessions...");
-  for (auto& item : dispatch_items_) {
+  for (auto& item : dispatcher_items_) {
     item->StopCb();
     item->TmuxKillSession();
   }
   EVR_ACTIVITY_LO("Stopped all dispatch items and killing tmux sessions");
 }
 
-void dispatcher::DispatcherNode::SetupTmuxSessions()
+void dispatcher::DispatcherNode::CleanupTmuxSessions()
 {
-  EVR_ACTIVITY_HI("Creating tmux session for all Dispatch Items...");
+  EVR_ACTIVITY_HI("Removing out-dated tmux session for all dispatcher items...");
 
-  for (auto& item : dispatch_items_) {
-    // If the tmux session is already exists, try to clean it up and
-    // start it back up from scratch
-    if (item->TmuxHasSession()) {
+  for (auto& item : dispatcher_items_) {
+    // Attempt to clean up any local tmux sessions
+    if (item->TmuxHasLocalSession()) {
       EVR_WARNING_HI(
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
-          "up the "
-          "process safely",
+          "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
       EVR_WARNING_LO(
           "If you consistently see this warning, contact your SW support "
           "developer");
+      item->TmuxSendKeys("C-C");  // SIGINT
+      item->TmuxKillSession();
+    }
+  }
+}
 
+void dispatcher::DispatcherNode::SetupTmuxSessions()
+{
+  EVR_ACTIVITY_HI("Creating tmux session for all Dispatch Items...");
+
+  for (auto& item : dispatcher_items_) {
+    // If the tmux session is already exists, try to refresh session and
+    // start it back up from scratch
+    if (item->TmuxHasSession()) {
+      EVR_WARNING_HI(
+          "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
+          "up the process safely",
+          item->get_tmux_name().c_str(), item->get_name().c_str());
+      EVR_WARNING_LO(
+          "If you consistently see this warning, contact your SW support "
+          "developer");
       item->TmuxSendKeys("C-C");  // SIGINT
       item->TmuxKillSession();
     }

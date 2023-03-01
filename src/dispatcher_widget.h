@@ -1,7 +1,7 @@
 #ifndef DISPATCHER_WIDGET_H_
 #define DISPATCHER_WIDGET_H_
 
-#include "dispatcher/dispatch_item.h"
+#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/dispatcher_node.h"
 
 #include <exception>

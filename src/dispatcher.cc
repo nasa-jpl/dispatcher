@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <iostream>
+#include <stdexcept>
 
 #include <rclcpp/rclcpp.hpp>
 
