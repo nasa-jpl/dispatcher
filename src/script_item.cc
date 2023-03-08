@@ -84,6 +84,7 @@ void dispatcher::ScriptItem::StartCb()
     for (auto& it : ros_node_->get_environment_variables("all")) {
       env_prefix += it.first + "=" + it.second + " ";
     }
+    assert(current_configuration_);
     cmd_with_prefix = "bash -c \"" + ros_node_->get_cmd_prefix("all") + " " +
                       env_prefix + current_configuration_->cmd + "\"";
   } else {
