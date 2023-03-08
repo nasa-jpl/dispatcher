@@ -34,6 +34,8 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
+  configurations_["all"] = Configuration();  
+
   InitializeTimerRate();
   DeclareInitParameterString("dispatcher_config_path", "",
                              "Path to dispatcher configuration file");
@@ -45,6 +47,7 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
   ParseConfig();
   CleanupTmuxSessions();
+  UpdateConfiguration();
 }
 
 void dispatcher::DispatcherNode::ParseConfig()
