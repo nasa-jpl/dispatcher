@@ -213,6 +213,7 @@ void dispatcher::DispatcherItem::UpdateConfiguration()
   }
 
   std::string current_configuration = dispatcher_->get_current_configuration();
+  
   if (configurations_.find(current_configuration) == configurations_.end()) {
     if (configurations_.find("all") == configurations_.end()) {
       // if default 'all' configuration also not found, then disable node
@@ -221,7 +222,7 @@ void dispatcher::DispatcherItem::UpdateConfiguration()
           ros_node_,
           "Neither 'all' nor '%s' configuration found for node '%s'; disabling",
           current_configuration.c_str(), name_.c_str());
-
+      return;
     } else {
       // selected configuration not found, use default configuration
       current_configuration_ = &configurations_["all"];
@@ -238,6 +239,7 @@ void dispatcher::DispatcherItem::UpdateConfiguration()
 
   std::string cmd_tmp;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
+  
   if (current_configuration_->hostname != "localhost") {
     if (current_configuration_->user.empty()) {
       cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
