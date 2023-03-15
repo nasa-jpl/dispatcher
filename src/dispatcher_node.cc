@@ -60,7 +60,7 @@ void dispatcher::DispatcherNode::ParseConfig()
   if (root["configurations"]) {
     for (const auto& yaml_config : root["configurations"]) {
       std::string name;
-      if(yaml_config["name"]) {
+      if(yaml_config.IsMap()) {
         name = yaml_config["name"].as<std::string>();
         dispatcher::DispatcherNode::Configuration configuration;
         if(yaml_config["environment_variables"]) {
