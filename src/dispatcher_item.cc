@@ -319,6 +319,13 @@ void dispatcher::DispatcherItem::Process()
 
 void dispatcher::DispatcherItem::StartCb()
 {
+  if(!enabled_) {
+    EVR_WARNING_LO_REF(
+        ros_node_,
+        "Refusing to start node %s in tmux session: %s because node is disabled",
+        name_.c_str(), tmux_name_.c_str());
+  }
+
   if (online_) {
     EVR_WARNING_HI_REF(
         ros_node_,
