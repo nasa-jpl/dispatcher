@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>dispatcher</name>
-  <version>0.0.28</version>
+  <version>0.0.29</version>
   <description>ROS2 dispatcher for CASAH node lifecycle management</description>
   <maintainer email="kwehage@jpl.nasa.gov">dev</maintainer>
   <license>JPL / Caltech</license>
