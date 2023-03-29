@@ -326,6 +326,7 @@ void dispatcher::DispatcherItem::StartCb()
         ros_node_,
         "Refusing to start node %s in tmux session: %s because node is disabled",
         name_.c_str(), tmux_name_.c_str());
+    return;
   }
 
   if (online_) {
