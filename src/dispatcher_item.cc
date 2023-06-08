@@ -272,7 +272,8 @@ void dispatcher::DispatcherItem::Process()
   const auto& online_nodes_             = ros_node_->get_online_nodes();
   size_t      num_online_nodes_found    = 0;
   size_t      num_expected_online_nodes = 0;
-
+  std::string online_nodes_str;
+  
   // does current configuration have any ros nodes specified?
   // if yes, then use current configuration:
   if (current_configuration_->ros_nodes.size() > 0) {
@@ -283,6 +284,12 @@ void dispatcher::DispatcherItem::Process()
       for (auto& online_node : online_nodes_) {
         if (ros_node.name == online_node.first &&
             ros_node.namespace_ == online_node.second) {
+          if(std::string(online_node.second) == std::string("/")) {
+            online_nodes_str += (std::string("\n  ") + "/" + online_node.first);
+          } else {
+            online_nodes_str += (std::string("\n  ") + online_node.second + "/" + 
+              online_node.first);
+          }
           num_online_nodes_found++;
           break;
         }
@@ -296,6 +303,12 @@ void dispatcher::DispatcherItem::Process()
       for (auto& online_node : online_nodes_) {
         if (ros_node.name == online_node.first &&
             ros_node.namespace_ == online_node.second) {
+          if(std::string(online_node.second) == std::string("/")) {
+            online_nodes_str += (std::string("\n  ") + "/" + online_node.first);
+          } else {
+            online_nodes_str += (std::string("\n  ") + online_node.second + "/" + 
+              online_node.first);
+          }
           num_online_nodes_found++;
           break;
         }
@@ -305,16 +318,24 @@ void dispatcher::DispatcherItem::Process()
 
   online_ = (num_online_nodes_found > 0);
   if (num_online_nodes_found != num_online_nodes_prev_) {
+    online_nodes_str = 
+      std::to_string(num_online_nodes_found) + "/" + 
+      std::to_string(num_expected_online_nodes) + std::string(" nodes online") +
+      online_nodes_str;
     EVR_ACTIVITY_LO_REF(
         ros_node_, "Status change for node %s, %ld/%ld nodes online",
         name_.c_str(), num_online_nodes_found, num_expected_online_nodes);
     num_online_nodes_prev_ = num_online_nodes_found;
+    label_->setToolTip(online_nodes_str.c_str());
     if (num_online_nodes_found == 0) {
       label_->setPixmap(red_status_icon_);
+      label_->setStyleSheet(QString("color: red"));
     } else if (num_online_nodes_found < num_expected_online_nodes) {
       label_->setPixmap(orange_status_icon_);
+      label_->setStyleSheet(QString("color: orange"));
     } else if (num_online_nodes_found == num_expected_online_nodes) {
       label_->setPixmap(green_status_icon_);
+      label_->setStyleSheet(QString("color: green"));
     }
   }
 }
