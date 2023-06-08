@@ -4,7 +4,6 @@ project(dispatcher
   VERSION 0.0.30
   LANGUAGES C CXX
 )
-set(CMAKE_PREFIX_PATH $ENV{HOME}/.cmake/packages)
 find_package(CfwCmake)
 
 cfw_configure_project()
@@ -18,7 +17,7 @@ option(BUILD "Optionally disable building package by setting BUILD=OFF" ON)
 if(BUILD)
 
   cfw_fetch_dependencies(
-    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.3.18
+    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.3.21
   )
 
   set(CMAKE_AUTOMOC ON)
