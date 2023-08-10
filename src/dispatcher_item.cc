@@ -451,7 +451,7 @@ void dispatcher::DispatcherItem::TerminalCb()
   }
   EVR_ACTIVITY_LO_REF(ros_node_, "sending command: gnome-terminal -t %s -- %s",
                       name_.c_str(), cmd.c_str());
-  system(("gnome-terminal -t " + name_ + " -- " + cmd).c_str());
+  (void)system(("gnome-terminal -t " + name_ + " -- " + cmd).c_str());
 }
 
 bool dispatcher::DispatcherItem::TmuxKillSession()
