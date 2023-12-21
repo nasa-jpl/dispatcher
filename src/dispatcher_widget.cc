@@ -72,6 +72,12 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
   script_layout_ = new QGridLayout(script_group_box_);
   layout_->addWidget(script_group_box_);
 
+  variable_group_box_ = new QGroupBox();
+  variable_group_box_->setStyleSheet(QString("QGroupBox {border:0}"));
+  variable_group_box_->setContentsMargins(QMargins(-1, -1, -1, 0));
+  variable_layout_ = new QGridLayout(variable_group_box_);
+  layout_->addWidget(variable_group_box_);
+
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
 
   int          index = grid_layout_->rowCount();

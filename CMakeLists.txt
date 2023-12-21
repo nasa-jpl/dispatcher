@@ -17,7 +17,7 @@ option(BUILD "Optionally disable building package by setting BUILD=OFF" ON)
 if(BUILD)
 
   cfw_fetch_dependencies(
-    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.3.21
+    casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v0.3.25
   )
 
   set(CMAKE_AUTOMOC ON)
@@ -58,6 +58,8 @@ if(BUILD)
     src/dispatcher_node.h
     src/script_item.cc
     src/script_item.h
+    src/variable.cc
+    src/variable.h
   )
 
   target_link_libraries(

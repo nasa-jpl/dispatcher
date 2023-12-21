@@ -49,6 +49,7 @@ class DispatcherWidget : public QWidget
   // get methods
   QGridLayout* get_grid_layout() { return grid_layout_; }
   QGridLayout* get_script_layout() { return script_layout_; }
+  QGridLayout* get_variable_layout() { return variable_layout_; }
   std::shared_ptr<dispatcher::DispatcherNode> get_ros_node()
   {
     return ros_node_;
@@ -86,6 +87,8 @@ class DispatcherWidget : public QWidget
   QGridLayout* grid_layout_             = nullptr;
   QGroupBox*   script_group_box_        = nullptr;
   QGridLayout* script_layout_           = nullptr;
+  QGroupBox*   variable_group_box_      = nullptr;
+  QGridLayout* variable_layout_         = nullptr;
   std::string  dispatcher_config_path_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;

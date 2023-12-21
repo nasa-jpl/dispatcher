@@ -3,6 +3,7 @@
 
 #include "dispatcher/dispatcher_item.h"
 #include "dispatcher/script_item.h"
+#include "dispatcher/variable.h"
 
 #include <map>
 #include <unordered_map>
@@ -67,6 +68,10 @@ public:
   void StopChecked();
   void StopAll();
   void UpdateConfiguration();
+  void EnableVariables(bool);
+  const std::vector<dispatcher::Variable *>& GetVariables() {
+    return variables_;
+  }
 
 private:
   bool last_online_state_ = false;
@@ -75,6 +80,7 @@ private:
   int ssh_timeout_sec_ = 10;
   std::vector<dispatcher::DispatcherItem *> dispatcher_items_;
   std::vector<dispatcher::ScriptItem *> script_items_;
+  std::vector<dispatcher::Variable *> variables_;
   std::string workspace_;
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>> online_nodes_;
