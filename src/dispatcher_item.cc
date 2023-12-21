@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <string>
+#include <regex>
 
 #include <QCheckBox>
 #include <QGroupBox>
@@ -394,8 +395,18 @@ void dispatcher::DispatcherItem::StartCb()
     }
   }
 
+  // replace any instances of variables matching pattern $VARIABLE_NAME with its
+  // value
+  std::string configured_cmd = current_configuration_->cmd;
+  const auto& variables = ros_node_->GetVariables();
+  for(auto& variable : variables) {
+    configured_cmd = std::regex_replace(
+      configured_cmd, std::regex("\\$" + variable->GetName()), variable->GetValue());
+  }
+  EVR_ACTIVITY_LO_REF(ros_node_, "%s", configured_cmd.c_str());
+
   TmuxSendKeys(cmd_prefix + " " + env_prefix + " " +
-               current_configuration_->cmd);
+               configured_cmd);
 
   if (attach_on_start_) {
     // detach any existing clients and attach a new gnome terminal window

@@ -114,6 +114,10 @@ void dispatcher::DispatcherNode::ParseConfig()
     script_items_.push_back(new dispatcher::ScriptItem(widget_, this, script));
   }
 
+  for (const auto& variable : root["variables"]) {
+    variables_.push_back(new dispatcher::Variable(widget_, this, variable));
+  }
+
   QString title = "dispatcher - " + QString(workspace_.c_str());
   widget_->setWindowTitle(title);
 }
@@ -136,6 +140,7 @@ void dispatcher::DispatcherNode::Process()
   }
   if (online != last_online_state_) {
     widget_->get_configuration_combo_box()->setEnabled(!online);
+    EnableVariables(!online);
   }
   last_online_state_ = online;
 
@@ -232,3 +237,12 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
   }
   EVR_ACTIVITY_LO("Created Tmux session for all Dispatch Items.");
 }
+
+void dispatcher::DispatcherNode::EnableVariables(bool enable)
+{
+  for (auto& variable : variables_) {
+    variable->Enable(enable);
+  }
+}
+
+
