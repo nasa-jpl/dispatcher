@@ -78,7 +78,6 @@ if(BUILD)
     -pipe
     -fPIC
     -Wextra
-    -march=x86-64
     -mtune=generic
     -fstack-protector-strong
     -D_REENTRANT
