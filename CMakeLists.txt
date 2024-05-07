@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 project(dispatcher
   DESCRIPTION "Casah node dispatcher"
-  VERSION 0.0.36
+  VERSION 0.0.37
   LANGUAGES C CXX
 )
 find_package(CfwCmake)
