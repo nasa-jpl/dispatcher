@@ -78,7 +78,6 @@ target_compile_options(dispatcher_widget PUBLIC
   -pipe
   -fPIC
   -Wextra
-  -march=x86-64
   -mtune=generic
   -fstack-protector-strong
   -D_REENTRANT
