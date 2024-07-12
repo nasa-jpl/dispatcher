@@ -43,7 +43,7 @@ class DispatcherWidget : public QWidget
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public : explicit DispatcherWidget(QWidget* parent = 0);
+      public : explicit DispatcherWidget(QWidget* parent = 0, std::string dispatcher_lock_file_path = "/tmp/dispatcher.lock");
   ~DispatcherWidget();
 
   // get methods
@@ -89,7 +89,7 @@ class DispatcherWidget : public QWidget
   QGridLayout* script_layout_           = nullptr;
   QGroupBox*   variable_group_box_      = nullptr;
   QGridLayout* variable_layout_         = nullptr;
-  std::string  dispatcher_config_path_;
+  std::string  dispatcher_lock_file_path_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;

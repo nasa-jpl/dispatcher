@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <fstream>
 
 #include <QCoreApplication>
 #include <QGridLayout>
@@ -36,6 +37,36 @@ static void CheckTmuxExistsThrowException()
   }
 }
 
+static void CreateLockFile(const std::string& lock_filename) 
+{
+  std::ofstream output(lock_filename.c_str());
+}
+
+static void DeleteLockFile(const std::string& lock_filename) 
+{
+  if (remove(lock_filename.c_str()) != 0) {
+    std::string error_message = "Error deleting lock file: " + lock_filename;
+    throw dispatcher::DispatcherException(error_message.c_str());
+  }
+}
+
+static bool CheckLockFileExists(const std::string& lock_filename)
+{
+  std::ifstream lock_file(lock_filename.c_str());
+  return lock_file.good();
+}
+
+static void CheckLockFileExistsThrowException(const std::string& lock_filename)
+{
+  if (CheckLockFileExists(lock_filename)) {
+    std::string error_message = "Could not get lock on file " + lock_filename + "; an instance of Dispatcher appears to already be running, terminating...";
+    throw dispatcher::DispatcherException(error_message.c_str());
+  }
+  else {
+    CreateLockFile(lock_filename);
+  }
+}
+
 void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 {
   if (script_group_box_ == nullptr) {
@@ -47,10 +78,13 @@ void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 /*!
 @brief class constructor for DispatcherWidget application
 */
-dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
+dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent, std::string dispatcher_lock_file_path)
     : QWidget(parent)
 {
   CheckTmuxExistsThrowException();
+
+  dispatcher_lock_file_path_ = dispatcher_lock_file_path;
+  CheckLockFileExistsThrowException(dispatcher_lock_file_path_);
 
   QVBoxLayout* layout_ = new QVBoxLayout(parent);
 
@@ -118,7 +152,10 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent)
 /*!
 @brief class destructor
 */
-dispatcher::DispatcherWidget::~DispatcherWidget() {}
+dispatcher::DispatcherWidget::~DispatcherWidget() 
+{
+  DeleteLockFile(dispatcher_lock_file_path_);
+}
 
 void dispatcher::DispatcherWidget::UpdateConfiguration()
 {
