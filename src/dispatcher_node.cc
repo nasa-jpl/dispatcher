@@ -1,7 +1,8 @@
-#include "dispatcher/config.h"
-#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/dispatcher_node.h"
+#include "dispatcher/config.h"
 #include "dispatcher/dispatcher_widget.h"
+#include "dispatcher/ros_process_item.h"
+#include "dispatcher/shell_process_item.h"
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -34,16 +35,15 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
-  configurations_["all"] = Configuration();  
+  configurations_["all"] = Configuration();
 
   InitializeTimerRate();
   DeclareInitParameterString("dispatcher_config_path", "",
                              "Path to dispatcher configuration file");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
-  
-  DeclareInitParameterInt(
-    "ssh_timeout_sec", 10, "Default timeout for initiating remote ssh sessions"
-  );
+
+  DeclareInitParameterInt("ssh_timeout_sec", 10,
+                          "Default timeout for initiating remote ssh sessions");
   this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
   ParseConfig();
   CleanupTmuxSessions();
@@ -60,22 +60,23 @@ void dispatcher::DispatcherNode::ParseConfig()
   if (root["configurations"]) {
     for (const auto& yaml_config : root["configurations"]) {
       std::string name;
-      if(yaml_config.IsMap()) {
+      if (yaml_config.IsMap()) {
         name = yaml_config["name"].as<std::string>();
         dispatcher::DispatcherNode::Configuration configuration;
-        if(yaml_config["environment_variables"]) {
-          for(const auto& item : root["environment_variables"]) {
-            std::string key = item.first.as<std::string>();
+        if (yaml_config["environment_variables"]) {
+          for (const auto& item : root["environment_variables"]) {
+            std::string key   = item.first.as<std::string>();
             std::string value = item.second.as<std::string>();
             configuration.environment_variables[key] = value;
           }
         }
-        if(yaml_config["cmd_prefix"]) {
-          configuration.cmd_prefix = yaml_config["cmd_prefix"].as<std::string>();
+        if (yaml_config["cmd_prefix"]) {
+          configuration.cmd_prefix =
+              yaml_config["cmd_prefix"].as<std::string>();
         }
         configurations_[name] = configuration;
       } else {
-        name = yaml_config.as<std::string>();
+        name                  = yaml_config.as<std::string>();
         configurations_[name] = dispatcher::DispatcherNode::Configuration();
       }
       combo_box->addItem(QString::fromStdString(name));
@@ -90,9 +91,9 @@ void dispatcher::DispatcherNode::ParseConfig()
     configuration.cmd_prefix = root["cmd_prefix"].as<std::string>();
   }
   if (root["environment_variables"]) {
-    for(const auto& item : root["environment_variables"]) {
-      std::string key = item.first.as<std::string>();
-      std::string value = item.second.as<std::string>();
+    for (const auto& item : root["environment_variables"]) {
+      std::string key                          = item.first.as<std::string>();
+      std::string value                        = item.second.as<std::string>();
       configuration.environment_variables[key] = value;
     }
   }
@@ -100,8 +101,14 @@ void dispatcher::DispatcherNode::ParseConfig()
 
   workspace_ = root["workspace"].as<std::string>();
   for (const auto& node : root["nodes"]) {
-    dispatcher_items_.push_back(
-       new dispatcher::DispatcherItem(widget_, this, node));
+    if (node["type"] && node["type"].as<std::string>() == "base") {
+      dispatcher_items_.push_back(
+          new dispatcher::ShellProcessItem(widget_, this, node));
+    } else {
+      // Assume all dispatcher items are ROS items otherwise
+      dispatcher_items_.push_back(
+          new dispatcher::RosProcessItem(widget_, this, node));
+    }
   }
 
   auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
@@ -161,7 +168,7 @@ void dispatcher::DispatcherNode::UpdateConfiguration()
   for (auto& item : dispatcher_items_) {
     item->UpdateConfiguration();
   }
-  for (auto&item : script_items_) {
+  for (auto& item : script_items_) {
     item->UpdateConfiguration();
   }
 }
@@ -196,7 +203,8 @@ void dispatcher::DispatcherNode::StopAll()
 
 void dispatcher::DispatcherNode::CleanupTmuxSessions()
 {
-  EVR_ACTIVITY_HI("Removing out-dated tmux session for all dispatcher items...");
+  EVR_ACTIVITY_HI(
+      "Removing out-dated tmux session for all dispatcher items...");
 
   for (auto& item : dispatcher_items_) {
     // Attempt to clean up any local tmux sessions
@@ -244,5 +252,3 @@ void dispatcher::DispatcherNode::EnableVariables(bool enable)
     variable->Enable(enable);
   }
 }
-
-

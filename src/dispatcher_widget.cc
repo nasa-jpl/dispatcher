@@ -1,14 +1,13 @@
-#include "dispatcher/dispatcher_item.h"
-#include "dispatcher/dispatcher_node.h"
 #include "dispatcher/dispatcher_widget.h"
+#include "dispatcher/dispatcher_node.h"
 
 #include "dispatcher/config.h"
 
 #include <stdio.h>
 
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <fstream>
 
 #include <QCoreApplication>
 #include <QGridLayout>
@@ -37,12 +36,12 @@ static void CheckTmuxExistsThrowException()
   }
 }
 
-static void CreateLockFile(const std::string& lock_filename) 
+static void CreateLockFile(const std::string& lock_filename)
 {
   std::ofstream output(lock_filename.c_str());
 }
 
-static void DeleteLockFile(const std::string& lock_filename) 
+static void DeleteLockFile(const std::string& lock_filename)
 {
   if (remove(lock_filename.c_str()) != 0) {
     std::string error_message = "Error deleting lock file: " + lock_filename;
@@ -59,10 +58,11 @@ static bool CheckLockFileExists(const std::string& lock_filename)
 static void CheckLockFileExistsThrowException(const std::string& lock_filename)
 {
   if (CheckLockFileExists(lock_filename)) {
-    std::string error_message = "Could not get lock on file " + lock_filename + "; an instance of Dispatcher appears to already be running, terminating...";
+    std::string error_message = "Could not get lock on file " + lock_filename +
+                                "; an instance of Dispatcher appears to "
+                                "already be running, terminating...";
     throw dispatcher::DispatcherException(error_message.c_str());
-  }
-  else {
+  } else {
     CreateLockFile(lock_filename);
   }
 }
@@ -78,7 +78,8 @@ void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 /*!
 @brief class constructor for DispatcherWidget application
 */
-dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent, std::string dispatcher_lock_file_path)
+dispatcher::DispatcherWidget::DispatcherWidget(
+    QWidget* parent, std::string dispatcher_lock_file_path)
     : QWidget(parent)
 {
   CheckTmuxExistsThrowException();
@@ -152,7 +153,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(QWidget* parent, std::string disp
 /*!
 @brief class destructor
 */
-dispatcher::DispatcherWidget::~DispatcherWidget() 
+dispatcher::DispatcherWidget::~DispatcherWidget()
 {
   DeleteLockFile(dispatcher_lock_file_path_);
 }

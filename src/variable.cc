@@ -1,6 +1,5 @@
 #include "dispatcher/variable.h"
 
-#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
 #include <stdlib.h>
@@ -20,13 +19,13 @@
 @brief class constructor for Variable
 */
 dispatcher::Variable::Variable(QWidget* parent, DispatcherNode* ros_node,
-                                   const YAML::Node& node)
+                               const YAML::Node& node)
     : QWidget(parent)
 {
   dispatcher_ = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
   ros_node_   = ros_node;
   name_       = node["name"].as<std::string>();
-  for(auto& choice : node["choices"]) {
+  for (auto& choice : node["choices"]) {
     choices_.push_back(choice.as<std::string>());
   }
 
@@ -39,7 +38,7 @@ dispatcher::Variable::Variable(QWidget* parent, DispatcherNode* ros_node,
 
   combo_box_ = new QComboBox();
 
-  for(auto& choice : choices_) {
+  for (auto& choice : choices_) {
     combo_box_->addItem(QString::fromStdString(choice));
   }
   layout->addWidget(combo_box_, index_, 1);
@@ -50,14 +49,17 @@ dispatcher::Variable::Variable(QWidget* parent, DispatcherNode* ros_node,
 */
 dispatcher::Variable::~Variable() {}
 
-void dispatcher::Variable::Enable(bool enable) {
+void dispatcher::Variable::Enable(bool enable)
+{
   combo_box_->setEnabled(enable);
 }
 
-std::string dispatcher::Variable::GetValue() {
+std::string dispatcher::Variable::GetValue()
+{
   return combo_box_->currentText().toStdString();
 }
 
-std::string dispatcher::Variable::GetName() {
+std::string dispatcher::Variable::GetName()
+{
   return label_->text().toStdString();
 }
