@@ -52,12 +52,18 @@ endif()
 add_library(dispatcher_widget
   src/dispatcher_widget.cc
   src/dispatcher_widget.h
-  src/dispatcher_item.cc
-  src/dispatcher_item.h
   src/dispatcher_node.cc
   src/dispatcher_node.h
+  src/item.cc
+  src/item.h
+  src/process_item.cc
+  src/process_item.h
   src/script_item.cc
   src/script_item.h
+  src/shell_process_item.cc
+  src/shell_process_item.h
+  src/ros_process_item.cc
+  src/ros_process_item.h
   src/variable.cc
   src/variable.h
 )

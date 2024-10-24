@@ -11,6 +11,7 @@ configurations:
 nodes:
 
   - name: fcat
+    type: ros
     ros_nodes:
     - namespace: /fcat
       name: fcat
@@ -19,6 +20,15 @@ nodes:
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py
     - name: offline
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
+    start_checked: true
+
+  - name: ping
+    type: shell
+    configurations:
+    - name: online
+      cmd: ping google.com
+    - name: offline
+      cmd: ping asimov-dev
     start_checked: true
 
   - name: commander

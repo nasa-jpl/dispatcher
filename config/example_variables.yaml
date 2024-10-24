@@ -42,3 +42,14 @@ scripts:
     column: 0
     use_terminal: false
 
+  - name: cheer_me_up
+    configurations:
+    - name: online
+      # $FCAT_LOOP_RATE_HZ would be replaced with one of the aforementioned choices before this cmd string is executed 
+      cmd: cat /etc/hostname && echo I love JPL times $FCAT_LOOP_RATE_HZ
+      hostname: asimov-dev
+    - name: offline
+      cmd: cat /etc/hostname  && echo I love JPL times $FCAT_LOOP_RATE_HZ
+    row: 0
+    column: 0
+    use_terminal: false

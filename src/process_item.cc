@@ -1,23 +1,17 @@
-#include "dispatcher/dispatcher_item.h"
+#include "dispatcher/process_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
 #include <stdlib.h>
 
 #include <algorithm>
-#include <string>
 #include <regex>
+#include <string>
 
-#include <QCheckBox>
-#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QPixmap>
-#include <QPushButton>
 #include <QString>
 #include <QVBoxLayout>
-#include <QWidget>
-
-#include <yaml-cpp/yaml.h>
 
 static bool check_gnome_terminal_exists()
 {
@@ -25,39 +19,20 @@ static bool check_gnome_terminal_exists()
 }
 
 /*!
-@brief class constructor for DispatcherItem
+@brief class constructor for ProcessItem
 */
-dispatcher::DispatcherItem::DispatcherItem(QWidget*                    parent,
-                                           dispatcher::DispatcherNode* ros_node,
-                                           const YAML::Node&           node)
-    : QWidget(parent)
+dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
+                                     dispatcher::DispatcherNode* ros_node,
+                                     const YAML::Node&           node)
+    : dispatcher::Item(parent, ros_node, node)
 {
-  ros_node_           = ros_node;
-  dispatcher_         = dynamic_cast<dispatcher::DispatcherWidget*>(parent);
   QGridLayout* layout = dispatcher_->get_grid_layout();
   assert(layout);
-  name_ = node["name"].as<std::string>();
-  EVR_ACTIVITY_LO_REF(ros_node_, "Loading properties for node '%s'",
-                      name_.c_str());
 
   if (node["use_environment_variables"]) {
     use_environment_variables_ = node["use_environment_variables"].as<bool>();
   }
 
-  if (node["namespace"] && node["node_name"]) {
-    RosNodeMonitorConfig monitor_config;
-    monitor_config.namespace_ = node["namespace"].as<std::string>();
-    monitor_config.name       = node["node_name"].as<std::string>();
-    ros_nodes_.push_back(monitor_config);
-  }
-  if (node["ros_nodes"]) {
-    for (const auto& ros_node : node["ros_nodes"]) {
-      RosNodeMonitorConfig monitor_config;
-      monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
-      monitor_config.name       = ros_node["name"].as<std::string>();
-      ros_nodes_.push_back(monitor_config);
-    }
-  }
   if (node["attach_on_start"]) {
     attach_on_start_ = node["attach_on_start"].as<bool>();
   }
@@ -67,29 +42,10 @@ dispatcher::DispatcherItem::DispatcherItem(QWidget*                    parent,
                   "'cmd' and 'configurations' keys cannot be used together");
     rclcpp::shutdown();
   }
-  if (node["cmd"]) {
-    // user has specified a command at root level which applies to all
-    // configurations, so create a default 'all' configuration
-    DispatcherItemConfig config;
-    config.configuration_name = "all";
-    config.cmd                = node["cmd"].as<std::string>();
-
-    if (node["hostname"]) {
-      config.hostname = node["hostname"].as<std::string>();
-    } else {
-      config.hostname = "localhost";
-    }
-
-    if (node["user"]) {
-      config.user = node["user"].as<std::string>();
-    }
-
-    configurations_[config.configuration_name] = config;
-  }
 
   if (node["configurations"]) {
     for (const auto& configuration : node["configurations"]) {
-      DispatcherItemConfig config;
+      dispatcher::Item::Config config;
       config.configuration_name = configuration["name"].as<std::string>();
       config.cmd                = configuration["cmd"].as<std::string>();
       if (configuration["hostname"]) {
@@ -101,25 +57,12 @@ dispatcher::DispatcherItem::DispatcherItem(QWidget*                    parent,
         config.user = configuration["user"].as<std::string>();
       }
 
-      if (configuration["ros_nodes"]) {
-        for (const auto& ros_node : configuration["ros_nodes"]) {
-          RosNodeMonitorConfig monitor_config;
-          monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
-          monitor_config.name       = ros_node["name"].as<std::string>();
-          config.ros_nodes.push_back(monitor_config);
-        }
-      }
-
       configurations_[config.configuration_name] = config;
     }
   }
 
   bool start_checked = node["start_checked"].as<bool>();
-  use_cmd_prefix_    = true;
-  if (node["use_cmd_prefix"]) {
-    use_cmd_prefix_ = node["use_cmd_prefix"].as<bool>();
-  }
-  index_ = layout->rowCount();
+  index_             = layout->rowCount();
 
   // Convert any spaces to underscores in YAML Name parameter
   std::string rep_str = node["name"].as<std::string>();
@@ -175,7 +118,7 @@ dispatcher::DispatcherItem::DispatcherItem(QWidget*                    parent,
   UpdateConfiguration();
 }
 
-bool dispatcher::DispatcherItem::is_checked()
+bool dispatcher::ProcessItem::is_checked()
 {
   if (check_box_->checkState() == 0) {
     // unchecked case
@@ -189,9 +132,9 @@ bool dispatcher::DispatcherItem::is_checked()
 /*!
 @brief class destructor
 */
-dispatcher::DispatcherItem::~DispatcherItem() {}
+dispatcher::ProcessItem::~ProcessItem() {}
 
-void dispatcher::DispatcherItem::SetEnabled(bool enable)
+void dispatcher::ProcessItem::SetEnabled(bool enable)
 {
   enabled_ = enable;
   check_box_->setEnabled(enable);
@@ -205,7 +148,7 @@ void dispatcher::DispatcherItem::SetEnabled(bool enable)
   }
 }
 
-void dispatcher::DispatcherItem::UpdateConfiguration()
+void dispatcher::ProcessItem::UpdateConfiguration()
 {
   SetEnabled(true);
 
@@ -213,34 +156,15 @@ void dispatcher::DispatcherItem::UpdateConfiguration()
     TmuxKillSession();
   }
 
-  std::string current_configuration = dispatcher_->get_current_configuration();
-  
-  if (configurations_.find(current_configuration) == configurations_.end()) {
-    if (configurations_.find("all") == configurations_.end()) {
-      // if default 'all' configuration also not found, then disable node
-      SetEnabled(false);
-      EVR_ACTIVITY_LO_REF(
-          ros_node_,
-          "Neither 'all' nor '%s' configuration found for node '%s'; disabling",
-          current_configuration.c_str(), name_.c_str());
-      return;
-    } else {
-      // selected configuration not found, use default configuration
-      current_configuration_ = &configurations_["all"];
-      EVR_ACTIVITY_LO_REF(ros_node_,
-                          "No configurations specified for node '%s', "
-                          "using built-in configuration 'all'",
-                          name_.c_str());
-    }
-  } else {
-    current_configuration_ = &configurations_[current_configuration];
-    EVR_ACTIVITY_LO_REF(ros_node_, "Setting node '%s' to configuration '%s'",
-                        name_.c_str(), current_configuration.c_str());
+  Item::UpdateConfiguration();
+  if (!current_configuration_) {
+    SetEnabled(false);
+    return;
   }
 
   std::string cmd_tmp;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-  
+
   if (current_configuration_->hostname != "localhost") {
     if (current_configuration_->user.empty()) {
       cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
@@ -260,104 +184,22 @@ void dispatcher::DispatcherItem::UpdateConfiguration()
   start_->setToolTip(cmd_tmp.c_str());
 }
 
-void dispatcher::DispatcherItem::Process()
+bool dispatcher::ProcessItem::PrepareTmuxSession()
 {
-  if (!current_configuration_) {
-    return;
-  }
-
   if (!enabled_) {
-    return;
-  }
-
-  const auto& online_nodes_             = ros_node_->get_online_nodes();
-  size_t      num_online_nodes_found    = 0;
-  size_t      num_expected_online_nodes = 0;
-  std::string online_nodes_str;
-  
-  // does current configuration have any ros nodes specified?
-  // if yes, then use current configuration:
-  if (current_configuration_->ros_nodes.size() > 0) {
-    num_expected_online_nodes = current_configuration_->ros_nodes.size();
-    // for each ros node in the current configuration:
-    for (auto& ros_node : current_configuration_->ros_nodes) {
-      // check if node exists in list of online nodes
-      for (auto& online_node : online_nodes_) {
-        if (ros_node.name == online_node.first &&
-            ros_node.namespace_ == online_node.second) {
-          if(std::string(online_node.second) == std::string("/")) {
-            online_nodes_str += (std::string("\n  ") + "/" + online_node.first);
-          } else {
-            online_nodes_str += (std::string("\n  ") + online_node.second + "/" + 
-              online_node.first);
-          }
-          num_online_nodes_found++;
-          break;
-        }
-      }
-    }
-  } else {
-    // for each ros node in the default configuration:
-    num_expected_online_nodes = ros_nodes_.size();
-    for (auto& ros_node : ros_nodes_) {
-      // check if node exists in list of online nodes
-      for (auto& online_node : online_nodes_) {
-        if (ros_node.name == online_node.first &&
-            ros_node.namespace_ == online_node.second) {
-          if(std::string(online_node.second) == std::string("/")) {
-            online_nodes_str += (std::string("\n  ") + "/" + online_node.first);
-          } else {
-            online_nodes_str += (std::string("\n  ") + online_node.second + "/" + 
-              online_node.first);
-          }
-          num_online_nodes_found++;
-          break;
-        }
-      }
-    }
-  }
-
-  online_ = (num_online_nodes_found > 0);
-  if (num_online_nodes_found != num_online_nodes_prev_) {
-    online_nodes_str = 
-      std::to_string(num_online_nodes_found) + "/" + 
-      std::to_string(num_expected_online_nodes) + std::string(" nodes online") +
-      online_nodes_str;
-    EVR_ACTIVITY_LO_REF(
-        ros_node_, "Status change for node %s, %ld/%ld nodes online",
-        name_.c_str(), num_online_nodes_found, num_expected_online_nodes);
-    num_online_nodes_prev_ = num_online_nodes_found;
-    label_->setToolTip(online_nodes_str.c_str());
-    if (num_online_nodes_found == 0) {
-      label_->setPixmap(red_status_icon_);
-      label_->setStyleSheet(QString("color: red"));
-    } else if (num_online_nodes_found < num_expected_online_nodes) {
-      label_->setPixmap(orange_status_icon_);
-      label_->setStyleSheet(QString("color: orange"));
-    } else if (num_online_nodes_found == num_expected_online_nodes) {
-      label_->setPixmap(green_status_icon_);
-      label_->setStyleSheet(QString("color: green"));
-    }
-  }
-}
-
-void dispatcher::DispatcherItem::StartCb()
-{
-  if(!enabled_) {
-    EVR_WARNING_LO_REF(
-        ros_node_,
-        "Refusing to start node %s in tmux session: %s because node is disabled",
-        name_.c_str(), tmux_name_.c_str());
-    return;
+    EVR_WARNING_LO_REF(ros_node_,
+                       "Refusing to start node %s in tmux session: %s because "
+                       "node is disabled",
+                       name_.c_str(), tmux_name_.c_str());
+    return false;
   }
 
   if (online_) {
-    EVR_WARNING_HI_REF(
-        ros_node_,
-        "Refusing to start node %s in tmux session: %s "
-        "because node was detected as already running on ROS2 message bus",
-        name_.c_str(), tmux_name_.c_str());
-    return;
+    EVR_WARNING_HI_REF(ros_node_,
+                       "Refusing to start node %s in tmux session: %s "
+                       "because node was detected as already running",
+                       name_.c_str(), tmux_name_.c_str());
+    return false;
   }
 
   EVR_ACTIVITY_HI_REF(ros_node_, "Starting node: %s in tmux session: %s",
@@ -373,12 +215,11 @@ void dispatcher::DispatcherItem::StartCb()
         name_.c_str());
     (void)TmuxNewSession();
   }
+  return true;
+}
 
-  // cd to workspace directory and source ros environment
-  TmuxSendKeys("C-U");  // Clears the line of any text
-  TmuxSendKeys("cd " + ros_node_->get_workspace());
-  TmuxSendKeys("source install/setup.bash");
-
+void dispatcher::ProcessItem::StartCb()
+{
   // run user-supplied command, you can call an executable directly to start a
   // node or launch script
   std::string cmd_prefix;
@@ -398,15 +239,15 @@ void dispatcher::DispatcherItem::StartCb()
   // replace any instances of variables matching pattern $VARIABLE_NAME with its
   // value
   std::string configured_cmd = current_configuration_->cmd;
-  const auto& variables = ros_node_->GetVariables();
-  for(auto& variable : variables) {
-    configured_cmd = std::regex_replace(
-      configured_cmd, std::regex("\\$" + variable->GetName()), variable->GetValue());
+  const auto& variables      = ros_node_->GetVariables();
+  for (auto& variable : variables) {
+    configured_cmd = std::regex_replace(configured_cmd,
+                                        std::regex("\\$" + variable->GetName()),
+                                        variable->GetValue());
   }
   EVR_ACTIVITY_LO_REF(ros_node_, "%s", configured_cmd.c_str());
 
-  TmuxSendKeys(cmd_prefix + " " + env_prefix + " " +
-               configured_cmd);
+  TmuxSendKeys(cmd_prefix + " " + env_prefix + " " + configured_cmd);
 
   if (attach_on_start_) {
     // detach any existing clients and attach a new gnome terminal window
@@ -416,7 +257,7 @@ void dispatcher::DispatcherItem::StartCb()
   }
 }
 
-void dispatcher::DispatcherItem::StopCb()
+void dispatcher::ProcessItem::StopCb()
 {
   if (num_online_nodes_prev_ > 0) {
     EVR_ACTIVITY_LO_REF(ros_node_, "Stopping node: %s in tmux session: %s",
@@ -425,7 +266,7 @@ void dispatcher::DispatcherItem::StopCb()
   }
 }
 
-void dispatcher::DispatcherItem::TerminalCb()
+void dispatcher::ProcessItem::TerminalCb()
 {
   if (!check_gnome_terminal_exists()) {
     EVR_WARNING_HI_REF(
@@ -466,7 +307,7 @@ void dispatcher::DispatcherItem::TerminalCb()
   (void)result;
 }
 
-bool dispatcher::DispatcherItem::TmuxKillSession()
+bool dispatcher::ProcessItem::TmuxKillSession()
 {
   std::string cmd    = "tmux kill-session -t " + tmux_name_;
   int         result = SystemCall(cmd);
@@ -478,7 +319,7 @@ bool dispatcher::DispatcherItem::TmuxKillSession()
   return true;
 }
 
-bool dispatcher::DispatcherItem::TmuxNewSession()
+bool dispatcher::ProcessItem::TmuxNewSession()
 {
   std::string cmd    = "tmux new -d -s " + tmux_name_;
   int         result = SystemCall(cmd);
@@ -491,39 +332,14 @@ bool dispatcher::DispatcherItem::TmuxNewSession()
   return true;
 }
 
-void dispatcher::DispatcherItem::TmuxSendKeys(std::string cmd_str)
+void dispatcher::ProcessItem::TmuxSendKeys(std::string cmd_str)
 {
   std::string cmd =
       "tmux send-keys -t " + tmux_name_ + " '" + cmd_str + "' Enter";
   (void)SystemCall(cmd);
 }
 
-int dispatcher::DispatcherItem::SystemCall(std::string cmd)
-{
-  EVR_DIAGNOSTIC_REF(ros_node_, "Issuing subprocess call `%s`", cmd.c_str());
-  std::string cmd_tmp         = cmd;
-  const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-  if (current_configuration_ &&
-      current_configuration_->hostname != "localhost") {
-    if (current_configuration_->user.empty()) {
-      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-                std::to_string(ssh_timeout_sec) + " " +
-                current_configuration_->hostname + " \"" + cmd + "\"";
-    } else {
-      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-                std::to_string(ssh_timeout_sec) + " " +
-                current_configuration_->user + "@" +
-                current_configuration_->hostname + " \"" + cmd + "\"";
-    }
-  }
-  EVR_ACTIVITY_LO_REF(ros_node_, "SystemCall: %s", cmd_tmp.c_str());
-  int result = system(cmd_tmp.c_str());
-  EVR_DIAGNOSTIC_REF(ros_node_, "Subprocess call `%s` returned result %d",
-                     cmd_tmp.c_str(), result);
-  return result;
-}
-
-bool dispatcher::DispatcherItem::TmuxHasLocalSession()
+bool dispatcher::ProcessItem::TmuxHasLocalSession()
 {
   if (current_configuration_ &&
       current_configuration_->hostname == "localhost") {
@@ -532,7 +348,7 @@ bool dispatcher::DispatcherItem::TmuxHasLocalSession()
   return false;
 }
 
-bool dispatcher::DispatcherItem::TmuxHasSession()
+bool dispatcher::ProcessItem::TmuxHasSession()
 {
   std::string cmd    = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
   int         result = SystemCall(cmd);

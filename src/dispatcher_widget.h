@@ -1,7 +1,6 @@
 #ifndef DISPATCHER_WIDGET_H_
 #define DISPATCHER_WIDGET_H_
 
-#include "dispatcher/dispatcher_item.h"
 #include "dispatcher/dispatcher_node.h"
 
 #include <exception>
@@ -43,7 +42,9 @@ class DispatcherWidget : public QWidget
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public : explicit DispatcherWidget(QWidget* parent = 0, std::string dispatcher_lock_file_path = "/tmp/dispatcher.lock");
+      public : explicit DispatcherWidget(QWidget*    parent = 0,
+                                         std::string dispatcher_lock_file_path =
+                                             "/tmp/dispatcher.lock");
   ~DispatcherWidget();
 
   // get methods
