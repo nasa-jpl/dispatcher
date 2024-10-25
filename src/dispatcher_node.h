@@ -12,13 +12,13 @@
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include <casah_node/casah_node.hpp>
+#include "casah_node/evr_interface.hpp"
 
 namespace dispatcher
 {
 class DispatcherWidget;
 
-class DispatcherNode : public CasahNode
+class DispatcherNode : public casah_node::EvrInterface
 {
  public:
   DispatcherNode(DispatcherWidget*);
@@ -78,6 +78,7 @@ class DispatcherNode : public CasahNode
   {
     return variables_;
   }
+  double GetTimerRate() { return casah_node::BaseInterface::GetTimerRate(); }
 
  private:
   bool                                  last_online_state_        = false;
