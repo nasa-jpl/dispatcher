@@ -13,6 +13,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSocketNotifier>
 #include <QSpacerItem>
 #include <QWidget>
@@ -97,8 +98,16 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   QGroupBox* upper_box = new QGroupBox();
   upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
   upper_box->setContentsMargins(QMargins(-1, -1, -1, 0));
+
+  QScrollArea* scrollArea = new QScrollArea();
+  scrollArea->setWidget(upper_box);
+  scrollArea->setFixedSize(480, 200);
+  scrollArea->setStyleSheet(QString("QScrollArea {border:0}"));
+  scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
   grid_layout_ = new QGridLayout(upper_box);
-  layout_->addWidget(upper_box);
+  grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
+  layout_->addWidget(scrollArea);
 
   // lower group box / grid
   script_group_box_ = new QGroupBox();
