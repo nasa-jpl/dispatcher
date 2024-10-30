@@ -11,8 +11,11 @@
 #include <QCoreApplication>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QPropertyAnimation>
+#include <QScrollArea>
 #include <QSocketNotifier>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -75,6 +78,7 @@ class DispatcherWidget : public QWidget
   void StopAllCheckedCb();
   void EnableScripts(bool);
   void UpdateConfiguration();
+  void toggle(bool checked);
 
  private:
   void closeEvent(QCloseEvent*);
@@ -91,6 +95,10 @@ class DispatcherWidget : public QWidget
   QGroupBox*   variable_group_box_      = nullptr;
   QGridLayout* variable_layout_         = nullptr;
   std::string  dispatcher_lock_file_path_;
+
+  QToolButton*        toggleButton = nullptr;
+  QPropertyAnimation* animation    = nullptr;
+  QScrollArea*        scrollArea   = nullptr;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;

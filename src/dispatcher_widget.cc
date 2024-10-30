@@ -13,7 +13,6 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QSocketNotifier>
 #include <QSpacerItem>
 #include <QWidget>
@@ -96,18 +95,36 @@ dispatcher::DispatcherWidget::DispatcherWidget(
 
   // upper group box / grid
   QGroupBox* upper_box = new QGroupBox();
-  upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
+  // upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
   upper_box->setContentsMargins(QMargins(-1, -1, -1, 0));
 
-  QScrollArea* scrollArea = new QScrollArea();
-  scrollArea->setWidget(upper_box);
-  scrollArea->setFixedSize(480, 200);
-  scrollArea->setStyleSheet(QString("QScrollArea {border:0}"));
-  scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  toggleButton = new QToolButton();
+  toggleButton->setStyleSheet("QToolButton { border: none; }");
+  toggleButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  toggleButton->setArrowType(Qt::ArrowType::RightArrow);
+  toggleButton->setText("My Section");
+  toggleButton->setCheckable(true);
+  toggleButton->setChecked(false);
 
+  scrollArea = new QScrollArea();
+  scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  // scrollArea->setFixedSize(480, 200);
+  scrollArea->setMaximumHeight(0);   // Initially collapsed
+  scrollArea->setMinimumHeight(0);   // Initially collapsed
+  scrollArea->setMinimumWidth(480);  // Initially collapsed
+  // scrollArea->setStyleSheet(QString("QScrollArea {border:0}"));
+  scrollArea->setFrameShape(QFrame::NoFrame);
+  // scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+  // QWidget* upper_box = new QWidget();
   grid_layout_ = new QGridLayout(upper_box);
-  grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
+  // grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
+  layout_->addWidget(toggleButton);
   layout_->addWidget(scrollArea);
+
+  animation = new QPropertyAnimation(scrollArea, "maximumHeight");
+  animation->setDuration(300);
+  connect(toggleButton, &QToolButton::toggled, this, &DispatcherWidget::toggle);
 
   // lower group box / grid
   script_group_box_ = new QGroupBox();
@@ -151,12 +168,24 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
   timer_->start(loop_period_ms);
 
-  layout_->setSizeConstraint(QLayout::SetFixedSize);
+  scrollArea->setWidget(upper_box);
+  // layout_->setSizeConstraint(QLayout::SetFixedSize);
   layout_->setSpacing(0);
   setLayout(layout_);
 
   connect(configuration_combo_box_, SIGNAL(currentTextChanged(QString)), this,
           SLOT(UpdateConfiguration()));
+}
+
+void dispatcher::DispatcherWidget::toggle(bool checked)
+{
+  toggleButton->setArrowType(checked ? Qt::ArrowType::DownArrow
+                                     : Qt::ArrowType::RightArrow);
+
+  animation->setStartValue(scrollArea->maximumHeight());
+  animation->setEndValue(checked ? scrollArea->sizeHint().height()
+                                 : 0);  // This is the uncollapsed height
+  animation->start();
 }
 
 /*!
