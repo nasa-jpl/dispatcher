@@ -28,7 +28,8 @@
 @brief class constructor for DispatcherNode application
 */
 dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
-    : CasahNode("dispatcher", "dispatcher")
+    : casah_node::BaseInterface("dispatcher", "dispatcher"),
+      casah_node::EvrInterface("dispatcher", "dispatcher")
 {
   widget_ = widget;
 
