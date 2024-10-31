@@ -14,6 +14,7 @@
 #include <QPropertyAnimation>
 #include <QScrollArea>
 #include <QSocketNotifier>
+#include <QSplitter>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -99,6 +100,7 @@ class DispatcherWidget : public QWidget
   QToolButton*        toggleButton = nullptr;
   QPropertyAnimation* animation    = nullptr;
   QScrollArea*        scrollArea   = nullptr;
+  QSplitter*          splitter     = nullptr;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;

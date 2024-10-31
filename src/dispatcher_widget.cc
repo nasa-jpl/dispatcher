@@ -88,12 +88,18 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   CheckLockFileExistsThrowException(dispatcher_lock_file_path_);
 
   QVBoxLayout* layout_ = new QVBoxLayout(parent);
+  splitter             = new QSplitter(parent);
+  splitter->setOrientation(Qt::Vertical);
+  splitter->setStyleSheet(
+      "QSplitter::handle:vertical { background-color: darkGray; width: "
+      "5px; margin-top: 2px; margin-bottom: 2px; }");
 
   // combo box
   configuration_combo_box_ = new QComboBox();
   layout_->addWidget(configuration_combo_box_);
 
   // upper group box / grid
+  QGroupBox* top_split = new QGroupBox();
   QGroupBox* upper_box = new QGroupBox();
   // upper_box->setStyleSheet(QString("QGroupBox {border:0}"));
   upper_box->setContentsMargins(QMargins(-1, -1, -1, 0));
@@ -116,11 +122,14 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   scrollArea->setFrameShape(QFrame::NoFrame);
   // scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
-  // QWidget* upper_box = new QWidget();
   grid_layout_ = new QGridLayout(upper_box);
   // grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
-  layout_->addWidget(toggleButton);
-  layout_->addWidget(scrollArea);
+  // layout_->addWidget(toggleButton);
+  // layout_->addWidget(scrollArea);
+  QVBoxLayout* top_split_layout = new QVBoxLayout(top_split);
+  top_split_layout->addWidget(toggleButton);
+  top_split_layout->addWidget(scrollArea);
+  splitter->addWidget(top_split);
 
   animation = new QPropertyAnimation(scrollArea, "maximumHeight");
   animation->setDuration(300);
@@ -131,13 +140,17 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   script_group_box_->setStyleSheet(QString("QGroupBox {border:0}"));
   script_group_box_->setContentsMargins(QMargins(-1, -1, -1, 0));
   script_layout_ = new QGridLayout(script_group_box_);
-  layout_->addWidget(script_group_box_);
+  // layout_->addWidget(script_group_box_);
+  splitter->addWidget(script_group_box_);
 
   variable_group_box_ = new QGroupBox();
   variable_group_box_->setStyleSheet(QString("QGroupBox {border:0}"));
   variable_group_box_->setContentsMargins(QMargins(-1, -1, -1, 0));
   variable_layout_ = new QGridLayout(variable_group_box_);
-  layout_->addWidget(variable_group_box_);
+  // layout_->addWidget(variable_group_box_);
+  splitter->addWidget(variable_group_box_);
+
+  layout_->addWidget(splitter);
 
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
 
