@@ -42,7 +42,7 @@ class DispatcherException : public std::exception
   const char* what() const noexcept override { return message_; }
 };
 
-class DispatcherWidget : public QWidget
+class DispatcherWidget : public QScrollArea
 {
   Q_OBJECT  // must be included to add qt meta information
 
@@ -87,7 +87,7 @@ class DispatcherWidget : public QWidget
   std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
   rclcpp::executors::SingleThreadedExecutor   ros_executor_;
 
-  QScrollArea* scroll_main_window_       = nullptr;
+  QGroupBox*   groupbox_main_window_     = nullptr;
   QVBoxLayout* vlayout_main_window_      = nullptr;
   QComboBox*   configuration_combo_box_  = nullptr;
   QSplitter*   splitter_of_groupboxes_   = nullptr;

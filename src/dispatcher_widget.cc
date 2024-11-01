@@ -80,8 +80,9 @@ void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 */
 dispatcher::DispatcherWidget::DispatcherWidget(
     QWidget* parent, std::string dispatcher_lock_file_path)
-    : QWidget(parent)
+    : QScrollArea(parent)
 {
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);  // TODO
   CheckTmuxExistsThrowException();
 
   dispatcher_lock_file_path_ = dispatcher_lock_file_path;
@@ -89,9 +90,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(
 
   InitializeLayout();
 
-  ros_node_             = std::make_shared<dispatcher::DispatcherNode>(this);
-  double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
-  EVR_DIAGNOSTIC_REF(ros_node_, "Using loop period %f ms", loop_period_ms);
+  ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
 
   PopulateLayout();
 }
@@ -106,19 +105,19 @@ dispatcher::DispatcherWidget::~DispatcherWidget()
 
 void dispatcher::DispatcherWidget::InitializeLayout()
 {
-  // Main window is a scrollable vlayout
-  scroll_main_window_  = new QScrollArea(this);
-  vlayout_main_window_ = new QVBoxLayout(scroll_main_window_);
+  // Main window is a scrollable of a GroupBox
+  groupbox_main_window_ = new QGroupBox(this);
+  vlayout_main_window_  = new QVBoxLayout(groupbox_main_window_);
 
   // Combo box to choose between configurations
-  configuration_combo_box_ = new QComboBox(scroll_main_window_);
+  configuration_combo_box_ = new QComboBox(groupbox_main_window_);
   vlayout_main_window_->addWidget(configuration_combo_box_);
 
   // Use QSplitter to organize three adjustable sections
   // - Our ROS and Shell processes
   // - ScriptItems
   // - Variables
-  splitter_of_groupboxes_ = new QSplitter(scroll_main_window_);
+  splitter_of_groupboxes_ = new QSplitter(groupbox_main_window_);
   splitter_of_groupboxes_->setOrientation(Qt::Vertical);
   splitter_of_groupboxes_->setStyleSheet(
       "QSplitter::handle:vertical { background-color: darkGray; width: "
@@ -129,8 +128,8 @@ void dispatcher::DispatcherWidget::InitializeLayout()
   // TODO: Just one for now
   groupbox_processes = new QGroupBox(splitter_of_groupboxes_);
   groupbox_processes->setContentsMargins(QMargins(-1, -1, -1, 0));
-
   layout_groupbox_processes = new QVBoxLayout(groupbox_processes);
+  groupbox_processes->setLayout(layout_groupbox_processes);
 
   toggleButton = new QToolButton(groupbox_processes);
   toggleButton->setStyleSheet("QToolButton { border: none; }");
@@ -141,27 +140,15 @@ void dispatcher::DispatcherWidget::InitializeLayout()
   toggleButton->setChecked(false);
   layout_groupbox_processes->addWidget(toggleButton);
 
-  // scrollArea = new QScrollArea(groupbox_processes);
-  // scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  // // scrollArea->setFixedSize(480, 200);
-  // scrollArea->setMaximumHeight(0);   // Initially collapsed
-  // scrollArea->setMinimumHeight(0);   // Initially collapsed
-  // scrollArea->setMinimumWidth(480);  // Initially collapsed
-  // // scrollArea->setStyleSheet(QString("QScrollArea {border:0}"));
-  // scrollArea->setFrameShape(QFrame::NoFrame);
-  // // scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
   toggle_area = new QGroupBox(groupbox_processes);
   toggle_area->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  // scrollArea->setFixedSize(480, 200);
   toggle_area->setMaximumHeight(0);   // Initially collapsed
   toggle_area->setMinimumHeight(0);   // Initially collapsed
   toggle_area->setMinimumWidth(480);  // Initially collapsed
   toggle_area->setStyleSheet(QString("QGroupBox {border:0}"));
-  // scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   layout_groupbox_processes->addWidget(toggle_area);
-
   grid_layout_ = new QGridLayout(toggle_area);
+  toggle_area->setLayout(grid_layout_);
   // grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
 
   splitter_of_groupboxes_->addWidget(groupbox_processes);
@@ -179,17 +166,6 @@ void dispatcher::DispatcherWidget::InitializeLayout()
   variable_group_box_->setContentsMargins(QMargins(-1, -1, -1, 0));
   variable_layout_ = new QGridLayout(variable_group_box_);
   splitter_of_groupboxes_->addWidget(variable_group_box_);
-}
-
-void dispatcher::DispatcherWidget::toggle(bool checked)
-{
-  toggleButton->setArrowType(checked ? Qt::ArrowType::DownArrow
-                                     : Qt::ArrowType::RightArrow);
-
-  animation->setStartValue(toggle_area->maximumHeight());
-  animation->setEndValue(checked ? toggle_area->sizeHint().height()
-                                 : 0);  // This is the uncollapsed height
-  animation->start();
 }
 
 void dispatcher::DispatcherWidget::PopulateLayout()
@@ -216,7 +192,9 @@ void dispatcher::DispatcherWidget::PopulateLayout()
 
   // // layout_->setSizeConstraint(QLayout::SetFixedSize);
   vlayout_main_window_->setSpacing(0);
-  setLayout(vlayout_main_window_);
+  groupbox_main_window_->setLayout(vlayout_main_window_);
+  setWidget(groupbox_main_window_);
+  setWidgetResizable(true);
 
   connect(configuration_combo_box_, SIGNAL(currentTextChanged(QString)), this,
           SLOT(UpdateConfiguration()));
@@ -224,6 +202,9 @@ void dispatcher::DispatcherWidget::PopulateLayout()
   animation = new QPropertyAnimation(toggle_area, "maximumHeight");
   animation->setDuration(300);
   connect(toggleButton, &QToolButton::toggled, this, &DispatcherWidget::toggle);
+
+  double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
+  EVR_DIAGNOSTIC_REF(ros_node_, "Using loop period %f ms", loop_period_ms);
 
   timer_ = new QTimer;
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
@@ -264,4 +245,15 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
   ros_node_->StopAll();
   rclcpp::shutdown();
   QCoreApplication::quit();
+}
+
+void dispatcher::DispatcherWidget::toggle(bool checked)
+{
+  toggleButton->setArrowType(checked ? Qt::ArrowType::DownArrow
+                                     : Qt::ArrowType::RightArrow);
+
+  animation->setStartValue(toggle_area->maximumHeight());
+  animation->setEndValue(checked ? toggle_area->sizeHint().height()
+                                 : 0);  // This is the uncollapsed height
+  animation->start();
 }
