@@ -87,20 +87,25 @@ class DispatcherWidget : public QWidget
   std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
   rclcpp::executors::SingleThreadedExecutor   ros_executor_;
 
-  QComboBox*   configuration_combo_box_ = nullptr;
-  QTimer*      timer_                   = nullptr;
-  QVBoxLayout* layout_                  = nullptr;
-  QGridLayout* grid_layout_             = nullptr;
-  QGroupBox*   script_group_box_        = nullptr;
-  QGridLayout* script_layout_           = nullptr;
-  QGroupBox*   variable_group_box_      = nullptr;
-  QGridLayout* variable_layout_         = nullptr;
-  std::string  dispatcher_lock_file_path_;
+  QScrollArea* scroll_main_window_       = nullptr;
+  QVBoxLayout* vlayout_main_window_      = nullptr;
+  QComboBox*   configuration_combo_box_  = nullptr;
+  QSplitter*   splitter_of_groupboxes_   = nullptr;
+  QGroupBox*   groupbox_processes        = nullptr;
+  QVBoxLayout* layout_groupbox_processes = nullptr;
+  QGroupBox*   script_group_box_         = nullptr;
+  QGridLayout* script_layout_            = nullptr;
+  QGroupBox*   variable_group_box_       = nullptr;
+  QGridLayout* variable_layout_          = nullptr;
+
+  QTimer*      timer_       = nullptr;
+  QGridLayout* grid_layout_ = nullptr;
+
+  std::string dispatcher_lock_file_path_;
 
   QToolButton*        toggleButton = nullptr;
   QPropertyAnimation* animation    = nullptr;
-  QScrollArea*        scrollArea   = nullptr;
-  QSplitter*          splitter     = nullptr;
+  QGroupBox*          toggle_area  = nullptr;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
@@ -108,6 +113,7 @@ class DispatcherWidget : public QWidget
   QSize minimumSizeHint() const { return QSize(30, 30); }
   QSize sizeHint() const { return QSize(30, 30); }
   void  InitializeLayout();
+  void  PopulateLayout();
 
  signals:
 };
