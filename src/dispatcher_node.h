@@ -93,9 +93,11 @@ class DispatcherNode : public casah_node::EvrInterface
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
   std::map<std::string, Configuration>                configurations_;
 
-  void              ParseConfig();
-  void              SetupTmuxSessions();
-  void              CleanupTmuxSessions();
+  void ParseConfig();
+  void AddConfiguration(std::string name, const YAML::Node& yaml_iter);
+  void AddItem(std::string node_type, const YAML::Node& item);
+  void SetupTmuxSessions();
+  void CleanupTmuxSessions();
   DispatcherWidget* widget_ = nullptr;
 };
 

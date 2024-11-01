@@ -75,6 +75,15 @@ void dispatcher::DispatcherWidget::EnableScripts(bool enable)
   script_group_box_->setVisible(enable);
 }
 
+void dispatcher::DispatcherWidget::EnableVariables(bool enable)
+{
+  if (variable_group_box_ == nullptr) {
+    EVR_FATAL_REF(ros_node_,
+                  "variable_group_box_ was not correctly initialized");
+  }
+  variable_group_box_->setVisible(enable);
+}
+
 /*!
 @brief class constructor for DispatcherWidget application
 */
@@ -105,24 +114,26 @@ dispatcher::DispatcherWidget::~DispatcherWidget()
 
 void dispatcher::DispatcherWidget::InitializeLayout()
 {
-  // Main window is a scrollable of a GroupBox
-  groupbox_main_window_ = new QGroupBox(this);
-  vlayout_main_window_  = new QVBoxLayout(groupbox_main_window_);
+  // Groupbox that contains everything, child of DispatcherWidget
+  groupbox_main_ = new QGroupBox(this);
+  groupbox_main_->setStyleSheet(QString("QGroupBox {border:0}"));
+  groupbox_main_->setContentsMargins(QMargins(-1, -1, -1, 0));
+  vlayout_main_ = new QVBoxLayout(groupbox_main_);
 
   // Combo box to choose between configurations
-  configuration_combo_box_ = new QComboBox(groupbox_main_window_);
-  vlayout_main_window_->addWidget(configuration_combo_box_);
+  configuration_combo_box_ = new QComboBox(groupbox_main_);
+  vlayout_main_->addWidget(configuration_combo_box_);
 
   // Use QSplitter to organize three adjustable sections
   // - Our ROS and Shell processes
   // - ScriptItems
   // - Variables
-  splitter_of_groupboxes_ = new QSplitter(groupbox_main_window_);
+  splitter_of_groupboxes_ = new QSplitter(groupbox_main_);
   splitter_of_groupboxes_->setOrientation(Qt::Vertical);
   splitter_of_groupboxes_->setStyleSheet(
       "QSplitter::handle:vertical { background-color: darkGray; width: "
       "5px; margin-top: 2px; margin-bottom: 2px; }");
-  vlayout_main_window_->addWidget(splitter_of_groupboxes_);
+  vlayout_main_->addWidget(splitter_of_groupboxes_);
 
   // GroupBoxes of Process Items
   // TODO: Just one for now
@@ -142,9 +153,9 @@ void dispatcher::DispatcherWidget::InitializeLayout()
 
   toggle_area = new QGroupBox(groupbox_processes);
   toggle_area->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  toggle_area->setMaximumHeight(0);   // Initially collapsed
-  toggle_area->setMinimumHeight(0);   // Initially collapsed
-  toggle_area->setMinimumWidth(480);  // Initially collapsed
+  toggle_area->setMaximumHeight(0);  // Initially collapsed
+  toggle_area->setMinimumHeight(0);  // Initially collapsed
+  toggle_area->setMinimumWidth(480);
   toggle_area->setStyleSheet(QString("QGroupBox {border:0}"));
   layout_groupbox_processes->addWidget(toggle_area);
   grid_layout_ = new QGridLayout(toggle_area);
@@ -191,9 +202,9 @@ void dispatcher::DispatcherWidget::PopulateLayout()
   grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
 
   // // layout_->setSizeConstraint(QLayout::SetFixedSize);
-  vlayout_main_window_->setSpacing(0);
-  groupbox_main_window_->setLayout(vlayout_main_window_);
-  setWidget(groupbox_main_window_);
+  vlayout_main_->setSpacing(0);
+  groupbox_main_->setLayout(vlayout_main_);
+  setWidget(groupbox_main_);
   setWidgetResizable(true);
 
   connect(configuration_combo_box_, SIGNAL(currentTextChanged(QString)), this,

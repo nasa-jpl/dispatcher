@@ -78,17 +78,23 @@ class DispatcherWidget : public QScrollArea
   void StartAllCheckedCb();
   void StopAllCheckedCb();
   void EnableScripts(bool);
+  void EnableVariables(bool);
   void UpdateConfiguration();
   void toggle(bool checked);
 
  private:
   void closeEvent(QCloseEvent*);
 
+  std::string                                 dispatcher_lock_file_path_;
   std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
   rclcpp::executors::SingleThreadedExecutor   ros_executor_;
 
-  QGroupBox*   groupbox_main_window_     = nullptr;
-  QVBoxLayout* vlayout_main_window_      = nullptr;
+  std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
+  std::vector<std::pair<std::string, std::string>>    online_nodes_;
+
+  QTimer*      timer_                    = nullptr;
+  QGroupBox*   groupbox_main_            = nullptr;
+  QVBoxLayout* vlayout_main_             = nullptr;
   QComboBox*   configuration_combo_box_  = nullptr;
   QSplitter*   splitter_of_groupboxes_   = nullptr;
   QGroupBox*   groupbox_processes        = nullptr;
@@ -98,17 +104,10 @@ class DispatcherWidget : public QScrollArea
   QGroupBox*   variable_group_box_       = nullptr;
   QGridLayout* variable_layout_          = nullptr;
 
-  QTimer*      timer_       = nullptr;
-  QGridLayout* grid_layout_ = nullptr;
-
-  std::string dispatcher_lock_file_path_;
-
   QToolButton*        toggleButton = nullptr;
-  QPropertyAnimation* animation    = nullptr;
   QGroupBox*          toggle_area  = nullptr;
-
-  std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
-  std::vector<std::pair<std::string, std::string>>    online_nodes_;
+  QGridLayout*        grid_layout_ = nullptr;
+  QPropertyAnimation* animation    = nullptr;
 
   QSize minimumSizeHint() const { return QSize(30, 30); }
   QSize sizeHint() const { return QSize(30, 30); }
