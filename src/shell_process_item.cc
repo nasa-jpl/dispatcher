@@ -18,8 +18,8 @@
 */
 dispatcher::ShellProcessItem::ShellProcessItem(
     QWidget* parent, dispatcher::DispatcherNode* ros_node,
-    const YAML::Node& node)
-    : dispatcher::ProcessItem(parent, ros_node, node)
+    const YAML::Node& node, QGridLayout* layout)
+    : dispatcher::ProcessItem(parent, ros_node, node, layout)
 {
 }
 

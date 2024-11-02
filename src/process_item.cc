@@ -23,10 +23,11 @@ static bool check_gnome_terminal_exists()
 */
 dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
                                      dispatcher::DispatcherNode* ros_node,
-                                     const YAML::Node&           node)
+                                     const YAML::Node&           node,
+                                     QGridLayout*                layout)
     : dispatcher::Item(parent, ros_node, node)
 {
-  QGridLayout* layout = dispatcher_->get_grid_layout();
+  // QGridLayout* layout = dispatcher_->get_grid_layout();
   assert(layout);
 
   if (node["use_environment_variables"]) {

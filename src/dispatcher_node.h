@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <QGridLayout>
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
@@ -95,7 +96,8 @@ class DispatcherNode : public casah_node::EvrInterface
 
   void ParseConfig();
   void AddConfiguration(std::string name, const YAML::Node& yaml_iter);
-  void AddItem(std::string node_type, const YAML::Node& item);
+  void AddItem(std::string node_type, const YAML::Node& item,
+               QGridLayout* layout);
   void SetupTmuxSessions();
   void CleanupTmuxSessions();
   DispatcherWidget* widget_ = nullptr;

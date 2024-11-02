@@ -55,7 +55,8 @@ void dispatcher::DispatcherNode::ParseConfig()
 {
   EVR_DIAGNOSTIC("Parsing dispatcher_config_path: %s",
                  dispatcher_config_path_.c_str());
-  YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
+  YAML::Node root         = YAML::LoadFile(dispatcher_config_path_.c_str());
+  auto       dispatcher_w = dynamic_cast<DispatcherWidget*>(widget_);
 
   // Add other configurations defined in YAML
   auto combo_box = widget_->get_configuration_combo_box();
@@ -81,13 +82,17 @@ void dispatcher::DispatcherNode::ParseConfig()
 
   workspace_ = root["workspace"].as<std::string>();
   for (const auto& node : root["nodes"]) {
-    // Every node defined will be known as a DispatcherItem
+    // Every node defined in YAML is known as a DispatcherItem in DispatcherNode
+    // and a Process in DispatcherWidget
+    std::string  name = node["name"].as<std::string>();
+    QGridLayout* layout;
     if (node["type"]) {
       std::string node_type = node["type"].as<std::string>();
       if (node_type == "category") {
         if (node["items"]) {
           for (const auto& item : node["items"]) {
-            AddItem(node_type, item);
+            layout = dispatcher_w->add_category_of_processes(name);
+            AddItem(node_type, item, layout);
           }
         } else {
           EVR_WARNING_HI(  // TODO: Can use FATAL here?
@@ -97,22 +102,23 @@ void dispatcher::DispatcherNode::ParseConfig()
               node_type.c_str());
         }
       } else {
-        AddItem(node_type, node);
+        layout = dispatcher_w->add_single_process(name);
+        AddItem(node_type, node, layout);
       }
     } else {
       // For backwards compatibility, assume this is a ROS item
-      AddItem("ros", node);
+      layout = dispatcher_w->add_single_process(name);
+      AddItem("ros", node, layout);
     }
   }
 
-  auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
-  root["scripts"] ? dispatcher->EnableScripts(true)
-                  : dispatcher->EnableScripts(false);
+  root["scripts"] ? dispatcher_w->EnableScripts(true)
+                  : dispatcher_w->EnableScripts(false);
   for (const auto& script : root["scripts"]) {
     script_items_.push_back(new dispatcher::ScriptItem(widget_, this, script));
   }
-  root["variables"] ? dispatcher->EnableVariables(true)
-                    : dispatcher->EnableVariables(false);
+  root["variables"] ? dispatcher_w->EnableVariables(true)
+                    : dispatcher_w->EnableVariables(false);
   for (const auto& variable : root["variables"]) {
     variables_.push_back(new dispatcher::Variable(widget_, this, variable));
   }
@@ -248,14 +254,15 @@ void dispatcher::DispatcherNode::EnableVariables(bool enable)
 }
 
 void dispatcher::DispatcherNode::AddItem(std::string       node_type,
-                                         const YAML::Node& item)
+                                         const YAML::Node& item,
+                                         QGridLayout*      layout)
 {
   if (node_type == "shell") {
     dispatcher_items_.push_back(
-        new dispatcher::ShellProcessItem(widget_, this, item));
+        new dispatcher::ShellProcessItem(widget_, this, item, layout));
   } else if (node_type == "ros") {
     dispatcher_items_.push_back(
-        new dispatcher::RosProcessItem(widget_, this, item));
+        new dispatcher::RosProcessItem(widget_, this, item, layout));
   } else {
     EVR_WARNING_HI(
         "Encountered node type %s in YAML that's unsupported, it will be "

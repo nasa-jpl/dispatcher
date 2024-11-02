@@ -137,32 +137,23 @@ void dispatcher::DispatcherWidget::InitializeLayout()
 
   // GroupBoxes of Process Items
   // TODO: Just one for now
-  groupbox_processes = new QGroupBox(splitter_of_groupboxes_);
-  groupbox_processes->setContentsMargins(QMargins(-1, -1, -1, 0));
-  layout_groupbox_processes = new QVBoxLayout(groupbox_processes);
-  groupbox_processes->setLayout(layout_groupbox_processes);
+  groupbox_processes_ = new QGroupBox(splitter_of_groupboxes_);
+  groupbox_processes_->setContentsMargins(QMargins(-1, -1, -1, 0));
+  layout_groupboxes_of_processes_ = new QVBoxLayout(groupbox_processes_);
+  groupbox_processes_->setLayout(layout_groupboxes_of_processes_);
 
-  toggleButton = new QToolButton(groupbox_processes);
-  toggleButton->setStyleSheet("QToolButton { border: none; }");
-  toggleButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  toggleButton->setArrowType(Qt::ArrowType::RightArrow);
-  toggleButton->setText("My Section");
-  toggleButton->setCheckable(true);
-  toggleButton->setChecked(false);
-  layout_groupbox_processes->addWidget(toggleButton);
+  // toggle_area = new QGroupBox(groupbox_processes);
+  // toggle_area->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  // toggle_area->setMaximumHeight(0);  // Initially collapsed
+  // toggle_area->setMinimumHeight(0);  // Initially collapsed
+  // toggle_area->setMinimumWidth(480);
+  // toggle_area->setStyleSheet(QString("QGroupBox {border:0}"));
+  // layout_groupbox_processes->addWidget(toggle_area);
+  // grid_layout_ = new QGridLayout(toggle_area);
+  // toggle_area->setLayout(grid_layout_);
+  // // grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
 
-  toggle_area = new QGroupBox(groupbox_processes);
-  toggle_area->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  toggle_area->setMaximumHeight(0);  // Initially collapsed
-  toggle_area->setMinimumHeight(0);  // Initially collapsed
-  toggle_area->setMinimumWidth(480);
-  toggle_area->setStyleSheet(QString("QGroupBox {border:0}"));
-  layout_groupbox_processes->addWidget(toggle_area);
-  grid_layout_ = new QGridLayout(toggle_area);
-  toggle_area->setLayout(grid_layout_);
-  // grid_layout_->setSizeConstraint(QLayout::SetFixedSize);
-
-  splitter_of_groupboxes_->addWidget(groupbox_processes);
+  splitter_of_groupboxes_->addWidget(groupbox_processes_);
 
   // ScriptItem Groupbox
   script_group_box_ = new QGroupBox(splitter_of_groupboxes_);
@@ -181,25 +172,26 @@ void dispatcher::DispatcherWidget::InitializeLayout()
 
 void dispatcher::DispatcherWidget::PopulateLayout()
 {
-  int          index = grid_layout_->rowCount();
-  QPushButton* start = new QPushButton("start all checked", this);
-  start->setStyleSheet(QString("color: green"));
-  start->setFlat(false);
-  grid_layout_->addWidget(start, index, 2);
-  connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
+  // TODO: Put Back the buttons
+  // int          index = grid_layout_->rowCount();
+  // QPushButton* start = new QPushButton("start all checked", this);
+  // start->setStyleSheet(QString("color: green"));
+  // start->setFlat(false);
+  // grid_layout_->addWidget(start, index, 2);
+  // connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
 
-  QPushButton* stop = new QPushButton("stop all checked", this);
-  stop->setStyleSheet(QString("color: red"));
-  grid_layout_->addWidget(stop, index, 3);
-  connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
+  // QPushButton* stop = new QPushButton("stop all checked", this);
+  // stop->setStyleSheet(QString("color: red"));
+  // grid_layout_->addWidget(stop, index, 3);
+  // connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
 
-  QSpacerItem* spacer =
-      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  grid_layout_->addItem(spacer, index, 4);
+  // QSpacerItem* spacer =
+  //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  // grid_layout_->addItem(spacer, index, 4);
 
-  QSpacerItem* spacer2 =
-      new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
+  // QSpacerItem* spacer2 =
+  //     new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+  // grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
 
   // // layout_->setSizeConstraint(QLayout::SetFixedSize);
   vlayout_main_->setSpacing(0);
@@ -209,10 +201,6 @@ void dispatcher::DispatcherWidget::PopulateLayout()
 
   connect(configuration_combo_box_, SIGNAL(currentTextChanged(QString)), this,
           SLOT(UpdateConfiguration()));
-
-  animation = new QPropertyAnimation(toggle_area, "maximumHeight");
-  animation->setDuration(300);
-  connect(toggleButton, &QToolButton::toggled, this, &DispatcherWidget::toggle);
 
   double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
   EVR_DIAGNOSTIC_REF(ros_node_, "Using loop period %f ms", loop_period_ms);
@@ -258,13 +246,74 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
   QCoreApplication::quit();
 }
 
-void dispatcher::DispatcherWidget::toggle(bool checked)
+QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
 {
-  toggleButton->setArrowType(checked ? Qt::ArrowType::DownArrow
-                                     : Qt::ArrowType::RightArrow);
+  QGroupBox*   gb_single          = new QGroupBox(groupbox_processes_);
+  QGridLayout* g_layout_gb_single = new QGridLayout(gb_single);
+  gb_single->setLayout(g_layout_gb_single);
 
-  animation->setStartValue(toggle_area->maximumHeight());
-  animation->setEndValue(checked ? toggle_area->sizeHint().height()
-                                 : 0);  // This is the uncollapsed height
-  animation->start();
+  map_grid_layouts_[name] = g_layout_gb_single;
+  return map_grid_layouts_[name];
+}
+
+QGridLayout* dispatcher::DispatcherWidget::add_category_of_processes(
+    std::string category_name)
+{
+  QGroupBox* gb_category = new QGroupBox(groupbox_processes_);
+  dispatcher::DispatcherCategoryWidget widget(gb_category, category_name);
+
+  map_grid_layouts_[category_name] = widget.get_grid_layout();
+
+  return map_grid_layouts_[category_name];
+}
+
+dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
+    QWidget* parent, std::string category_name)
+    : QGroupBox(parent)
+{
+  QVBoxLayout* v_layout_category = new QVBoxLayout(parent);
+
+  // Define a QToolButton so we can click to collapse the below gb
+  toggle_button_ = new QToolButton(parent);
+  toggle_button_->setStyleSheet("QToolButton { border: none; }");
+  toggle_button_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  toggle_button_->setArrowType(Qt::ArrowType::RightArrow);
+  toggle_button_->setText(QString(category_name.c_str()));
+  toggle_button_->setCheckable(true);
+  toggle_button_->setChecked(false);
+  v_layout_category->addWidget(toggle_button_);
+
+  // Define collapsible QGroupBox to hold all the processes
+  QGroupBox* gb_processes = new QGroupBox(parent);
+  gb_processes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  gb_processes->setMaximumHeight(0);  // Initially collapsed
+  gb_processes->setMinimumHeight(0);  // Initially collapsed
+  // // gb_processes->setMinimumWidth(480);
+  gb_processes->setStyleSheet("QGroupBox {border:0}");
+  v_layout_category->addWidget(gb_processes);
+
+  grid_layout_ = new QGridLayout(gb_processes);
+  gb_processes->setLayout(grid_layout_);
+  // // g_layout_category_processes->setSizeConstraint(QLayout::SetFixedSize);
+
+  animation_ = new QPropertyAnimation(toggle_groupbox_, "maximumHeight");
+  animation_->setDuration(300);
+  connect(toggle_button_, &QToolButton::toggled, this,
+          &DispatcherCategoryWidget::ToggleCb);
+}
+
+/*!
+@brief class destructor
+*/
+dispatcher::DispatcherCategoryWidget::~DispatcherCategoryWidget() {}
+
+void dispatcher::DispatcherCategoryWidget::ToggleCb(bool checked)
+{
+  toggle_button_->setArrowType(checked ? Qt::ArrowType::DownArrow
+                                       : Qt::ArrowType::RightArrow);
+
+  animation_->setStartValue(toggle_groupbox_->maximumHeight());
+  animation_->setEndValue(checked ? toggle_groupbox_->sizeHint().height()
+                                  : 0);  // This is the uncollapsed height
+  animation_->start();
 }
