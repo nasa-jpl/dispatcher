@@ -189,6 +189,10 @@ void dispatcher::DispatcherWidget::PopulateLayout()
       new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
   layout->addItem(spacer, index, 4);
 
+  QSpacerItem* spacer3 =
+      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  layout->addItem(spacer3, index, 0);
+
   QSpacerItem* spacer2 =
       new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
   layout->addItem(spacer2, layout->rowCount(), 0);
