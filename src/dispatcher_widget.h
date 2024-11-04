@@ -46,8 +46,8 @@ class DispatcherCategoryWidget : public QGroupBox
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public : DispatcherCategoryWidget(QWidget*    parent        = 0,
-                                        std::string category_name = "Default");
+      public : explicit DispatcherCategoryWidget(
+                   QWidget* parent = 0, std::string category_name = "Default");
   ~DispatcherCategoryWidget();
 
   QGridLayout* grid_layout_;

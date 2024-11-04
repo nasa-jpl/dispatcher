@@ -90,12 +90,13 @@ void dispatcher::DispatcherNode::ParseConfig()
       std::string node_type = node["type"].as<std::string>();
       if (node_type == "category") {
         if (node["items"]) {
+          layout = dispatcher_w->add_category_of_processes(name);
           for (const auto& item : node["items"]) {
-            layout = dispatcher_w->add_category_of_processes(name);
+            node_type = item["type"].as<std::string>();
             AddItem(node_type, item, layout);
           }
         } else {
-          EVR_WARNING_HI(  // TODO: Can use FATAL here?
+          EVR_FATAL(
               "Encountered node type %s in YAML but user did not specify an "
               "'items' array that lists all the items to be run. Nothing "
               "additional will be added to dispatcher",
@@ -264,7 +265,7 @@ void dispatcher::DispatcherNode::AddItem(std::string       node_type,
     dispatcher_items_.push_back(
         new dispatcher::RosProcessItem(widget_, this, item, layout));
   } else {
-    EVR_WARNING_HI(
+    EVR_FATAL(
         "Encountered node type %s in YAML that's unsupported, it will be "
         "ignored and not added to dispatcher",
         node_type.c_str());

@@ -172,26 +172,26 @@ void dispatcher::DispatcherWidget::InitializeLayout()
 
 void dispatcher::DispatcherWidget::PopulateLayout()
 {
-  // TODO: Put Back the buttons
-  // int          index = grid_layout_->rowCount();
-  // QPushButton* start = new QPushButton("start all checked", this);
-  // start->setStyleSheet(QString("color: green"));
-  // start->setFlat(false);
-  // grid_layout_->addWidget(start, index, 2);
-  // connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
+  QGridLayout* layout = add_single_process("start_stop_all");
+  int          index  = layout->rowCount();
+  QPushButton* start  = new QPushButton("start all checked", this);
+  start->setStyleSheet(QString("color: green"));
+  start->setFlat(false);
+  layout->addWidget(start, index, 2);
+  connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
 
-  // QPushButton* stop = new QPushButton("stop all checked", this);
-  // stop->setStyleSheet(QString("color: red"));
-  // grid_layout_->addWidget(stop, index, 3);
-  // connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
+  QPushButton* stop = new QPushButton("stop all checked", this);
+  stop->setStyleSheet(QString("color: red"));
+  layout->addWidget(stop, index, 3);
+  connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
 
-  // QSpacerItem* spacer =
-  //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  // grid_layout_->addItem(spacer, index, 4);
+  QSpacerItem* spacer =
+      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  layout->addItem(spacer, index, 4);
 
-  // QSpacerItem* spacer2 =
-  //     new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  // grid_layout_->addItem(spacer2, grid_layout_->rowCount(), 0);
+  QSpacerItem* spacer2 =
+      new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+  layout->addItem(spacer2, layout->rowCount(), 0);
 
   // // layout_->setSizeConstraint(QLayout::SetFixedSize);
   vlayout_main_->setSpacing(0);
@@ -248,9 +248,12 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
 
 QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
 {
-  QGroupBox*   gb_single          = new QGroupBox(groupbox_processes_);
+  QGroupBox* gb_single = new QGroupBox(groupbox_processes_);
+  gb_single->setStyleSheet(QString("QGroupBox {border:0}"));
+  gb_single->setContentsMargins(QMargins(-1, -1, -1, 0));
   QGridLayout* g_layout_gb_single = new QGridLayout(gb_single);
   gb_single->setLayout(g_layout_gb_single);
+  layout_groupboxes_of_processes_->addWidget(gb_single);
 
   map_grid_layouts_[name] = g_layout_gb_single;
   return map_grid_layouts_[name];
@@ -259,11 +262,15 @@ QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
 QGridLayout* dispatcher::DispatcherWidget::add_category_of_processes(
     std::string category_name)
 {
-  QGroupBox* gb_category = new QGroupBox(groupbox_processes_);
-  dispatcher::DispatcherCategoryWidget widget(gb_category, category_name);
+  dispatcher::DispatcherCategoryWidget* widget =
+      new dispatcher::DispatcherCategoryWidget(groupbox_processes_,
+                                               category_name);
+  // QGroupBox* gb_category = new QGroupBox(groupbox_processes_);
+  widget->setStyleSheet(QString("QGroupBox {border:0}"));
+  widget->setContentsMargins(QMargins(-1, -1, -1, 0));
+  layout_groupboxes_of_processes_->addWidget(widget);
 
-  map_grid_layouts_[category_name] = widget.get_grid_layout();
-
+  map_grid_layouts_[category_name] = widget->get_grid_layout();
   return map_grid_layouts_[category_name];
 }
 
@@ -274,7 +281,7 @@ dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
   QVBoxLayout* v_layout_category = new QVBoxLayout(parent);
 
   // Define a QToolButton so we can click to collapse the below gb
-  toggle_button_ = new QToolButton(parent);
+  toggle_button_ = new QToolButton(this);
   toggle_button_->setStyleSheet("QToolButton { border: none; }");
   toggle_button_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   toggle_button_->setArrowType(Qt::ArrowType::RightArrow);
@@ -284,16 +291,17 @@ dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
   v_layout_category->addWidget(toggle_button_);
 
   // Define collapsible QGroupBox to hold all the processes
-  QGroupBox* gb_processes = new QGroupBox(parent);
-  gb_processes->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  gb_processes->setMaximumHeight(0);  // Initially collapsed
-  gb_processes->setMinimumHeight(0);  // Initially collapsed
+  toggle_groupbox_ = new QGroupBox(this);
+  toggle_groupbox_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  toggle_groupbox_->setMaximumHeight(0);  // Initially collapsed
+  toggle_groupbox_->setMinimumHeight(0);  // Initially collapsed
   // // gb_processes->setMinimumWidth(480);
-  gb_processes->setStyleSheet("QGroupBox {border:0}");
-  v_layout_category->addWidget(gb_processes);
+  toggle_groupbox_->setStyleSheet("QGroupBox {border:0}");
+  v_layout_category->addWidget(toggle_groupbox_);
 
-  grid_layout_ = new QGridLayout(gb_processes);
-  gb_processes->setLayout(grid_layout_);
+  grid_layout_ = new QGridLayout(toggle_groupbox_);
+  toggle_groupbox_->setLayout(grid_layout_);
+  this->setLayout(v_layout_category);
   // // g_layout_category_processes->setSizeConstraint(QLayout::SetFixedSize);
 
   animation_ = new QPropertyAnimation(toggle_groupbox_, "maximumHeight");
