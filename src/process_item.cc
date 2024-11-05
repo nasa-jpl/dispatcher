@@ -27,7 +27,6 @@ dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
                                      QGridLayout*                layout)
     : dispatcher::Item(parent, ros_node, node)
 {
-  // QGridLayout* layout = dispatcher_->get_grid_layout();
   assert(layout);
 
   if (node["use_environment_variables"]) {

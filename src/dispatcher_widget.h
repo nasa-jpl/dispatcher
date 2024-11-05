@@ -50,13 +50,13 @@ class DispatcherCategoryWidget : public QGroupBox
                    QWidget* parent = 0, std::string category_name = "Default");
   ~DispatcherCategoryWidget();
 
-  QGridLayout* grid_layout_;
   QGridLayout* get_grid_layout() { return grid_layout_; }
 
  public slots:
   void ToggleCb(bool);
 
  private:
+  QGridLayout*        grid_layout_     = nullptr;
   QToolButton*        toggle_button_   = nullptr;
   QGroupBox*          toggle_groupbox_ = nullptr;
   QPropertyAnimation* animation_       = nullptr;
@@ -105,6 +105,8 @@ class DispatcherWidget : public QScrollArea
   void UpdateConfiguration();
 
  private:
+  void InitializeWidgets();
+  void FinalizeWidgets();
   void closeEvent(QCloseEvent*);
 
   std::string                                 dispatcher_lock_file_path_;
@@ -129,8 +131,6 @@ class DispatcherWidget : public QScrollArea
 
   QSize minimumSizeHint() const { return QSize(30, 30); }
   QSize sizeHint() const { return QSize(30, 30); }
-  void  InitializeLayout();
-  void  PopulateLayout();
 
  signals:
 };

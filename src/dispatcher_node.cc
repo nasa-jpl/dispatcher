@@ -85,15 +85,15 @@ void dispatcher::DispatcherNode::ParseConfig()
     // Every node defined in YAML is known as a DispatcherItem in DispatcherNode
     // and a Process in DispatcherWidget
     std::string  name = node["name"].as<std::string>();
-    QGridLayout* layout;
+    QGridLayout* grid_layout;
     if (node["type"]) {
       std::string node_type = node["type"].as<std::string>();
       if (node_type == "category") {
         if (node["items"]) {
-          layout = dispatcher_w->add_category_of_processes(name);
+          grid_layout = dispatcher_w->add_category_of_processes(name);
           for (const auto& item : node["items"]) {
             node_type = item["type"].as<std::string>();
-            AddItem(node_type, item, layout);
+            AddItem(node_type, item, grid_layout);
           }
         } else {
           EVR_FATAL(
@@ -103,13 +103,13 @@ void dispatcher::DispatcherNode::ParseConfig()
               node_type.c_str());
         }
       } else {
-        layout = dispatcher_w->add_single_process(name);
-        AddItem(node_type, node, layout);
+        grid_layout = dispatcher_w->add_single_process(name);
+        AddItem(node_type, node, grid_layout);
       }
     } else {
       // For backwards compatibility, assume this is a ROS item
-      layout = dispatcher_w->add_single_process(name);
-      AddItem("ros", node, layout);
+      grid_layout = dispatcher_w->add_single_process(name);
+      AddItem("ros", node, grid_layout);
     }
   }
 
@@ -209,8 +209,7 @@ void dispatcher::DispatcherNode::CleanupTmuxSessions()
     // Attempt to clean up any local tmux sessions
     if (item->TmuxHasLocalSession()) {
       EVR_WARNING_HI(
-          "Prior Tmux session '%s' for item '%s' detected, attempting to "
-          "clean "
+          "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
       EVR_WARNING_LO(
@@ -231,8 +230,7 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
     // start it back up from scratch
     if (item->TmuxHasSession()) {
       EVR_WARNING_HI(
-          "Prior Tmux session '%s' for item '%s' detected, attempting to "
-          "clean "
+          "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
       EVR_WARNING_LO(
@@ -255,36 +253,37 @@ void dispatcher::DispatcherNode::EnableVariables(bool enable)
 }
 
 void dispatcher::DispatcherNode::AddItem(std::string       node_type,
-                                         const YAML::Node& item,
+                                         const YAML::Node& node,
                                          QGridLayout*      layout)
 {
   if (node_type == "shell") {
     dispatcher_items_.push_back(
-        new dispatcher::ShellProcessItem(widget_, this, item, layout));
+        new dispatcher::ShellProcessItem(widget_, this, node, layout));
   } else if (node_type == "ros") {
     dispatcher_items_.push_back(
-        new dispatcher::RosProcessItem(widget_, this, item, layout));
+        new dispatcher::RosProcessItem(widget_, this, node, layout));
   } else {
-    EVR_FATAL(
-        "Encountered node type %s in YAML that's unsupported, it will be "
+    EVR_WARNING_HI(
+        "Encountered node named '%s' with type '%s' in YAML that's "
+        "unsupported, it will be "
         "ignored and not added to dispatcher",
-        node_type.c_str());
+        node["name"].as<std::string>().c_str(), node_type.c_str());
   }
 }
 
 void dispatcher::DispatcherNode::AddConfiguration(std::string       name,
-                                                  const YAML::Node& yaml_iter)
+                                                  const YAML::Node& node)
 {
   dispatcher::DispatcherNode::Configuration configuration;
-  if (yaml_iter["environment_variables"]) {
-    for (const auto& item : yaml_iter["environment_variables"]) {
+  if (node["environment_variables"]) {
+    for (const auto& item : node["environment_variables"]) {
       std::string key                          = item.first.as<std::string>();
       std::string value                        = item.second.as<std::string>();
       configuration.environment_variables[key] = value;
     }
   }
-  if (yaml_iter["cmd_prefix"]) {
-    configuration.cmd_prefix = yaml_iter["cmd_prefix"].as<std::string>();
+  if (node["cmd_prefix"]) {
+    configuration.cmd_prefix = node["cmd_prefix"].as<std::string>();
   }
   configurations_[name] = configuration;
 }
