@@ -88,7 +88,8 @@ class DispatcherWidget : public QScrollArea
     return configuration_combo_box_->currentText().toStdString();
   }
 
-  // Allows dynamically adding groups or singletons of processes
+  // Allows dynamically adding groups or singletons of processes through the
+  // return of a QGridLayout* that child Widgets can be added to
   QGridLayout* add_category_of_processes(std::string);
   QGridLayout* add_single_process(std::string);
 
