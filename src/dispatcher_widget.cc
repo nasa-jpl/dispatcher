@@ -70,8 +70,8 @@ static void CheckLockFileExistsThrowException(const std::string& lock_filename)
 static QGroupBox* DispatcherGroupBox(QWidget* parent)
 {
   QGroupBox* new_gb = new QGroupBox(parent);
-  new_gb->setStyleSheet(QString("QGroupBox {border:0}"));
-  new_gb->setContentsMargins(QMargins(-1, -1, -1, 0));
+  new_gb->setStyleSheet("QGroupBox {border: 0px; }");
+  new_gb->setContentsMargins(0, 0, 0, 0);
   return new_gb;
 }
 
@@ -100,6 +100,8 @@ dispatcher::DispatcherWidget::DispatcherWidget(
     : QScrollArea(parent)
 {
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  resize(520, 600);
+
   CheckTmuxExistsThrowException();
 
   dispatcher_lock_file_path_ = dispatcher_lock_file_path;
@@ -253,11 +255,15 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
 QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
 {
   QGroupBox*   gb_single          = DispatcherGroupBox(groupbox_processes_);
-  QGridLayout* g_layout_gb_single = new QGridLayout(gb_single);
-  gb_single->setLayout(g_layout_gb_single);
+  QVBoxLayout* v_layout_gb_single = new QVBoxLayout(gb_single);
+  QGroupBox*   gb_single_child    = DispatcherGroupBox(gb_single);
+  QGridLayout* g_layout_gb_single_child = new QGridLayout(gb_single_child);
+  gb_single_child->setLayout(g_layout_gb_single_child);
+  gb_single->setLayout(v_layout_gb_single);
+  v_layout_gb_single->addWidget(gb_single_child);
   layout_groupboxes_of_processes_->addWidget(gb_single);
 
-  map_grid_layouts_[name] = g_layout_gb_single;
+  map_grid_layouts_[name] = g_layout_gb_single_child;
   return map_grid_layouts_[name];
 }
 

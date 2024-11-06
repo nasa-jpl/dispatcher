@@ -59,11 +59,11 @@ dispatcher::Item::~Item() {}
 void dispatcher::Item::UpdateConfiguration()
 {
   std::string current_configuration = dispatcher_->get_current_configuration();
+  // current_configuration_            = nullptr;
 
   if (configurations_.find(current_configuration) == configurations_.end()) {
     if (configurations_.find("all") == configurations_.end()) {
       // if default 'all' configuration also not found, then disable node
-      // SetEnabled(false);
       EVR_ACTIVITY_LO_REF(ros_node_,
                           "Neither 'all' nor '%s' configuration found for "
                           "script '%s'; disabling",
