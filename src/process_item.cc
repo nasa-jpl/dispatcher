@@ -155,13 +155,17 @@ void dispatcher::ProcessItem::SetEnabled(bool enable)
   } else {
     label_->setPixmap(grey_status_icon_);
   }
+}
 
-  // Make it disappear
-  // check_box_->setVisible(enable);
-  // terminal_->setVisible(enable);
-  // start_->setVisible(enable);
-  // stop_->setVisible(enable);
-  // label_->setVisible(enable);
+void dispatcher::ProcessItem::SetVisible(bool visible)
+{
+  // If this ProcessItem is to be visible, consider it enabled
+  enabled_ = visible;
+  check_box_->setVisible(visible);
+  terminal_->setVisible(visible);
+  start_->setVisible(visible);
+  stop_->setVisible(visible);
+  label_->setVisible(visible);
 }
 
 void dispatcher::ProcessItem::UpdateConfiguration()
@@ -173,10 +177,15 @@ void dispatcher::ProcessItem::UpdateConfiguration()
   }
 
   Item::UpdateConfiguration();
-  if (!current_configuration_) {
+  if (current_configuration_ == nullptr) {
+    // nullptr implies that the current configuration is not defined for this
+    // item. So disable and make it invisible
     SetEnabled(false);
+    SetVisible(false);
     return;
   }
+  // Valid configuration identifed for this item, so set it visible
+  SetVisible(true);
 
   std::string cmd_tmp;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
