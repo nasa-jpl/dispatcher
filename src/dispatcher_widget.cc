@@ -100,10 +100,8 @@ dispatcher::DispatcherWidget::DispatcherWidget(
     : QScrollArea(parent)
 {
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-  resize(520, 600);
 
   CheckTmuxExistsThrowException();
-
   dispatcher_lock_file_path_ = dispatcher_lock_file_path;
   CheckLockFileExistsThrowException(dispatcher_lock_file_path_);
 
@@ -113,6 +111,19 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   // Reads the dispatcher.yaml and setup/populates QWidgets with more
   // information (i.e processes, configurations)
   ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
+
+  // Pick up WindowSize settings, if avail, from last session to restore
+  QSettings settings;
+  if (settings.status() == QSettings::NoError) {
+    EVR_ACTIVITY_HI_REF(ros_node_,
+                        "Restoring window size from previous session...");
+    restoreGeometry(settings.value("geometry").toByteArray());
+  } else {
+    EVR_ACTIVITY_HI_REF(ros_node_,
+                        "Unable to restore window size from previous session "
+                        "so will default to something arbitrary");
+    resize(520, 600);
+  }
 
   // Now that QWidgets are properly populated, do some finishing touches (i.e
   // start/stop_all, connect signals to callbacks
@@ -246,7 +257,10 @@ void dispatcher::DispatcherWidget::StopAllCheckedCb()
 
 void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
 {
-  EVR_ACTIVITY_HI_REF(ros_node_, "Shutting down");
+  EVR_ACTIVITY_HI_REF(ros_node_, "Shutting down after saving window state.");
+  QSettings settings;
+  settings.setValue("geometry", saveGeometry());
+
   ros_node_->StopAll();
   rclcpp::shutdown();
   QCoreApplication::quit();

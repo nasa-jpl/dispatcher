@@ -66,21 +66,20 @@ void dispatcher::Item::UpdateConfiguration()
       current_configuration_ = nullptr;
       EVR_ACTIVITY_LO_REF(ros_node_,
                           "Neither 'all' nor '%s' configuration found for "
-                          "ProcessItem '%s'; disabling",
+                          "item '%s'; disabling",
                           current_configuration.c_str(), name_.c_str());
 
     } else {
       // selected configuration not found, use default configuration
       current_configuration_ = &configurations_["all"];
       EVR_ACTIVITY_LO_REF(ros_node_,
-                          "No configurations specified for ProcessItem '%s', "
+                          "No configurations specified for item '%s', "
                           "using built-in configuration 'all'",
                           name_.c_str());
     }
   } else {
     current_configuration_ = &configurations_[current_configuration];
-    EVR_ACTIVITY_LO_REF(ros_node_,
-                        "Setting ProcessItem '%s' to configuration '%s'",
+    EVR_ACTIVITY_LO_REF(ros_node_, "Setting item '%s' to configuration '%s'",
                         name_.c_str(), current_configuration.c_str());
   }
 }

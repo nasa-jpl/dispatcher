@@ -13,6 +13,7 @@
 #include <QGroupBox>
 #include <QPropertyAnimation>
 #include <QScrollArea>
+#include <QSettings>
 #include <QSocketNotifier>
 #include <QSplitter>
 #include <QTimer>

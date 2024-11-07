@@ -10,6 +10,9 @@
 int main(int argc, char* argv[])
 {
   rclcpp::init(argc, argv);
+  // Define org and app name, which is necessary for QSettings later on
+  QCoreApplication::setOrganizationName("casah");
+  QCoreApplication::setApplicationName("dispatcher");
   QApplication app(argc, argv);
   Q_INIT_RESOURCE(icons);
   dispatcher::DispatcherWidget w;
