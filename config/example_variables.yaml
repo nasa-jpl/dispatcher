@@ -1,5 +1,7 @@
 workspace: .
 
+hide_unconfigured_processes: true
+
 variables:
   - name: FCAT_LOOP_RATE_HZ
     choices:
@@ -32,7 +34,7 @@ nodes:
     type: shell
     configurations:
     - name: online
-      cmd: ping fittonia
+      cmd: ping asimov-dev
     start_checked: true
 
 

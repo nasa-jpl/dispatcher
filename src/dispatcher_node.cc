@@ -56,6 +56,13 @@ void dispatcher::DispatcherNode::ParseConfig()
   YAML::Node root         = YAML::LoadFile(dispatcher_config_path_.c_str());
   auto       dispatcher_w = dynamic_cast<DispatcherWidget*>(widget_);
 
+  // Determine how nodes irrelevant to the chosen configuration is displayed
+  if (root["hide_unconfigured_processes"]) {
+    hide_unconfigured_processes_ =
+        root["hide_unconfigured_processes"].as<std::string>() == "true" ? true
+                                                                        : false;
+  }
+
   // Load other configurations defined in YAML and then add them all to
   // combo_box
   auto combo_box = widget_->get_configuration_combo_box();

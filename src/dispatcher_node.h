@@ -28,7 +28,7 @@ class DispatcherNode : public casah_node::EvrInterface
   struct Configuration {
     std::map<std::string, std::string> environment_variables;
     std::string                        cmd_prefix;
-    std::string                        icon = "";
+    std::string                        icon;
   };
 
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
@@ -36,6 +36,10 @@ class DispatcherNode : public casah_node::EvrInterface
     return online_nodes_;
   }
   const std::string& get_workspace() { return workspace_; }
+  bool&              should_hide_unconfigured_process()
+  {
+    return hide_unconfigured_processes_;
+  }
   const std::string& get_cmd_prefix(const std::string& configuration)
   {
     // check if configuration exists
@@ -83,8 +87,9 @@ class DispatcherNode : public casah_node::EvrInterface
   double GetTimerRate() { return casah_node::BaseInterface::GetTimerRate(); }
 
  private:
-  bool                                  last_online_state_        = false;
-  bool                                  tmux_sessions_configured_ = false;
+  bool                                  last_online_state_           = false;
+  bool                                  tmux_sessions_configured_    = false;
+  bool                                  hide_unconfigured_processes_ = false;
   std::string                           dispatcher_config_path_;
   int                                   ssh_timeout_sec_ = 10;
   std::vector<dispatcher::ProcessItem*> dispatcher_items_;

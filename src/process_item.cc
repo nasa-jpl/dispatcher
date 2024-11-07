@@ -146,26 +146,23 @@ dispatcher::ProcessItem::~ProcessItem() {}
 void dispatcher::ProcessItem::SetEnabled(bool enable)
 {
   enabled_ = enable;
-  check_box_->setEnabled(enable);
-  terminal_->setEnabled(enable);
-  start_->setEnabled(enable);
-  stop_->setEnabled(enable);
-  if (enable) {
-    label_->setPixmap(red_status_icon_);
+  if (ros_node_->should_hide_unconfigured_process()) {
+    check_box_->setVisible(enable);
+    terminal_->setVisible(enable);
+    start_->setVisible(enable);
+    stop_->setVisible(enable);
+    label_->setVisible(enable);
   } else {
-    label_->setPixmap(grey_status_icon_);
+    check_box_->setEnabled(enable);
+    terminal_->setEnabled(enable);
+    start_->setEnabled(enable);
+    stop_->setEnabled(enable);
+    if (enable) {
+      label_->setPixmap(red_status_icon_);
+    } else {
+      label_->setPixmap(grey_status_icon_);
+    }
   }
-}
-
-void dispatcher::ProcessItem::SetVisible(bool visible)
-{
-  // If this ProcessItem is to be visible, consider it enabled
-  enabled_ = visible;
-  check_box_->setVisible(visible);
-  terminal_->setVisible(visible);
-  start_->setVisible(visible);
-  stop_->setVisible(visible);
-  label_->setVisible(visible);
 }
 
 void dispatcher::ProcessItem::UpdateConfiguration()
@@ -178,14 +175,10 @@ void dispatcher::ProcessItem::UpdateConfiguration()
 
   Item::UpdateConfiguration();
   if (current_configuration_ == nullptr) {
-    // nullptr implies that the current configuration is not defined for this
-    // item. So disable and make it invisible
+    // nullptr implies the current configuration is undefined for this item
     SetEnabled(false);
-    SetVisible(false);
     return;
   }
-  // Valid configuration identifed for this item, so set it visible
-  SetVisible(true);
 
   std::string cmd_tmp;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();

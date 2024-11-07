@@ -216,7 +216,7 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
   vlayout_main_->setSpacing(0);
   groupbox_main_->setLayout(vlayout_main_);
   setWidget(groupbox_main_);
-  // Forces Widgets inside QScrollArea to scale with QScaleArea
+  // Forces Widgets inside QScrollArea to scale with QScrollArea
   setWidgetResizable(true);
 
   // Set up timer

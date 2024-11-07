@@ -2,7 +2,6 @@ workspace: .
 
 cmd_prefix: RMW_IMPLEMENTATION=rmw_cyclonedds_cpp CYCLONEDDS_URI=/etc/cyclonedds.xml
 
-
 configurations:
   - online-test-no-config-available
   - online
@@ -10,7 +9,7 @@ configurations:
 
 nodes:
 
-  - name: visualization
+  - name: robot
     type: category 
     items:
     - name: fcat
@@ -25,15 +24,6 @@ nodes:
         cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
       start_checked: true
 
-    - name: ping1
-      type: shell
-      configurations:
-      - name: online
-        cmd: ping google.com
-      - name: offline
-        cmd: ping bradbury-ctrl
-      start_checked: true
-
   - name: commander
     namespace: /commander
     node_name: commander
@@ -44,25 +34,25 @@ nodes:
   - name: simulations
     type: category 
     items:
-    - name: ping2_1
+    - name: ping1_1
       type: shell
       configurations:
       - name: online
         cmd: ping google.com
       - name: offline
-        cmd: ping bradbury-ctrl
+        cmd: ping asimov-dev
       start_checked: true
 
-    - name: ping2_2
+    - name: ping1_2
       type: shell
       configurations:
       - name: online
         cmd: ping google.com
       - name: offline
-        cmd: ping bradbury-ctrl
+        cmd: ping asimov-dev
       start_checked: true
 
-  - name: ping3
+  - name: ping2
     type: shell
     configurations:
     - name: online
