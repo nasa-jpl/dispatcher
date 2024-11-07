@@ -28,6 +28,7 @@ class DispatcherNode : public casah_node::EvrInterface
   struct Configuration {
     std::map<std::string, std::string> environment_variables;
     std::string                        cmd_prefix;
+    std::string                        icon = "";
   };
 
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()

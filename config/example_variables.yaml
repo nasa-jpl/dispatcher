@@ -10,8 +10,10 @@ variables:
 
 
 configurations:
-  - online
-  - offline
+  - name: online
+    icon: :/icons/configuration.png
+  - name: offline
+    icon: :/icons/configuration.png
 
 nodes:
 
@@ -24,6 +26,13 @@ nodes:
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py --rate $FCAT_LOOP_RATE_HZ
     - name: offline
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
+    start_checked: true
+
+  - name: ping3
+    type: shell
+    configurations:
+    - name: online
+      cmd: ping fittonia
     start_checked: true
 
 

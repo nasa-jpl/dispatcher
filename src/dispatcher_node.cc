@@ -36,8 +36,6 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
-  configurations_["all"] = Configuration();
-
   InitializeTimerRate();
   DeclareInitParameterString("dispatcher_config_path", "",
                              "Path to dispatcher configuration file");
@@ -58,7 +56,8 @@ void dispatcher::DispatcherNode::ParseConfig()
   YAML::Node root         = YAML::LoadFile(dispatcher_config_path_.c_str());
   auto       dispatcher_w = dynamic_cast<DispatcherWidget*>(widget_);
 
-  // Add other configurations defined in YAML
+  // Load other configurations defined in YAML and then add them all to
+  // combo_box
   auto combo_box = widget_->get_configuration_combo_box();
   if (root["configurations"]) {
     for (const auto& yaml_config : root["configurations"]) {
@@ -71,11 +70,17 @@ void dispatcher::DispatcherNode::ParseConfig()
         name                  = yaml_config.as<std::string>();
         configurations_[name] = dispatcher::DispatcherNode::Configuration();
       }
-      combo_box->addItem(QString::fromStdString(name));
     }
-  } else {
-    combo_box->addItem("default");
   }
+  for (auto const& config : configurations_) {
+    if (config.second.icon.empty()) {
+      combo_box->addItem(QString::fromStdString(config.first));
+    } else {
+      combo_box->addItem(QIcon(QString::fromStdString(config.second.icon)),
+                         QString::fromStdString(config.first));
+    }
+  }
+  combo_box->setIconSize(QSize(20, 20));
 
   // add default 'all' configuration
   AddConfiguration("all", root);
@@ -285,5 +290,9 @@ void dispatcher::DispatcherNode::AddConfiguration(std::string       name,
   if (node["cmd_prefix"]) {
     configuration.cmd_prefix = node["cmd_prefix"].as<std::string>();
   }
+  if (node["icon"]) {
+    configuration.icon = node["icon"].as<std::string>();
+  }
+
   configurations_[name] = configuration;
 }
