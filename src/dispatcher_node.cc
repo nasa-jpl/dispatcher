@@ -182,6 +182,13 @@ void dispatcher::DispatcherNode::UpdateConfiguration()
   for (auto& item : script_items_) {
     item->UpdateConfiguration();
   }
+  // Purposely toggle all collapsible areas to redraw bounding boxes for items
+  // that disappear
+  for (auto& w : widget_->get_collapsible_widgets()) {
+    bool checked = w->get_checked_state();
+    w->set_checked_state(!checked);
+    w->set_checked_state(checked);
+  }
 }
 
 void dispatcher::DispatcherNode::StartChecked()

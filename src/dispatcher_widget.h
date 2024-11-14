@@ -51,6 +51,8 @@ class DispatcherCategoryWidget : public QGroupBox
                    QWidget* parent = 0, std::string category_name = "Default");
   ~DispatcherCategoryWidget();
 
+  bool get_checked_state() { return toggle_button_->isChecked(); }
+  void set_checked_state(bool check) { toggle_button_->setChecked(check); }
   QGridLayout* get_grid_layout() { return grid_layout_; }
 
  public slots:
@@ -87,6 +89,10 @@ class DispatcherWidget : public QScrollArea
   std::string get_current_configuration()
   {
     return configuration_combo_box_->currentText().toStdString();
+  }
+  std::vector<DispatcherCategoryWidget*> get_collapsible_widgets()
+  {
+    return vec_collapsible_widgets_;
   }
 
   // Allows dynamically adding groups or singletons of processes through the
@@ -126,6 +132,7 @@ class DispatcherWidget : public QScrollArea
   QGroupBox*   groupbox_processes_             = nullptr;
   QVBoxLayout* layout_groupboxes_of_processes_ = nullptr;
   std::unordered_map<std::string, QGridLayout*> map_grid_layouts_;
+  std::vector<DispatcherCategoryWidget*>        vec_collapsible_widgets_;
   QGroupBox*                                    script_group_box_   = nullptr;
   QGridLayout*                                  script_layout_      = nullptr;
   QGroupBox*                                    variable_group_box_ = nullptr;

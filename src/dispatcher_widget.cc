@@ -297,6 +297,7 @@ QGridLayout* dispatcher::DispatcherWidget::add_category_of_processes(
       new dispatcher::DispatcherCategoryWidget(groupbox_processes_,
                                                category_name);
   layout_groupboxes_of_processes_->addWidget(widget);
+  vec_collapsible_widgets_.push_back(widget);
 
   map_grid_layouts_[category_name] = widget->get_grid_layout();
   return map_grid_layouts_[category_name];
@@ -337,7 +338,7 @@ dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
   this->setLayout(v_layout_category);
 
   animation_ = new QPropertyAnimation(toggle_groupbox_, "maximumHeight");
-  animation_->setDuration(300);
+  animation_->setDuration(200);
   connect(toggle_button_, &QToolButton::toggled, this,
           &DispatcherCategoryWidget::ToggleCb);
 }
