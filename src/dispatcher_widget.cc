@@ -70,8 +70,10 @@ static void CheckLockFileExistsThrowException(const std::string& lock_filename)
 static QGroupBox* DispatcherGroupBox(QWidget* parent)
 {
   QGroupBox* new_gb = new QGroupBox(parent);
-  new_gb->setStyleSheet("QGroupBox {border: 0px; }");
-  new_gb->setContentsMargins(0, 0, 0, 0);
+  // Set these type of gb to be borderless
+  new_gb->setObjectName(QString("myGb"));
+  new_gb->setStyleSheet(QString("QGroupBox#myGb {border: 0}"));
+
   return new_gb;
 }
 
@@ -114,7 +116,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(
 
   // Pick up WindowSize settings, if avail, from last session to restore
   QSettings settings;
-  if (settings.status() == QSettings::NoError) {
+  if (settings.contains("geometry")) {
     EVR_ACTIVITY_HI_REF(ros_node_,
                         "Restoring window size from previous session...");
     restoreGeometry(settings.value("geometry").toByteArray());
@@ -148,6 +150,11 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   configuration_combo_box_ = new QComboBox(groupbox_main_);
   vlayout_main_->addWidget(configuration_combo_box_);
 
+  // Add a spacer for visual separation
+  QSpacerItem* spacer =
+      new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  vlayout_main_->insertSpacerItem(1, spacer);
+
   // Use QSplitter to organize three adjustable sections
   // - Our ROS and Shell processes
   // - ScriptItems
@@ -162,6 +169,7 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   // ProcessItem GroupBox, will contain Groupboxes of Items
   groupbox_processes_             = DispatcherGroupBox(splitter_of_groupboxes_);
   layout_groupboxes_of_processes_ = new QVBoxLayout(groupbox_processes_);
+  layout_groupboxes_of_processes_->setContentsMargins(0, 0, 0, 0);
   groupbox_processes_->setLayout(layout_groupboxes_of_processes_);
   splitter_of_groupboxes_->addWidget(groupbox_processes_);
 
@@ -213,7 +221,6 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
   // Must do this towards the end, but establish that DispatcherWidget is a
   // parent of groupbox_main_, which contains all the QWidgets we have
   // initialized and populated so far
-  vlayout_main_->setSpacing(0);
   groupbox_main_->setLayout(vlayout_main_);
   setWidget(groupbox_main_);
   // Forces Widgets inside QScrollArea to scale with QScrollArea
@@ -270,8 +277,10 @@ QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
 {
   QGroupBox*   gb_single          = DispatcherGroupBox(groupbox_processes_);
   QVBoxLayout* v_layout_gb_single = new QVBoxLayout(gb_single);
-  QGroupBox*   gb_single_child    = DispatcherGroupBox(gb_single);
+  v_layout_gb_single->setContentsMargins(-1, 0, -1, 0);
+  QGroupBox*   gb_single_child          = DispatcherGroupBox(gb_single);
   QGridLayout* g_layout_gb_single_child = new QGridLayout(gb_single_child);
+  g_layout_gb_single_child->setContentsMargins(-1, 0, -1, 0);
   gb_single_child->setLayout(g_layout_gb_single_child);
   gb_single->setLayout(v_layout_gb_single);
   v_layout_gb_single->addWidget(gb_single_child);
@@ -297,9 +306,11 @@ dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
     QWidget* parent, std::string category_name)
     : QGroupBox(parent)
 {
-  this->setStyleSheet(QString("QGroupBox {border:0}"));
-  this->setContentsMargins(QMargins(-1, -1, -1, 0));
+  this->setObjectName(QString("categoryGb"));
+  this->setStyleSheet(QString("QGroupBox#categoryGb {border:0}"));
+  this->setContentsMargins(0, 0, 0, 0);
   QVBoxLayout* v_layout_category = new QVBoxLayout(parent);
+  v_layout_category->setContentsMargins(-1, 0, -1, 0);
 
   // Define a QToolButton so we can click to collapse the below gb
   toggle_button_ = new QToolButton(this);
@@ -312,13 +323,16 @@ dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
   v_layout_category->addWidget(toggle_button_);
 
   // Define collapsible QGroupBox to hold all the processes
-  toggle_groupbox_ = DispatcherGroupBox(this);
+  toggle_groupbox_ = new QGroupBox(this);
   toggle_groupbox_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   toggle_groupbox_->setMaximumHeight(0);  // Initially collapsed
   toggle_groupbox_->setMinimumHeight(0);  // Initially collapsed
   v_layout_category->addWidget(toggle_groupbox_);
 
   grid_layout_ = new QGridLayout(toggle_groupbox_);
+  // These ContentMargins were hand-picked to ensure vertical alignment between
+  // the buttons within a collapsible category and those that are not
+  grid_layout_->setContentsMargins(6, 4, 6, 4);
   toggle_groupbox_->setLayout(grid_layout_);
   this->setLayout(v_layout_category);
 

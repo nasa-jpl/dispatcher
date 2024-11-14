@@ -13,9 +13,9 @@ variables:
 
 configurations:
   - name: online
-    icon: :/icons/configuration.png
+    icon: :/icons/wifi.png
   - name: offline
-    icon: :/icons/configuration.png
+    icon: :/icons/wifi-no.png
 
 nodes:
 
@@ -33,9 +33,39 @@ nodes:
   - name: ping3
     type: shell
     configurations:
-    - name: online
+    - name: offline
       cmd: ping asimov-dev
     start_checked: true
+
+  - name: ping3
+    type: shell
+    configurations:
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
+
+  - name: ping3
+    type: shell
+    configurations:
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
+
+  - name: category
+    type: category
+    items:
+      - name: ping3
+        type: shell
+        configurations:
+        - name: offline
+          cmd: ping asimov-dev
+        start_checked: true
+      - name: ping3
+        type: shell
+        configurations:
+        - name: offline
+          cmd: ping asimov-dev
+        start_checked: true
 
 
 scripts:
