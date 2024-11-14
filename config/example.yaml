@@ -10,7 +10,7 @@ configurations:
 nodes:
 
   - name: robot
-    type: category 
+    type: category # Use this type to define a collapsible category of proceses
     items:
     - name: fcat
       type: ros

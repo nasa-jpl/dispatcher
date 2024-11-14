@@ -1,5 +1,8 @@
 workspace: .
 
+# When a configuration is selected in dispatcher, if this is set to true,
+# then processes that are not defined for the specific configuration
+# will be hidden (instead of grayed out)
 hide_unconfigured_processes: true
 
 variables:
