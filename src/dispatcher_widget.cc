@@ -150,10 +150,10 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   configuration_combo_box_ = new QComboBox(groupbox_main_);
   vlayout_main_->addWidget(configuration_combo_box_);
 
-  // Add a spacer for visual separation
-  QSpacerItem* spacer =
-      new QSpacerItem(0, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  vlayout_main_->insertSpacerItem(1, spacer);
+  // Define a fixed height spacer
+  spacer_padding_ =
+      new QSpacerItem(0, 16, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  vlayout_main_->insertSpacerItem(1, spacer_padding_);
 
   // Use QSplitter to organize three adjustable sections
   // - Our ROS and Shell processes
@@ -182,6 +182,13 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   variable_group_box_ = DispatcherGroupBox(splitter_of_groupboxes_);
   variable_layout_    = new QGridLayout(variable_group_box_);
   splitter_of_groupboxes_->addWidget(variable_group_box_);
+
+  // Define these pillow spacers that expand to fill up all space in vertical
+  // and horizontal orientations for later use
+  spacer_horz_pillow_ =
+      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  spacer_vert_pillow_ =
+      new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
 }
 
 void dispatcher::DispatcherWidget::FinalizeWidgets()
@@ -191,36 +198,34 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
           SLOT(UpdateConfiguration()));
 
   // Create a GroupBox to hold start/stop_all buttons
-  QGridLayout* layout = add_single_process("start_stop_all");
-  int          index  = layout->rowCount();
-  QPushButton* start  = new QPushButton("start all checked", this);
+  QGridLayout* layout_ss_all = add_single_process("start_stop_all");
+  QPushButton* start         = new QPushButton("start all checked", this);
   start->setStyleSheet(QString("color: green"));
-  start->setFlat(false);
-  layout->addWidget(start, index, 2);
+  layout_ss_all->addWidget(start, 1, 2);
   connect(start, SIGNAL(clicked()), this, SLOT(StartAllCheckedCb()));
 
   QPushButton* stop = new QPushButton("stop all checked", this);
   stop->setStyleSheet(QString("color: red"));
-  layout->addWidget(stop, index, 3);
+  layout_ss_all->addWidget(stop, 1, 3);
   connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
 
-  // Spacers to flank newly minted buttons
-  QSpacerItem* spacer =
-      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  layout->addItem(spacer, index, 4);
+  // Add spacers to this start_stop_all GB to position things nicely
+  layout_ss_all->addItem(spacer_padding_, 0, 0);
+  layout_ss_all->addItem(spacer_horz_pillow_, 1, 4);
+  layout_ss_all->addItem(spacer_horz_pillow_, 1, 0);
+  layout_ss_all->addItem(spacer_vert_pillow_, 2, 0);
 
-  QSpacerItem* spacer3 =
-      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  layout->addItem(spacer3, index, 0);
+  // Add spacers to ScriptItem buttons to position things nicely
+  script_layout_->addItem(spacer_vert_pillow_, 0, 0);
+  script_layout_->addItem(spacer_vert_pillow_, script_layout_->rowCount(), 0);
+  variable_layout_->addItem(spacer_vert_pillow_, 0, 0);
+  variable_layout_->addItem(spacer_vert_pillow_, variable_layout_->rowCount(),
+                            0);
 
-  // Spacers below the new buttons
-  QSpacerItem* spacer2 =
-      new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-  layout->addItem(spacer2, layout->rowCount(), 0);
-
-  // Must do this towards the end, but establish that DispatcherWidget is a
-  // parent of groupbox_main_, which contains all the QWidgets we have
-  // initialized and populated so far
+  // Must do this towards the end
+  // Establish that DispatcherWidget is parent of groupbox_main_, which
+  // contains the layouts of all the QWidgets we have initialized and
+  // populated so far
   groupbox_main_->setLayout(vlayout_main_);
   setWidget(groupbox_main_);
   // Forces Widgets inside QScrollArea to scale with QScrollArea

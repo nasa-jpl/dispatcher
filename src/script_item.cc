@@ -47,7 +47,9 @@ dispatcher::ScriptItem::ScriptItem(QWidget* parent, DispatcherNode* ros_node,
     use_terminal_ = node["use_terminal"].as<bool>();
   }
 
-  int row    = node["row"].as<int>();
+  // The GridLayout this ScriptItem is going into will have a space in the 0th
+  // row, so just increment the value read from the YAML
+  int row    = node["row"].as<int>() + 1;
   int column = node["column"].as<int>();
 
   QGridLayout* layout = dispatcher_->get_script_layout();

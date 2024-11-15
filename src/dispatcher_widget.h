@@ -137,6 +137,9 @@ class DispatcherWidget : public QScrollArea
   QGridLayout*                                  script_layout_      = nullptr;
   QGroupBox*                                    variable_group_box_ = nullptr;
   QGridLayout*                                  variable_layout_    = nullptr;
+  QSpacerItem*                                  spacer_padding_     = nullptr;
+  QSpacerItem*                                  spacer_vert_pillow_ = nullptr;
+  QSpacerItem*                                  spacer_horz_pillow_ = nullptr;
 
   QSize minimumSizeHint() const { return QSize(30, 30); }
   QSize sizeHint() const { return QSize(30, 30); }
