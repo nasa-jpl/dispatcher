@@ -77,6 +77,41 @@ static QGroupBox* DispatcherGroupBox(QWidget* parent)
   return new_gb;
 }
 
+typedef enum {
+  SPACER_TYPE_FIXED_HEIGHT = 0,
+  SPACER_TYPE_VERT_PILLOW,
+  SPACER_TYPE_HORIZ_PILLOW,
+} DispatcherSpacerItemType;
+
+static QSpacerItem* DispatcherSpacerItem(DispatcherSpacerItemType type)
+{
+  QSpacerItem* new_spacer = nullptr;
+  switch (type) {
+    case SPACER_TYPE_FIXED_HEIGHT:
+      // Spacer with fixed height and expands to consume all width
+      new_spacer =
+          new QSpacerItem(0, 16, QSizePolicy::Expanding, QSizePolicy::Minimum);
+      break;
+    case SPACER_TYPE_VERT_PILLOW:
+      // Pillow spacer because this expands to fill up all vertical space
+      new_spacer =
+          new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+      break;
+    case SPACER_TYPE_HORIZ_PILLOW:
+      // Pillow spacer because this expands to fill up all horizontal space
+      new_spacer =
+          new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+      break;
+    default:
+      // By default, return a fixed sized spacer
+      new_spacer = new QSpacerItem(16, 16);
+      break;
+  }
+
+  assert(new_spacer);
+  return new_spacer;
+}
+
 void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 {
   if (script_group_box_ == nullptr) {
@@ -150,10 +185,9 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   configuration_combo_box_ = new QComboBox(groupbox_main_);
   vlayout_main_->addWidget(configuration_combo_box_);
 
-  // Define a fixed height spacer
-  spacer_padding_ =
-      new QSpacerItem(0, 16, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  vlayout_main_->insertSpacerItem(1, spacer_padding_);
+  // Add a fixed height spacer
+  vlayout_main_->insertSpacerItem(
+      1, DispatcherSpacerItem(SPACER_TYPE_FIXED_HEIGHT));
 
   // Use QSplitter to organize three adjustable sections
   // - Our ROS and Shell processes
@@ -182,13 +216,6 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   variable_group_box_ = DispatcherGroupBox(splitter_of_groupboxes_);
   variable_layout_    = new QGridLayout(variable_group_box_);
   splitter_of_groupboxes_->addWidget(variable_group_box_);
-
-  // Define these pillow spacers that expand to fill up all space in vertical
-  // and horizontal orientations for later use
-  spacer_horz_pillow_ =
-      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  spacer_vert_pillow_ =
-      new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
 }
 
 void dispatcher::DispatcherWidget::FinalizeWidgets()
@@ -210,17 +237,19 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
   connect(stop, SIGNAL(clicked()), this, SLOT(StopAllCheckedCb()));
 
   // Add spacers to this start_stop_all GB to position things nicely
-  layout_ss_all->addItem(spacer_padding_, 0, 0);
-  layout_ss_all->addItem(spacer_horz_pillow_, 1, 4);
-  layout_ss_all->addItem(spacer_horz_pillow_, 1, 0);
-  layout_ss_all->addItem(spacer_vert_pillow_, 2, 0);
+  layout_ss_all->addItem(DispatcherSpacerItem(SPACER_TYPE_FIXED_HEIGHT), 0, 0);
+  layout_ss_all->addItem(DispatcherSpacerItem(SPACER_TYPE_HORIZ_PILLOW), 1, 4);
+  layout_ss_all->addItem(DispatcherSpacerItem(SPACER_TYPE_HORIZ_PILLOW), 1, 0);
+  layout_ss_all->addItem(DispatcherSpacerItem(SPACER_TYPE_VERT_PILLOW), 2, 0);
 
   // Add spacers to ScriptItem buttons to position things nicely
-  script_layout_->addItem(spacer_vert_pillow_, 0, 0);
-  script_layout_->addItem(spacer_vert_pillow_, script_layout_->rowCount(), 0);
-  variable_layout_->addItem(spacer_vert_pillow_, 0, 0);
-  variable_layout_->addItem(spacer_vert_pillow_, variable_layout_->rowCount(),
+  script_layout_->addItem(DispatcherSpacerItem(SPACER_TYPE_VERT_PILLOW), 0, 0);
+  script_layout_->addItem(DispatcherSpacerItem(SPACER_TYPE_VERT_PILLOW),
+                          script_layout_->rowCount(), 0);
+  variable_layout_->addItem(DispatcherSpacerItem(SPACER_TYPE_VERT_PILLOW), 0,
                             0);
+  variable_layout_->addItem(DispatcherSpacerItem(SPACER_TYPE_VERT_PILLOW),
+                            variable_layout_->rowCount(), 0);
 
   // Must do this towards the end
   // Establish that DispatcherWidget is parent of groupbox_main_, which
