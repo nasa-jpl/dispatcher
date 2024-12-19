@@ -73,3 +73,4 @@ Starting a terminal using the GUI button requires that you have `gnome-terminal`
 `dispatcher` also supports capabilities such as variables and configurations. Example YAMLs leveraging these capabilities are in the `config/` subdirectory. Briefly, 
 - variables are string/numerical values that are substituted in the `cmd:` defined for a ROS node or process
 - configurations is the way to run the same node or process in different ways, such as providing different run-time parameters or configuration files.
+- grouping one or more ROS node or process into a section within dispatcher
