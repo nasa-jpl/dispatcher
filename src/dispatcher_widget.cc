@@ -225,7 +225,7 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
           SLOT(UpdateConfiguration()));
 
   // Create a GroupBox to hold start/stop_all buttons
-  QGridLayout* layout_ss_all = add_single_process("start_stop_all");
+  QGridLayout* layout_ss_all = AddSingleProcess("start_stop_all");
   QPushButton* start         = new QPushButton("start all checked", this);
   start->setStyleSheet(QString("color: green"));
   layout_ss_all->addWidget(start, 1, 2);
@@ -307,7 +307,7 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
   QCoreApplication::quit();
 }
 
-QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
+QGridLayout* dispatcher::DispatcherWidget::AddSingleProcess(std::string name)
 {
   QGroupBox*   gb_single          = DispatcherGroupBox(groupbox_processes_);
   QVBoxLayout* v_layout_gb_single = new QVBoxLayout(gb_single);
@@ -324,7 +324,7 @@ QGridLayout* dispatcher::DispatcherWidget::add_single_process(std::string name)
   return map_grid_layouts_[name];
 }
 
-QGridLayout* dispatcher::DispatcherWidget::add_category_of_processes(
+QGridLayout* dispatcher::DispatcherWidget::AddCategoryOfProcesses(
     std::string category_name)
 {
   dispatcher::DispatcherCategoryWidget* widget =

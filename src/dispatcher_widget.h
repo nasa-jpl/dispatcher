@@ -97,8 +97,8 @@ class DispatcherWidget : public QScrollArea
 
   // Allows dynamically adding groups or singletons of processes through the
   // return of a QGridLayout* that child Widgets can be added to
-  QGridLayout* add_category_of_processes(std::string);
-  QGridLayout* add_single_process(std::string);
+  QGridLayout* AddCategoryOfProcesses(std::string);
+  QGridLayout* AddSingleProcess(std::string);
 
   // utility methods
   bool IsOnline() { return (!online_nodes_.empty()); }

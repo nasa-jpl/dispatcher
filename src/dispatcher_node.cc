@@ -101,7 +101,7 @@ void dispatcher::DispatcherNode::ParseConfig()
       std::string node_type = node["type"].as<std::string>();
       if (node_type == "category") {
         if (node["items"]) {
-          grid_layout = dispatcher_w->add_category_of_processes(name);
+          grid_layout = dispatcher_w->AddCategoryOfProcesses(name);
           for (const auto& item : node["items"]) {
             node_type = item["type"].as<std::string>();
             AddItem(node_type, item, grid_layout);
@@ -114,12 +114,12 @@ void dispatcher::DispatcherNode::ParseConfig()
               node_type.c_str());
         }
       } else {
-        grid_layout = dispatcher_w->add_single_process(name);
+        grid_layout = dispatcher_w->AddSingleProcess(name);
         AddItem(node_type, node, grid_layout);
       }
     } else {
       // For backwards compatibility, assume this is a ROS item
-      grid_layout = dispatcher_w->add_single_process(name);
+      grid_layout = dispatcher_w->AddSingleProcess(name);
       AddItem("ros", node, grid_layout);
     }
   }
