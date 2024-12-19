@@ -25,6 +25,14 @@ class DispatcherNode : public casah_node::EvrInterface
   DispatcherNode(DispatcherWidget*);
   ~DispatcherNode();
 
+  enum ItemType {
+    CATEGORY = 0,  // A Dispatcher construct to signal there will be multiple
+                   // Items and to lump them all into one category
+    ROS,           // Items that are ros_nodes
+    SHELL,         // Items that are executables called from shell
+    UNDEF,         // Unsupported
+  };
+
   struct Configuration {
     std::map<std::string, std::string> environment_variables;
     std::string                        cmd_prefix;
@@ -100,11 +108,13 @@ class DispatcherNode : public casah_node::EvrInterface
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
   std::map<std::string, Configuration>                configurations_;
 
-  void ParseConfig();
-  void AddConfiguration(const std::string&, const YAML::Node&);
-  void AddItem(const std::string&, const YAML::Node&, QGridLayout*);
-  void SetupTmuxSessions();
-  void CleanupTmuxSessions();
+  void              ParseConfig();
+  void              AddConfiguration(const std::string&, const YAML::Node&);
+  void              AddItem(ItemType, const YAML::Node&, QGridLayout*);
+  void              SetupTmuxSessions();
+  void              CleanupTmuxSessions();
+  ItemType          GetItemTypeFromStr(std::string);
+  std::string       ItemTypeToStr(ItemType);
   DispatcherWidget* widget_ = nullptr;
 };
 

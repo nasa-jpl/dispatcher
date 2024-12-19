@@ -98,12 +98,12 @@ void dispatcher::DispatcherNode::ParseConfig()
     std::string  name = node["name"].as<std::string>();
     QGridLayout* grid_layout;
     if (node["type"]) {
-      std::string node_type = node["type"].as<std::string>();
-      if (node_type == "category") {
+      ItemType node_type = GetItemTypeFromStr(node["type"].as<std::string>());
+      if (node_type == CATEGORY) {
         if (node["items"]) {
           grid_layout = dispatcher_w->AddCategoryOfProcesses(name);
           for (const auto& item : node["items"]) {
-            node_type = item["type"].as<std::string>();
+            node_type = GetItemTypeFromStr(item["type"].as<std::string>());
             AddItem(node_type, item, grid_layout);
           }
         } else {
@@ -111,7 +111,7 @@ void dispatcher::DispatcherNode::ParseConfig()
               "Encountered node type %s in YAML but user did not specify an "
               "'items' array that lists all the items to be run. Nothing "
               "additional will be added to dispatcher",
-              node_type.c_str());
+              ItemTypeToStr(node_type).c_str());
         }
       } else {
         grid_layout = dispatcher_w->AddSingleProcess(name);
@@ -120,7 +120,7 @@ void dispatcher::DispatcherNode::ParseConfig()
     } else {
       // For backwards compatibility, assume this is a ROS item
       grid_layout = dispatcher_w->AddSingleProcess(name);
-      AddItem("ros", node, grid_layout);
+      AddItem(ROS, node, grid_layout);
     }
   }
 
@@ -270,22 +270,27 @@ void dispatcher::DispatcherNode::EnableVariables(bool enable)
   }
 }
 
-void dispatcher::DispatcherNode::AddItem(const std::string& node_type,
-                                         const YAML::Node&  node,
-                                         QGridLayout*       layout)
+void dispatcher::DispatcherNode::AddItem(ItemType          node_type,
+                                         const YAML::Node& node,
+                                         QGridLayout*      layout)
 {
-  if (node_type == "shell") {
-    dispatcher_items_.push_back(
-        new dispatcher::ShellProcessItem(widget_, this, node, layout));
-  } else if (node_type == "ros") {
-    dispatcher_items_.push_back(
-        new dispatcher::RosProcessItem(widget_, this, node, layout));
-  } else {
-    EVR_WARNING_HI(
-        "Encountered node named '%s' with type '%s' in YAML that's "
-        "unsupported, it will be "
-        "ignored and not added to dispatcher",
-        node["name"].as<std::string>().c_str(), node_type.c_str());
+  switch (node_type) {
+    case SHELL:
+      dispatcher_items_.push_back(
+          new dispatcher::ShellProcessItem(widget_, this, node, layout));
+      break;
+    case ROS:
+      dispatcher_items_.push_back(
+          new dispatcher::RosProcessItem(widget_, this, node, layout));
+      break;
+    default:
+      EVR_WARNING_HI(
+          "Encountered node named '%s' with type '%s' in YAML that's "
+          "unsupported, it will be "
+          "ignored and not added to dispatcher",
+          node["name"].as<std::string>().c_str(),
+          ItemTypeToStr(node_type).c_str());
+      break;
   }
 }
 
@@ -308,4 +313,38 @@ void dispatcher::DispatcherNode::AddConfiguration(const std::string& name,
   }
 
   configurations_[name] = configuration;
+}
+
+std::string dispatcher::DispatcherNode::ItemTypeToStr(ItemType type)
+{
+  std::string str_item_type;
+  switch (type) {
+    case ROS:
+      str_item_type = "ros";
+      break;
+    case SHELL:
+      str_item_type = "shell";
+      break;
+    case CATEGORY:
+      str_item_type = "category";
+      break;
+    default:
+      str_item_type = "undef";
+      break;
+  }
+  return str_item_type;
+}
+dispatcher::DispatcherNode::ItemType
+dispatcher::DispatcherNode::GetItemTypeFromStr(std::string type)
+{
+  ItemType item_type = UNDEF;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+  if (type == "shell") {
+    item_type = SHELL;
+  } else if (type == "ros") {
+    item_type = ROS;
+  } else if (type == "category") {
+    item_type = CATEGORY;
+  }
+  return item_type;
 }
