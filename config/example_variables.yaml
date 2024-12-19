@@ -33,9 +33,11 @@ nodes:
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
     start_checked: true
 
-  - name: ping3
+  - name: my-ping3
     type: shell
     configurations:
+    - name: online
+      cmd: ping asimov-dev
     - name: offline
       cmd: ping asimov-dev
     start_checked: true
@@ -47,7 +49,7 @@ nodes:
       cmd: ping asimov-dev
     start_checked: true
 
-  - name: ping3
+  - name: ping4
     type: shell
     configurations:
     - name: offline
@@ -57,15 +59,23 @@ nodes:
   - name: category
     type: category
     items:
-      - name: ping3
+      - name: pingA
         type: shell
         configurations:
         - name: offline
           cmd: ping asimov-dev
         start_checked: true
-      - name: ping3
+      - name: pingB
         type: shell
         configurations:
+        - name: offline
+          cmd: ping asimov-dev
+        start_checked: true
+      - name: pingC
+        type: shell
+        configurations:
+        - name: online
+          cmd: ping asimov-dev
         - name: offline
           cmd: ping asimov-dev
         start_checked: true

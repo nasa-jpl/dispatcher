@@ -31,7 +31,7 @@ nodes:
     start_checked: true
     stop_tmux_cmd: "C-D"
 
-  - name: simulations
+  - name: simulation_but_this_is_a_very_long_name_to_demonstrate_elided
     type: category 
     items:
     - name: ping1_1
