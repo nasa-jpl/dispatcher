@@ -70,9 +70,9 @@ static void CheckLockFileExistsThrowException(const std::string& lock_filename)
 static QGroupBox* DispatcherGroupBox(QWidget* parent)
 {
   QGroupBox* new_gb = new QGroupBox(parent);
-  // Set these type of gb to be borderless
-  new_gb->setObjectName(QString("myGb"));
-  new_gb->setStyleSheet(QString("QGroupBox#myGb {border: 0}"));
+  // Set this type of GroupBoxes to be borderless
+  new_gb->setObjectName(QString("borderless_gb"));
+  new_gb->setStyleSheet(QString("QGroupBox#borderless_gb {border: 0}"));
 
   return new_gb;
 }

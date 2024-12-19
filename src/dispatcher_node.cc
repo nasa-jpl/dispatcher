@@ -78,7 +78,7 @@ void dispatcher::DispatcherNode::ParseConfig()
       }
     }
   }
-  for (auto const& config : configurations_) {
+  for (const auto& config : configurations_) {
     if (config.second.icon.empty()) {
       combo_box->addItem(QString::fromStdString(config.first));
     } else {
