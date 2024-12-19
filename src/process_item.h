@@ -1,6 +1,7 @@
 #ifndef PROCESS_ITEM_H_
 #define PROCESS_ITEM_H_
 
+#include <QGridLayout>
 #include <QPushButton>
 
 #include "dispatcher/item.h"
@@ -13,7 +14,8 @@ class ProcessItem : public Item
   Q_OBJECT;  // must be included to add qt meta information
 
  public:
-  explicit ProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&);
+  explicit ProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&,
+                       QGridLayout*);
   ~ProcessItem();
 
   // get/set methods

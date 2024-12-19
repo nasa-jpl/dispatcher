@@ -2,7 +2,6 @@ workspace: .
 
 cmd_prefix: RMW_IMPLEMENTATION=rmw_cyclonedds_cpp CYCLONEDDS_URI=/etc/cyclonedds.xml
 
-
 configurations:
   - online-test-no-config-available
   - online
@@ -10,26 +9,20 @@ configurations:
 
 nodes:
 
-  - name: fcat
-    type: ros
-    ros_nodes:
-    - namespace: /fcat
-      name: fcat
-    configurations:
-    - name: online
-      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py
-    - name: offline
-      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
-    start_checked: true
-
-  - name: ping
-    type: shell
-    configurations:
-    - name: online
-      cmd: ping google.com
-    - name: offline
-      cmd: ping asimov-dev
-    start_checked: true
+  - name: robot
+    type: category # Use this type to define a collapsible category of proceses
+    items:
+    - name: fcat
+      type: ros
+      ros_nodes:
+      - namespace: /fcat
+        name: fcat
+      configurations:
+      - name: online
+        cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py
+      - name: offline
+        cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
+      start_checked: true
 
   - name: commander
     namespace: /commander
@@ -38,6 +31,35 @@ nodes:
     start_checked: true
     stop_tmux_cmd: "C-D"
 
+  - name: simulation_maybe
+    type: category 
+    items:
+    - name: ping1_but_this_is_a_very_long_name_to_demonstrate_elided
+      type: shell
+      configurations:
+      - name: online
+        cmd: ping google.com
+      - name: offline
+        cmd: ping asimov-dev
+      start_checked: true
+
+    - name: ping1_2
+      type: shell
+      configurations:
+      - name: online
+        cmd: ping google.com
+      - name: offline
+        cmd: ping asimov-dev
+      start_checked: true
+
+  - name: ping2
+    type: shell
+    configurations:
+    - name: online
+      cmd: ping google.com
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
 
 scripts:
 

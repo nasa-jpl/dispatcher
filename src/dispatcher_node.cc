@@ -36,8 +36,6 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
-  configurations_["all"] = Configuration();
-
   InitializeTimerRate();
   DeclareInitParameterString("dispatcher_config_path", "",
                              "Path to dispatcher configuration file");
@@ -55,73 +53,84 @@ void dispatcher::DispatcherNode::ParseConfig()
 {
   EVR_DIAGNOSTIC("Parsing dispatcher_config_path: %s",
                  dispatcher_config_path_.c_str());
-  YAML::Node root = YAML::LoadFile(dispatcher_config_path_.c_str());
+  YAML::Node root         = YAML::LoadFile(dispatcher_config_path_.c_str());
+  auto       dispatcher_w = dynamic_cast<DispatcherWidget*>(widget_);
 
+  // Determine how nodes irrelevant to the chosen configuration is displayed
+  if (root["hide_unconfigured_processes"]) {
+    hide_unconfigured_processes_ =
+        root["hide_unconfigured_processes"].as<bool>();
+  }
+
+  // Load other configurations defined in YAML and then add them all to
+  // combo_box
   auto combo_box = widget_->get_configuration_combo_box();
   if (root["configurations"]) {
     for (const auto& yaml_config : root["configurations"]) {
       std::string name;
       if (yaml_config.IsMap()) {
         name = yaml_config["name"].as<std::string>();
-        dispatcher::DispatcherNode::Configuration configuration;
-        if (yaml_config["environment_variables"]) {
-          for (const auto& item : root["environment_variables"]) {
-            std::string key   = item.first.as<std::string>();
-            std::string value = item.second.as<std::string>();
-            configuration.environment_variables[key] = value;
-          }
-        }
-        if (yaml_config["cmd_prefix"]) {
-          configuration.cmd_prefix =
-              yaml_config["cmd_prefix"].as<std::string>();
-        }
-        configurations_[name] = configuration;
+        AddConfiguration(name, yaml_config);
       } else {
+        // Also support simpler configuration definition
         name                  = yaml_config.as<std::string>();
         configurations_[name] = dispatcher::DispatcherNode::Configuration();
       }
-      combo_box->addItem(QString::fromStdString(name));
     }
-  } else {
-    combo_box->addItem("default");
   }
+  for (const auto& config : configurations_) {
+    if (config.second.icon.empty()) {
+      combo_box->addItem(QString::fromStdString(config.first));
+    } else {
+      combo_box->addItem(QIcon(QString::fromStdString(config.second.icon)),
+                         QString::fromStdString(config.first));
+    }
+  }
+  combo_box->setIconSize(QSize(20, 20));
 
   // add default 'all' configuration
-  dispatcher::DispatcherNode::Configuration configuration;
-  if (root["cmd_prefix"]) {
-    configuration.cmd_prefix = root["cmd_prefix"].as<std::string>();
-  }
-  if (root["environment_variables"]) {
-    for (const auto& item : root["environment_variables"]) {
-      std::string key                          = item.first.as<std::string>();
-      std::string value                        = item.second.as<std::string>();
-      configuration.environment_variables[key] = value;
-    }
-  }
-  configurations_["all"] = configuration;
+  AddConfiguration("all", root);
 
   workspace_ = root["workspace"].as<std::string>();
   for (const auto& node : root["nodes"]) {
-    if (node["type"] && node["type"].as<std::string>() == "base") {
-      dispatcher_items_.push_back(
-          new dispatcher::ShellProcessItem(widget_, this, node));
+    // Every node defined in YAML is known as a DispatcherItem in DispatcherNode
+    // and a Process in DispatcherWidget
+    std::string  name = node["name"].as<std::string>();
+    QGridLayout* grid_layout;
+    if (node["type"]) {
+      ItemType node_type = GetItemTypeFromStr(node["type"].as<std::string>());
+      if (node_type == CATEGORY) {
+        if (node["items"]) {
+          grid_layout = dispatcher_w->AddCategoryOfProcesses(name);
+          for (const auto& item : node["items"]) {
+            node_type = GetItemTypeFromStr(item["type"].as<std::string>());
+            AddItem(node_type, item, grid_layout);
+          }
+        } else {
+          EVR_FATAL(
+              "Encountered node type %s in YAML but user did not specify an "
+              "'items' array that lists all the items to be run. Nothing "
+              "additional will be added to dispatcher",
+              ItemTypeToStr(node_type).c_str());
+        }
+      } else {
+        grid_layout = dispatcher_w->AddSingleProcess(name);
+        AddItem(node_type, node, grid_layout);
+      }
     } else {
-      // Assume all dispatcher items are ROS items otherwise
-      dispatcher_items_.push_back(
-          new dispatcher::RosProcessItem(widget_, this, node));
+      // For backwards compatibility, assume this is a ROS item
+      grid_layout = dispatcher_w->AddSingleProcess(name);
+      AddItem(ROS, node, grid_layout);
     }
   }
 
-  auto dispatcher = dynamic_cast<DispatcherWidget*>(widget_);
-  if (root["scripts"]) {
-    dispatcher->EnableScripts(true);
-  } else {
-    dispatcher->EnableScripts(false);
-  }
+  root["scripts"] ? dispatcher_w->EnableScripts(true)
+                  : dispatcher_w->EnableScripts(false);
   for (const auto& script : root["scripts"]) {
     script_items_.push_back(new dispatcher::ScriptItem(widget_, this, script));
   }
-
+  root["variables"] ? dispatcher_w->EnableVariables(true)
+                    : dispatcher_w->EnableVariables(false);
   for (const auto& variable : root["variables"]) {
     variables_.push_back(new dispatcher::Variable(widget_, this, variable));
   }
@@ -171,6 +180,13 @@ void dispatcher::DispatcherNode::UpdateConfiguration()
   }
   for (auto& item : script_items_) {
     item->UpdateConfiguration();
+  }
+  // Purposely toggle all collapsible areas to redraw bounding boxes for items
+  // that disappear
+  for (auto& w : widget_->get_collapsible_widgets()) {
+    bool checked = w->get_checked_state();
+    w->set_checked_state(!checked);
+    w->set_checked_state(checked);
   }
 }
 
@@ -252,4 +268,83 @@ void dispatcher::DispatcherNode::EnableVariables(bool enable)
   for (auto& variable : variables_) {
     variable->Enable(enable);
   }
+}
+
+void dispatcher::DispatcherNode::AddItem(ItemType          node_type,
+                                         const YAML::Node& node,
+                                         QGridLayout*      layout)
+{
+  switch (node_type) {
+    case SHELL:
+      dispatcher_items_.push_back(
+          new dispatcher::ShellProcessItem(widget_, this, node, layout));
+      break;
+    case ROS:
+      dispatcher_items_.push_back(
+          new dispatcher::RosProcessItem(widget_, this, node, layout));
+      break;
+    default:
+      EVR_WARNING_HI(
+          "Encountered node named '%s' with type '%s' in YAML that's "
+          "unsupported, it will be "
+          "ignored and not added to dispatcher",
+          node["name"].as<std::string>().c_str(),
+          ItemTypeToStr(node_type).c_str());
+      break;
+  }
+}
+
+void dispatcher::DispatcherNode::AddConfiguration(const std::string& name,
+                                                  const YAML::Node&  node)
+{
+  dispatcher::DispatcherNode::Configuration configuration;
+  if (node["environment_variables"]) {
+    for (const auto& item : node["environment_variables"]) {
+      std::string key                          = item.first.as<std::string>();
+      std::string value                        = item.second.as<std::string>();
+      configuration.environment_variables[key] = value;
+    }
+  }
+  if (node["cmd_prefix"]) {
+    configuration.cmd_prefix = node["cmd_prefix"].as<std::string>();
+  }
+  if (node["icon"]) {
+    configuration.icon = node["icon"].as<std::string>();
+  }
+
+  configurations_[name] = configuration;
+}
+
+std::string dispatcher::DispatcherNode::ItemTypeToStr(ItemType type)
+{
+  std::string str_item_type;
+  switch (type) {
+    case ROS:
+      str_item_type = "ros";
+      break;
+    case SHELL:
+      str_item_type = "shell";
+      break;
+    case CATEGORY:
+      str_item_type = "category";
+      break;
+    default:
+      str_item_type = "undef";
+      break;
+  }
+  return str_item_type;
+}
+dispatcher::DispatcherNode::ItemType
+dispatcher::DispatcherNode::GetItemTypeFromStr(std::string type)
+{
+  ItemType item_type = UNDEF;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+  if (type == "shell") {
+    item_type = SHELL;
+  } else if (type == "ros") {
+    item_type = ROS;
+  } else if (type == "category") {
+    item_type = CATEGORY;
+  }
+  return item_type;
 }

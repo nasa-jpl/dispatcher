@@ -22,5 +22,7 @@
     <file>terminal.png</file>
     <file>warehouse.png</file>
     <file>waste.png</file>
+    <file>wifi.png</file>
+    <file>wifi-no.png</file>
   </qresource>
 </RCC>

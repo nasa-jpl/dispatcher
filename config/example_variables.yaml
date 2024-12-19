@@ -1,5 +1,10 @@
 workspace: .
 
+# When a configuration is selected in dispatcher, if this is set to true,
+# then processes that are not defined for the specific configuration
+# will be hidden (instead of grayed out). [true, false]
+hide_unconfigured_processes: true
+
 variables:
   - name: FCAT_LOOP_RATE_HZ
     choices:
@@ -10,8 +15,10 @@ variables:
 
 
 configurations:
-  - online
-  - offline
+  - name: online
+    icon: :/icons/wifi.png
+  - name: offline
+    icon: :/icons/wifi-no.png
 
 nodes:
 
@@ -25,6 +32,53 @@ nodes:
     - name: offline
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
     start_checked: true
+
+  - name: my-ping3
+    type: shell
+    configurations:
+    - name: online
+      cmd: ping asimov-dev
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
+
+  - name: ping3
+    type: shell
+    configurations:
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
+
+  - name: ping4
+    type: shell
+    configurations:
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
+
+  - name: category
+    type: category
+    items:
+      - name: pingA
+        type: shell
+        configurations:
+        - name: offline
+          cmd: ping asimov-dev
+        start_checked: true
+      - name: pingB
+        type: shell
+        configurations:
+        - name: offline
+          cmd: ping asimov-dev
+        start_checked: true
+      - name: pingC
+        type: shell
+        configurations:
+        - name: online
+          cmd: ping asimov-dev
+        - name: offline
+          cmd: ping asimov-dev
+        start_checked: true
 
 
 scripts:

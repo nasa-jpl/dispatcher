@@ -18,8 +18,9 @@
 */
 dispatcher::RosProcessItem::RosProcessItem(QWidget*                    parent,
                                            dispatcher::DispatcherNode* ros_node,
-                                           const YAML::Node&           node)
-    : dispatcher::ProcessItem(parent, ros_node, node)
+                                           const YAML::Node&           node,
+                                           QGridLayout*                layout)
+    : dispatcher::ProcessItem(parent, ros_node, node, layout)
 {
   // Expecting process_items to have `namespace`, `node_name` and `ros_nodes` to
   // have keys, so handle them in this class

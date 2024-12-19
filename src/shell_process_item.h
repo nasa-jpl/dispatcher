@@ -11,8 +11,8 @@ class ShellProcessItem : public ProcessItem
   Q_OBJECT;  // must be included to add qt meta information
 
  public:
-  explicit ShellProcessItem(QWidget* parent, DispatcherNode*,
-                            const YAML::Node&);
+  explicit ShellProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&,
+                            QGridLayout*);
   ~ShellProcessItem();
 
   // Uses pgrep to poll for aliveness of shell process

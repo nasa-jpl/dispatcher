@@ -11,7 +11,8 @@ class RosProcessItem : public ProcessItem
   Q_OBJECT;  // must be included to add qt meta information
 
  public:
-  explicit RosProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&);
+  explicit RosProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&,
+                          QGridLayout*);
   ~RosProcessItem();
 
   // Uses rqt to poll for aliveness of ROS nodes

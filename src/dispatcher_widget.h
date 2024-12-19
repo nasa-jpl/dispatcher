@@ -11,8 +11,13 @@
 #include <QCoreApplication>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QPropertyAnimation>
+#include <QScrollArea>
+#include <QSettings>
 #include <QSocketNotifier>
+#include <QSplitter>
 #include <QTimer>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -38,17 +43,40 @@ class DispatcherException : public std::exception
   const char* what() const noexcept override { return message_; }
 };
 
-class DispatcherWidget : public QWidget
+class DispatcherCategoryWidget : public QGroupBox
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public : explicit DispatcherWidget(QWidget*    parent = 0,
-                                         std::string dispatcher_lock_file_path =
-                                             "/tmp/dispatcher.lock");
+      public
+      : explicit DispatcherCategoryWidget(
+            QWidget* parent = 0, const std::string& category_name = "Default");
+  ~DispatcherCategoryWidget();
+
+  bool get_checked_state() { return toggle_button_->isChecked(); }
+  void set_checked_state(bool check) { toggle_button_->setChecked(check); }
+  QGridLayout* get_grid_layout() { return grid_layout_; }
+
+ public slots:
+  void ToggleCb(bool);
+
+ private:
+  QGridLayout*        grid_layout_     = nullptr;
+  QToolButton*        toggle_button_   = nullptr;
+  QGroupBox*          toggle_groupbox_ = nullptr;
+  QPropertyAnimation* animation_       = nullptr;
+};
+
+class DispatcherWidget : public QScrollArea
+{
+  Q_OBJECT  // must be included to add qt meta information
+
+      public
+      : explicit DispatcherWidget(QWidget*           parent = 0,
+                                  const std::string& dispatcher_lock_file_path =
+                                      "/tmp/dispatcher.lock");
   ~DispatcherWidget();
 
   // get methods
-  QGridLayout* get_grid_layout() { return grid_layout_; }
   QGridLayout* get_script_layout() { return script_layout_; }
   QGridLayout* get_variable_layout() { return variable_layout_; }
   std::shared_ptr<dispatcher::DispatcherNode> get_ros_node()
@@ -64,6 +92,15 @@ class DispatcherWidget : public QWidget
   {
     return configuration_combo_box_->currentText().toStdString();
   }
+  std::vector<DispatcherCategoryWidget*> get_collapsible_widgets()
+  {
+    return vec_collapsible_widgets_;
+  }
+
+  // Allows dynamically adding groups or singletons of processes through the
+  // return of a QGridLayout* that child Widgets can be added to
+  QGridLayout* AddCategoryOfProcesses(const std::string&);
+  QGridLayout* AddSingleProcess(const std::string&);
 
   // utility methods
   bool IsOnline() { return (!online_nodes_.empty()); }
@@ -74,30 +111,37 @@ class DispatcherWidget : public QWidget
   void StartAllCheckedCb();
   void StopAllCheckedCb();
   void EnableScripts(bool);
+  void EnableVariables(bool);
   void UpdateConfiguration();
 
  private:
+  void InitializeWidgets();
+  void FinalizeWidgets();
   void closeEvent(QCloseEvent*);
 
+  std::string                                 dispatcher_lock_file_path_;
   std::shared_ptr<dispatcher::DispatcherNode> ros_node_;
   rclcpp::executors::SingleThreadedExecutor   ros_executor_;
-
-  QComboBox*   configuration_combo_box_ = nullptr;
-  QTimer*      timer_                   = nullptr;
-  QVBoxLayout* layout_                  = nullptr;
-  QGridLayout* grid_layout_             = nullptr;
-  QGroupBox*   script_group_box_        = nullptr;
-  QGridLayout* script_layout_           = nullptr;
-  QGroupBox*   variable_group_box_      = nullptr;
-  QGridLayout* variable_layout_         = nullptr;
-  std::string  dispatcher_lock_file_path_;
 
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
 
+  QTimer*      timer_                          = nullptr;
+  QGroupBox*   groupbox_main_                  = nullptr;
+  QVBoxLayout* vlayout_main_                   = nullptr;
+  QComboBox*   configuration_combo_box_        = nullptr;
+  QSplitter*   splitter_of_groupboxes_         = nullptr;
+  QGroupBox*   groupbox_processes_             = nullptr;
+  QVBoxLayout* layout_groupboxes_of_processes_ = nullptr;
+  std::unordered_map<std::string, QGridLayout*> map_grid_layouts_;
+  std::vector<DispatcherCategoryWidget*>        vec_collapsible_widgets_;
+  QGroupBox*                                    script_group_box_   = nullptr;
+  QGridLayout*                                  script_layout_      = nullptr;
+  QGroupBox*                                    variable_group_box_ = nullptr;
+  QGridLayout*                                  variable_layout_    = nullptr;
+
   QSize minimumSizeHint() const { return QSize(30, 30); }
   QSize sizeHint() const { return QSize(30, 30); }
-  void  InitializeLayout();
 
  signals:
 };

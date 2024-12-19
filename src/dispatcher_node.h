@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <QGridLayout>
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
@@ -24,9 +25,18 @@ class DispatcherNode : public casah_node::EvrInterface
   DispatcherNode(DispatcherWidget*);
   ~DispatcherNode();
 
+  enum ItemType {
+    CATEGORY = 0,  // A Dispatcher construct to signal there will be multiple
+                   // Items and to lump them all into one category
+    ROS,           // Items that are ros_nodes
+    SHELL,         // Items that are executables called from shell
+    UNDEF,         // Unsupported
+  };
+
   struct Configuration {
     std::map<std::string, std::string> environment_variables;
     std::string                        cmd_prefix;
+    std::string                        icon;
   };
 
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
@@ -34,6 +44,10 @@ class DispatcherNode : public casah_node::EvrInterface
     return online_nodes_;
   }
   const std::string& get_workspace() { return workspace_; }
+  bool&              should_hide_unconfigured_process()
+  {
+    return hide_unconfigured_processes_;
+  }
   const std::string& get_cmd_prefix(const std::string& configuration)
   {
     // check if configuration exists
@@ -81,8 +95,9 @@ class DispatcherNode : public casah_node::EvrInterface
   double GetTimerRate() { return casah_node::BaseInterface::GetTimerRate(); }
 
  private:
-  bool                                  last_online_state_        = false;
-  bool                                  tmux_sessions_configured_ = false;
+  bool                                  last_online_state_           = false;
+  bool                                  tmux_sessions_configured_    = false;
+  bool                                  hide_unconfigured_processes_ = false;
   std::string                           dispatcher_config_path_;
   int                                   ssh_timeout_sec_ = 10;
   std::vector<dispatcher::ProcessItem*> dispatcher_items_;
@@ -94,8 +109,12 @@ class DispatcherNode : public casah_node::EvrInterface
   std::map<std::string, Configuration>                configurations_;
 
   void              ParseConfig();
+  void              AddConfiguration(const std::string&, const YAML::Node&);
+  void              AddItem(ItemType, const YAML::Node&, QGridLayout*);
   void              SetupTmuxSessions();
   void              CleanupTmuxSessions();
+  ItemType          GetItemTypeFromStr(std::string);
+  std::string       ItemTypeToStr(ItemType);
   DispatcherWidget* widget_ = nullptr;
 };
 

@@ -23,10 +23,10 @@ static bool check_gnome_terminal_exists()
 */
 dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
                                      dispatcher::DispatcherNode* ros_node,
-                                     const YAML::Node&           node)
+                                     const YAML::Node&           node,
+                                     QGridLayout*                layout)
     : dispatcher::Item(parent, ros_node, node)
 {
-  QGridLayout* layout = dispatcher_->get_grid_layout();
   assert(layout);
 
   if (node["use_environment_variables"]) {
@@ -84,36 +84,45 @@ dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
   orange_status_icon_ =
       QPixmap::fromImage(QImage(":/icons/orange.png").scaledToHeight(20));
 
+  int check_box_max_width    = 150;
   check_box_                 = new QCheckBox(QString(name_.c_str()), this);
   Qt::CheckState check_state = start_checked ? Qt::Checked : Qt::Unchecked;
   layout->addWidget(check_box_, index_, 0);
   check_box_->setChecked(check_state);
   check_box_->setAttribute(Qt::WA_TransparentForMouseEvents, false);
   check_box_->setFocusPolicy(Qt::StrongFocus);
+  // Set min width for CheckBox so that resizing won't alter vertical alignment
+  check_box_->setMinimumWidth(check_box_max_width);
+  // If the Checkbox text is too long, convert to elidedText so we don't exceed
+  // the min width for CheckBox
+  QFontMetrics fontMetrics(check_box_->font());
+  QString      elidedText = fontMetrics.elidedText(
+      check_box_->text(), Qt::ElideMiddle, check_box_max_width);
+  check_box_->setText(elidedText);
+
+  QSpacerItem* spacer =
+      new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+  layout->addItem(spacer, index_, 1);
 
   label_ = new QLabel("");
   label_->setPixmap(red_status_icon_);
-  layout->addWidget(label_, index_, 1);
+  layout->addWidget(label_, index_, 2);
 
   start_ = new QPushButton("start", this);
   start_->setStyleSheet(QString("color: green"));
-  layout->addWidget(start_, index_, 2);
+  layout->addWidget(start_, index_, 3);
   connect(start_, SIGNAL(clicked()), this, SLOT(StartCb()));
 
   stop_ = new QPushButton("stop", this);
   stop_->setStyleSheet(QString("color: red"));
-  layout->addWidget(stop_, index_, 3);
+  layout->addWidget(stop_, index_, 4);
   connect(stop_, SIGNAL(clicked()), this, SLOT(StopCb()));
 
   terminal_ = new QPushButton(this);
   terminal_->setIcon(QIcon(":/icons/terminal.png"));
   terminal_->setIconSize(QSize(20, 20));
-  layout->addWidget(terminal_, index_, 4);
+  layout->addWidget(terminal_, index_, 5);
   connect(terminal_, SIGNAL(clicked()), this, SLOT(TerminalCb()));
-
-  // QSpacerItem* spacer =
-  //     new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-  // layout->addItem(spacer, index_, 5);
 
   UpdateConfiguration();
 }
@@ -137,14 +146,22 @@ dispatcher::ProcessItem::~ProcessItem() {}
 void dispatcher::ProcessItem::SetEnabled(bool enable)
 {
   enabled_ = enable;
-  check_box_->setEnabled(enable);
-  terminal_->setEnabled(enable);
-  start_->setEnabled(enable);
-  stop_->setEnabled(enable);
-  if (enable) {
-    label_->setPixmap(red_status_icon_);
+  if (ros_node_->should_hide_unconfigured_process()) {
+    check_box_->setVisible(enable);
+    terminal_->setVisible(enable);
+    start_->setVisible(enable);
+    stop_->setVisible(enable);
+    label_->setVisible(enable);
   } else {
-    label_->setPixmap(grey_status_icon_);
+    check_box_->setEnabled(enable);
+    terminal_->setEnabled(enable);
+    start_->setEnabled(enable);
+    stop_->setEnabled(enable);
+    if (enable) {
+      label_->setPixmap(red_status_icon_);
+    } else {
+      label_->setPixmap(grey_status_icon_);
+    }
   }
 }
 
@@ -157,7 +174,8 @@ void dispatcher::ProcessItem::UpdateConfiguration()
   }
 
   Item::UpdateConfiguration();
-  if (!current_configuration_) {
+  if (current_configuration_ == nullptr) {
+    // nullptr implies the current configuration is undefined for this item
     SetEnabled(false);
     return;
   }
