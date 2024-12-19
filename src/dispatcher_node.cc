@@ -59,8 +59,7 @@ void dispatcher::DispatcherNode::ParseConfig()
   // Determine how nodes irrelevant to the chosen configuration is displayed
   if (root["hide_unconfigured_processes"]) {
     hide_unconfigured_processes_ =
-        root["hide_unconfigured_processes"].as<std::string>() == "true" ? true
-                                                                        : false;
+        root["hide_unconfigured_processes"].as<bool>();
   }
 
   // Load other configurations defined in YAML and then add them all to

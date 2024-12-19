@@ -158,7 +158,7 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   } else {
     EVR_ACTIVITY_HI_REF(ros_node_,
                         "Unable to restore window size from previous session "
-                        "so will default to something arbitrary");
+                        "so defaulting to 520x600.");
     resize(520, 600);
   }
 

@@ -2,7 +2,7 @@ workspace: .
 
 # When a configuration is selected in dispatcher, if this is set to true,
 # then processes that are not defined for the specific configuration
-# will be hidden (instead of grayed out)
+# will be hidden (instead of grayed out). [true, false]
 hide_unconfigured_processes: true
 
 variables:
