@@ -31,10 +31,10 @@ nodes:
     start_checked: true
     stop_tmux_cmd: "C-D"
 
-  - name: simulation_but_this_is_a_very_long_name_to_demonstrate_elided
+  - name: simulation_maybe
     type: category 
     items:
-    - name: ping1_1
+    - name: ping1_but_this_is_a_very_long_name_to_demonstrate_elided
       type: shell
       configurations:
       - name: online
