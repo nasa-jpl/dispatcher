@@ -270,9 +270,9 @@ void dispatcher::DispatcherNode::EnableVariables(bool enable)
   }
 }
 
-void dispatcher::DispatcherNode::AddItem(std::string       node_type,
-                                         const YAML::Node& node,
-                                         QGridLayout*      layout)
+void dispatcher::DispatcherNode::AddItem(const std::string& node_type,
+                                         const YAML::Node&  node,
+                                         QGridLayout*       layout)
 {
   if (node_type == "shell") {
     dispatcher_items_.push_back(
@@ -289,8 +289,8 @@ void dispatcher::DispatcherNode::AddItem(std::string       node_type,
   }
 }
 
-void dispatcher::DispatcherNode::AddConfiguration(std::string       name,
-                                                  const YAML::Node& node)
+void dispatcher::DispatcherNode::AddConfiguration(const std::string& name,
+                                                  const YAML::Node&  node)
 {
   dispatcher::DispatcherNode::Configuration configuration;
   if (node["environment_variables"]) {

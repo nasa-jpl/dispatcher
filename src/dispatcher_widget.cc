@@ -133,7 +133,7 @@ void dispatcher::DispatcherWidget::EnableVariables(bool enable)
 @brief class constructor for DispatcherWidget application
 */
 dispatcher::DispatcherWidget::DispatcherWidget(
-    QWidget* parent, std::string dispatcher_lock_file_path)
+    QWidget* parent, const std::string& dispatcher_lock_file_path)
     : QScrollArea(parent)
 {
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -307,7 +307,8 @@ void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
   QCoreApplication::quit();
 }
 
-QGridLayout* dispatcher::DispatcherWidget::AddSingleProcess(std::string name)
+QGridLayout* dispatcher::DispatcherWidget::AddSingleProcess(
+    const std::string& name)
 {
   QGroupBox*   gb_single          = DispatcherGroupBox(groupbox_processes_);
   QVBoxLayout* v_layout_gb_single = new QVBoxLayout(gb_single);
@@ -325,7 +326,7 @@ QGridLayout* dispatcher::DispatcherWidget::AddSingleProcess(std::string name)
 }
 
 QGridLayout* dispatcher::DispatcherWidget::AddCategoryOfProcesses(
-    std::string category_name)
+    const std::string& category_name)
 {
   dispatcher::DispatcherCategoryWidget* widget =
       new dispatcher::DispatcherCategoryWidget(groupbox_processes_,
@@ -338,7 +339,7 @@ QGridLayout* dispatcher::DispatcherWidget::AddCategoryOfProcesses(
 }
 
 dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
-    QWidget* parent, std::string category_name)
+    QWidget* parent, const std::string& category_name)
     : QGroupBox(parent)
 {
   this->setObjectName(QString("categoryGb"));
