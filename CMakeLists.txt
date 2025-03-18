@@ -42,7 +42,7 @@ find_package(
   Gui
   REQUIRED
 )
-find_package(yaml_cpp_vendor REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -68,17 +68,10 @@ add_library(dispatcher_widget
   src/variable.h
 )
 
-target_link_libraries(
-  dispatcher_widget
-  Qt5::Core
-  Qt5::Widgets
-  Qt5::OpenGL
-  Qt5::Gui
-)
-
 add_library(icons STATIC icons/icons.qrc)
 
-target_compile_options(dispatcher_widget PUBLIC
+target_compile_options(
+  dispatcher_widget PUBLIC
   -Wall
   -D_GNU_SOURCE=1
   -pipe
@@ -90,30 +83,33 @@ target_compile_options(dispatcher_widget PUBLIC
   -DQT_WIDGETS_LIB
   -DQT_GUI_LIB
   -DQT_CORE_LIB
-  -lstdc++11
-  -std=c++11
   -Wall
   -Wextra
   -ggdb3
 )
 
-target_include_directories(dispatcher_widget
-  PUBLIC
+target_include_directories(
+  dispatcher_widget PUBLIC
   ${CMAKE_BINARY_DIR}/include
 )
 
-target_link_libraries(
-  dispatcher_widget
-  casah_node
-  icons
-)
-
-ament_target_dependencies(dispatcher_widget
+ament_target_dependencies(
+  dispatcher_widget PUBLIC
   rclcpp
-  std_srvs
   sensor_msgs
   casah_msgs
-  yaml_cpp_vendor
+  std_srvs
+)
+
+target_link_libraries(
+  dispatcher_widget PUBLIC
+  Qt5::Core
+  Qt5::Widgets
+  Qt5::OpenGL
+  Qt5::Gui
+  casah_node
+  icons
+  yaml-cpp
 )
 
 add_executable(
