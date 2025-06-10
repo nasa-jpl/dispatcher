@@ -17,7 +17,7 @@ cfw_add_target_tag(
 )
 
 cfw_fetch_dependencies(
-  casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v1.0.0
+  casah_node git@fornat1.jpl.nasa.gov:casah/ros2/libs/casah_node.git v1.0.1
 )
 
 set(CMAKE_AUTOMOC ON)
