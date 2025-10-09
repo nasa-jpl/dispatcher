@@ -147,7 +147,13 @@ dispatcher::DispatcherWidget::DispatcherWidget(
 
   // Reads the dispatcher.yaml and setup/populates QWidgets with more
   // information (i.e processes, configurations)
-  ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
+  try { // In case we are unable to create the ros2 node, we delete the lock file
+    ros_node_ = std::make_shared<dispatcher::DispatcherNode>(this);
+  }
+  catch (...) {
+    DeleteLockFile(dispatcher_lock_file_path_);
+    throw;
+  }
 
   // Pick up WindowSize settings, if avail, from last session to restore
   QSettings settings;
