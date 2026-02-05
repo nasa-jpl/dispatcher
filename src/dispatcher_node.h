@@ -99,6 +99,7 @@ class DispatcherNode : public casah_node::EvrInterface
   bool                                  tmux_sessions_configured_    = false;
   bool                                  hide_unconfigured_processes_ = false;
   std::string                           dispatcher_config_path_;
+  std::string                           initial_configuration_;
   int                                   ssh_timeout_sec_ = 10;
   std::vector<dispatcher::ProcessItem*> dispatcher_items_;
   std::vector<dispatcher::ScriptItem*>  script_items_;

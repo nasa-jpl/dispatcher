@@ -39,11 +39,14 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   InitializeTimerRate();
   DeclareInitParameterString("dispatcher_config_path", "",
                              "Path to dispatcher configuration file");
+  DeclareInitParameterString("initial_configuration", "",
+                             "Name of initial configuration to load");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
 
   DeclareInitParameterInt("ssh_timeout_sec", 10,
                           "Default timeout for initiating remote ssh sessions");
   this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
+  this->get_parameter("initial_configuration", initial_configuration_);
   ParseConfig();
   CleanupTmuxSessions();
   UpdateConfiguration();
@@ -87,6 +90,21 @@ void dispatcher::DispatcherNode::ParseConfig()
     }
   }
   combo_box->setIconSize(QSize(20, 20));
+
+  // Set initial configuration from parameter if specified
+  if (!initial_configuration_.empty()) {
+    int index = combo_box->findText(QString::fromStdString(initial_configuration_));
+    if (index >= 0) {
+      combo_box->setCurrentIndex(index);
+      EVR_ACTIVITY_HI("Set initial_configuration to '%s'",
+                      initial_configuration_.c_str());
+    } else {
+      EVR_WARNING_HI("initial_configuration '%s' not found in available configurations",
+                     initial_configuration_.c_str());
+    }
+  } else {
+    EVR_DIAGNOSTIC("No initial_configuration specified, using default");
+  }
 
   // add default 'all' configuration
   AddConfiguration("all", root);
