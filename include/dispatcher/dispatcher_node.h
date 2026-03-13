@@ -106,6 +106,7 @@ class DispatcherNode : public rclcpp::Node
   std::shared_ptr<rclcpp::node_interfaces::NodeGraph> node_graph_;
   std::vector<std::pair<std::string, std::string>>    online_nodes_;
   std::map<std::string, Configuration>                configurations_;
+  double                                             target_loop_rate_hz_ = 10.0;
 
   void              ParseConfig();
   void              AddConfiguration(const std::string&, const YAML::Node&);

@@ -36,17 +36,19 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
-  InitializeTimerRate();
-  DeclareInitParameterString("dispatcher_config_path", "",
-                             "Path to dispatcher configuration file");
-  DeclareInitParameterString("initial_configuration", "",
-                             "Name of initial configuration to load");
+  this->declare_parameter<double>("target_loop_rate_hz", 100.0);
+  this->get_parameter("target_loop_rate_hz", target_loop_rate_hz_);
+
+
+  this->declare_parameter<std::string>("dispatcher_config_path", "");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
 
-  DeclareInitParameterInt("ssh_timeout_sec", 10,
-                          "Default timeout for initiating remote ssh sessions");
+  this->declare_parameter<int>("ssh_timeout_sec", 10);
   this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
+
+  this->declare_parameter<std::string>("initial_configuration", "");
   this->get_parameter("initial_configuration", initial_configuration_);
+
   ParseConfig();
   CleanupTmuxSessions();
   UpdateConfiguration();

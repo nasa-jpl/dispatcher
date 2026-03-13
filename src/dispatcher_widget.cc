@@ -269,7 +269,7 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
   setWidgetResizable(true);
 
   // Set up timer
-  double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
+  double loop_period_ms = 1.0 / ros_node_->target_loop_rate_hz_ * 1000.0;
   RCLCPP_DEBUG(ros_node_->get_logger(), "Using loop period %f ms",
                loop_period_ms);
   timer_ = new QTimer;
