@@ -23,7 +23,6 @@
 
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "casah_node/evr_interface.hpp"
 
 #include <sensor_msgs/msg/joint_state.hpp>
 

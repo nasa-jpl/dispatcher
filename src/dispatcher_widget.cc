@@ -17,6 +17,7 @@
 #include <QSpacerItem>
 #include <QWidget>
 
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node_interfaces/node_base_interface.hpp>
 
 #include <yaml-cpp/yaml.h>
@@ -115,7 +116,8 @@ static QSpacerItem* DispatcherSpacerItem(DispatcherSpacerItemType type)
 void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 {
   if (script_group_box_ == nullptr) {
-    EVR_FATAL_REF(ros_node_, "script_group_box_ was not correctly initialized");
+    RCLCPP_FATAL(ros_node_->get_logger(),
+                 "script_group_box_ was not correctly initialized");
   }
   script_group_box_->setVisible(enable);
 }
@@ -123,8 +125,8 @@ void dispatcher::DispatcherWidget::EnableScripts(bool enable)
 void dispatcher::DispatcherWidget::EnableVariables(bool enable)
 {
   if (variable_group_box_ == nullptr) {
-    EVR_FATAL_REF(ros_node_,
-                  "variable_group_box_ was not correctly initialized");
+    RCLCPP_FATAL(ros_node_->get_logger(),
+                 "variable_group_box_ was not correctly initialized");
   }
   variable_group_box_->setVisible(enable);
 }
@@ -158,13 +160,13 @@ dispatcher::DispatcherWidget::DispatcherWidget(
   // Pick up WindowSize settings, if avail, from last session to restore
   QSettings settings;
   if (settings.contains("geometry")) {
-    EVR_ACTIVITY_HI_REF(ros_node_,
-                        "Restoring window size from previous session...");
+    RCLCPP_INFO(ros_node_->get_logger(),
+                "Restoring window size from previous session...");
     restoreGeometry(settings.value("geometry").toByteArray());
   } else {
-    EVR_ACTIVITY_HI_REF(ros_node_,
-                        "Unable to restore window size from previous session "
-                        "so defaulting to 520x600.");
+    RCLCPP_INFO(ros_node_->get_logger(),
+                "Unable to restore window size from previous session so "
+                "defaulting to 520x600.");
     resize(520, 600);
   }
 
@@ -268,7 +270,8 @@ void dispatcher::DispatcherWidget::FinalizeWidgets()
 
   // Set up timer
   double loop_period_ms = 1.0 / ros_node_->GetTimerRate() * 1000.0;
-  EVR_DIAGNOSTIC_REF(ros_node_, "Using loop period %f ms", loop_period_ms);
+  RCLCPP_DEBUG(ros_node_->get_logger(), "Using loop period %f ms",
+               loop_period_ms);
   timer_ = new QTimer;
   connect(timer_, SIGNAL(timeout()), this, SLOT(Process()));
   timer_->start(loop_period_ms);
@@ -285,7 +288,7 @@ void dispatcher::DispatcherWidget::Process()
     ros_node_->Process();
     ros_executor_.spin_node_some(ros_node_);
   } else {
-    EVR_ACTIVITY_HI_REF(ros_node_, "Shutting down");
+    RCLCPP_INFO(ros_node_->get_logger(), "Shutting down");
     ros_node_->StopAll();
     rclcpp::shutdown();
     QCoreApplication::quit();
@@ -304,7 +307,8 @@ void dispatcher::DispatcherWidget::StopAllCheckedCb()
 
 void dispatcher::DispatcherWidget::closeEvent(QCloseEvent*)
 {
-  EVR_ACTIVITY_HI_REF(ros_node_, "Shutting down after saving window state.");
+  RCLCPP_INFO(ros_node_->get_logger(),
+              "Shutting down after saving window state.");
   QSettings settings;
   settings.setValue("geometry", saveGeometry());
 

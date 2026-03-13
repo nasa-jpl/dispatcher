@@ -18,6 +18,7 @@
 #include <QSpacerItem>
 #include <QWidget>
 
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node_interfaces/node_base_interface.hpp>
 
 #include <yaml-cpp/yaml.h>
@@ -28,8 +29,7 @@
 @brief class constructor for DispatcherNode application
 */
 dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
-    : casah_node::BaseInterface("dispatcher", "dispatcher"),
-      casah_node::EvrInterface("dispatcher", "dispatcher")
+    : rclcpp::Node("dispatcher_node", rclcpp::NodeOptions().allow_undeclared_parameters(true))
 {
   widget_ = widget;
 
@@ -54,8 +54,8 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
 
 void dispatcher::DispatcherNode::ParseConfig()
 {
-  EVR_DIAGNOSTIC("Parsing dispatcher_config_path: %s",
-                 dispatcher_config_path_.c_str());
+  RCLCPP_DEBUG(this->get_logger(), "Parsing dispatcher_config_path: %s",
+               dispatcher_config_path_.c_str());
   YAML::Node root         = YAML::LoadFile(dispatcher_config_path_.c_str());
   auto       dispatcher_w = dynamic_cast<DispatcherWidget*>(widget_);
 
@@ -96,14 +96,16 @@ void dispatcher::DispatcherNode::ParseConfig()
     int index = combo_box->findText(QString::fromStdString(initial_configuration_));
     if (index >= 0) {
       combo_box->setCurrentIndex(index);
-      EVR_ACTIVITY_HI("Set initial_configuration to '%s'",
-                      initial_configuration_.c_str());
+      RCLCPP_INFO(this->get_logger(), "Set initial_configuration to '%s'",
+                  initial_configuration_.c_str());
     } else {
-      EVR_WARNING_HI("initial_configuration '%s' not found in available configurations",
-                     initial_configuration_.c_str());
+      RCLCPP_WARN(this->get_logger(),
+                  "initial_configuration '%s' not found in available configurations",
+                  initial_configuration_.c_str());
     }
   } else {
-    EVR_DIAGNOSTIC("No initial_configuration specified, using default");
+    RCLCPP_DEBUG(this->get_logger(),
+                 "No initial_configuration specified, using default");
   }
 
   // add default 'all' configuration
@@ -125,7 +127,8 @@ void dispatcher::DispatcherNode::ParseConfig()
             AddItem(node_type, item, grid_layout);
           }
         } else {
-          EVR_FATAL(
+          RCLCPP_FATAL(
+              this->get_logger(),
               "Encountered node type %s in YAML but user did not specify an "
               "'items' array that lists all the items to be run. Nothing "
               "additional will be added to dispatcher",
@@ -186,11 +189,11 @@ void dispatcher::DispatcherNode::Process()
 
 void dispatcher::DispatcherNode::UpdateConfiguration()
 {
-  EVR_ACTIVITY_HI("Updating configuration to: %s",
-                  widget_->get_configuration_combo_box()
-                      ->currentText()
-                      .toStdString()
-                      .c_str());
+  RCLCPP_INFO(this->get_logger(), "Updating configuration to: %s",
+              widget_->get_configuration_combo_box()
+                  ->currentText()
+                  .toStdString()
+                  .c_str());
 
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
   for (auto& item : dispatcher_items_) {
@@ -228,27 +231,31 @@ void dispatcher::DispatcherNode::StopChecked()
 
 void dispatcher::DispatcherNode::StopAll()
 {
-  EVR_ACTIVITY_HI("Stopping all dispatch items and killing tmux sessions...");
+  RCLCPP_INFO(this->get_logger(),
+              "Stopping all dispatch items and killing tmux sessions...");
   for (auto& item : dispatcher_items_) {
     item->StopCb();
     item->TmuxKillSession();
   }
-  EVR_ACTIVITY_LO("Stopped all dispatch items and killing tmux sessions");
+  RCLCPP_INFO(this->get_logger(),
+              "Stopped all dispatch items and killing tmux sessions");
 }
 
 void dispatcher::DispatcherNode::CleanupTmuxSessions()
 {
-  EVR_ACTIVITY_HI(
-      "Removing out-dated tmux session for all dispatcher items...");
+  RCLCPP_INFO(this->get_logger(),
+              "Removing out-dated tmux session for all dispatcher items...");
 
   for (auto& item : dispatcher_items_) {
     // Attempt to clean up any local tmux sessions
     if (item->TmuxHasLocalSession()) {
-      EVR_WARNING_HI(
+      RCLCPP_WARN(
+          this->get_logger(),
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
-      EVR_WARNING_LO(
+      RCLCPP_WARN(
+          this->get_logger(),
           "If you consistently see this warning, contact your SW support "
           "developer");
       item->TmuxSendKeys("C-C");  // SIGINT
@@ -259,17 +266,20 @@ void dispatcher::DispatcherNode::CleanupTmuxSessions()
 
 void dispatcher::DispatcherNode::SetupTmuxSessions()
 {
-  EVR_ACTIVITY_HI("Creating tmux session for all Dispatch Items...");
+  RCLCPP_INFO(this->get_logger(),
+              "Creating tmux session for all Dispatch Items...");
 
   for (auto& item : dispatcher_items_) {
     // If the tmux session is already exists, try to refresh session and
     // start it back up from scratch
     if (item->TmuxHasSession()) {
-      EVR_WARNING_HI(
+      RCLCPP_WARN(
+          this->get_logger(),
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
-      EVR_WARNING_LO(
+      RCLCPP_WARN(
+          this->get_logger(),
           "If you consistently see this warning, contact your SW support "
           "developer");
       item->TmuxSendKeys("C-C");  // SIGINT
@@ -278,7 +288,8 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
 
     item->TmuxNewSession();
   }
-  EVR_ACTIVITY_LO("Created Tmux session for all Dispatch Items.");
+  RCLCPP_INFO(this->get_logger(),
+              "Created Tmux session for all Dispatch Items.");
 }
 
 void dispatcher::DispatcherNode::EnableVariables(bool enable)
@@ -302,7 +313,8 @@ void dispatcher::DispatcherNode::AddItem(ItemType          node_type,
           new dispatcher::RosProcessItem(widget_, this, node, layout));
       break;
     default:
-      EVR_WARNING_HI(
+      RCLCPP_WARN(
+          this->get_logger(),
           "Encountered node named '%s' with type '%s' in YAML that's "
           "unsupported, it will be "
           "ignored and not added to dispatcher",

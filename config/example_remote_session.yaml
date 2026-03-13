@@ -26,7 +26,7 @@ nodes:
     - name: online
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py
       hostname: asimov-dev.jpl.nasa.gov 
-      # user: casah-admin <- optionally specify username, if username is specified, dispatcher
+      # user: admin <- optionally specify username, if username is specified, dispatcher
       # issues ssh commands as 'ssh username@hostname "command"'; otherwise dispatcher
       # uses the syntax 'ssh hostname "command"'
     - name: offline

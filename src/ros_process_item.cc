@@ -13,6 +13,8 @@
 #include <QString>
 #include <QVBoxLayout>
 
+#include <rclcpp/rclcpp.hpp>
+
 /*!
 @brief class constructor for RosProcessItem
 */
@@ -107,9 +109,10 @@ void dispatcher::RosProcessItem::Process()
     online_nodes_str = std::to_string(num_online_nodes_found) + "/" +
                        std::to_string(num_expected_online_nodes) +
                        std::string(" nodes online") + online_nodes_str;
-    EVR_ACTIVITY_LO_REF(
-        ros_node_, "Status change for node %s, %ld/%ld nodes online",
-        name_.c_str(), num_online_nodes_found, num_expected_online_nodes);
+    RCLCPP_INFO(ros_node_->get_logger(),
+                "Status change for node %s, %ld/%ld nodes online",
+                name_.c_str(), num_online_nodes_found,
+                num_expected_online_nodes);
     num_online_nodes_prev_ = num_online_nodes_found;
     label_->setToolTip(online_nodes_str.c_str());
     if (num_online_nodes_found == 0) {

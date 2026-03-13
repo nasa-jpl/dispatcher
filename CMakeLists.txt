@@ -73,7 +73,6 @@ target_link_libraries(dispatcher_widget
     Qt5::Gui
     yaml-cpp
     icons
-    casah_node
 )
 
 add_executable(dispatcher

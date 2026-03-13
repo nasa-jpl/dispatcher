@@ -17,8 +17,8 @@ The yaml config file contains the workspace location and settings for a number o
 ## Parameters
 | Name                    | Type   | Description                                        | Default |
 | ----------------------- | ------ | -------------------------------------------------- | ------- |
-| `casah_logs_dir`        | string | Location of log files                              | "/logs" |
-| `casah_verbosity_level` | string | One of {`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`} | "INFO"  |
+| `logs_dir`        | string | Location of log files                              | "/logs" |
+| `verbosity_level` | string | One of {`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`} | "INFO"  |
 | `target_loop_rate_hz`   | double | Process loop rate                                  | 100     |
 | `dispacher_config_path` | string | Path to dispatcher configuration yaml              | ''      |
 | `ssh_timeout_sec`       | int    | Timeout in secs when connecting to SSH server      | 10      |

@@ -13,13 +13,12 @@
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include "casah_node/evr_interface.hpp"
 
 namespace dispatcher
 {
 class DispatcherWidget;
 
-class DispatcherNode : public casah_node::EvrInterface
+class DispatcherNode : public rclcpp::Node
 {
  public:
   DispatcherNode(DispatcherWidget*);
@@ -82,7 +81,7 @@ class DispatcherNode : public casah_node::EvrInterface
     }
   }
   int          get_ssh_timeout_sec() { return ssh_timeout_sec_; }
-  virtual void Process() override;
+  void         Process();
   void         StartChecked();
   void         StopChecked();
   void         StopAll();
@@ -92,7 +91,6 @@ class DispatcherNode : public casah_node::EvrInterface
   {
     return variables_;
   }
-  double GetTimerRate() { return casah_node::BaseInterface::GetTimerRate(); }
 
  private:
   bool                                  last_online_state_           = false;

@@ -3,7 +3,7 @@
 <package format="3">
   <name>dispatcher</name>
   <version>0.1.5</version>
-  <description>ROS2 dispatcher for CASAH node lifecycle management</description>
+  <description>ROS2 dispatcher for node lifecycle management</description>
   <maintainer email="kwehage@jpl.nasa.gov">dev</maintainer>
   <license>JPL / Caltech</license>
 
