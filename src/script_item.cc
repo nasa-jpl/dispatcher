@@ -1,3 +1,4 @@
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/script_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -72,35 +73,19 @@ dispatcher::ScriptItem::~ScriptItem() {}
 
 void dispatcher::ScriptItem::StartCb()
 {
-  std::string system_call;
-  std::string cmd_with_prefix;
   std::string configured_cmd = current_configuration_->cmd;
 
   // replace any instances of variables matching pattern $VARIABLE_NAME with its
   // value
-  const auto& variables = ros_node_->GetVariables();
-  for (auto& variable : variables) {
-    configured_cmd = std::regex_replace(configured_cmd,
-                                        std::regex("\\$" + variable->GetName()),
-                                        variable->GetValue());
+  std::vector<std::pair<std::string, std::string>> variable_values;
+  for (auto& variable : ros_node_->GetVariables()) {
+    variable_values.emplace_back(variable->GetName(), variable->GetValue());
   }
-  // Prepend prefixes and terminal stuff as needed
-  if (use_cmd_prefix_) {
-    std::string env_prefix;
-    for (auto& it : ros_node_->get_environment_variables("all")) {
-      env_prefix += it.first + "=" + it.second + " ";
-    }
-    assert(current_configuration_);
-    cmd_with_prefix = "bash -c \'" + ros_node_->get_cmd_prefix("all") + " " +
-                      env_prefix + configured_cmd + "\'";
-  } else {
-    cmd_with_prefix = "bash -c \'" + configured_cmd + "\'";
-  }
-  if (use_terminal_) {
-    system_call = "gnome-terminal -- " + cmd_with_prefix;
-  } else {
-    system_call = cmd_with_prefix;
-  }
+  configured_cmd =
+      dispatcher::detail::SubstituteVariables(configured_cmd, variable_values);
 
-  (void)SystemCall(system_call);
+  (void)SystemCall(dispatcher::detail::BuildScriptSystemCall(
+      configured_cmd, ros_node_->get_cmd_prefix("all"),
+      ros_node_->get_environment_variables("all"), use_cmd_prefix_,
+      use_terminal_));
 }

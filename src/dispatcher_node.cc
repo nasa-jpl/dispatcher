@@ -1,4 +1,5 @@
 #include "dispatcher/dispatcher_node.h"
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/dispatcher_widget.h"
 #include "dispatcher/ros_process_item.h"
 #include "dispatcher/shell_process_item.h"
@@ -164,6 +165,25 @@ void dispatcher::DispatcherNode::ParseConfig()
 @brief class destructor
 */
 dispatcher::DispatcherNode::~DispatcherNode() {}
+
+const std::string& dispatcher::DispatcherNode::get_cmd_prefix(
+    const std::string& configuration)
+{
+  static const std::string kEmptyPrefix;
+  const auto* resolved =
+      dispatcher::detail::ResolveCmdPrefix(configurations_, configuration);
+  return resolved == nullptr ? kEmptyPrefix : *resolved;
+}
+
+const std::map<std::string, std::string>&
+dispatcher::DispatcherNode::get_environment_variables(
+    const std::string& configuration)
+{
+  static const std::map<std::string, std::string> kEmptyEnvironmentVariables;
+  const auto* resolved = dispatcher::detail::ResolveEnvironmentVariables(
+      configurations_, configuration);
+  return resolved == nullptr ? kEmptyEnvironmentVariables : *resolved;
+}
 
 void dispatcher::DispatcherNode::Process()
 {
@@ -347,34 +367,10 @@ void dispatcher::DispatcherNode::AddConfiguration(const std::string& name,
 
 std::string dispatcher::DispatcherNode::ItemTypeToStr(ItemType type)
 {
-  std::string str_item_type;
-  switch (type) {
-    case ROS:
-      str_item_type = "ros";
-      break;
-    case SHELL:
-      str_item_type = "shell";
-      break;
-    case CATEGORY:
-      str_item_type = "category";
-      break;
-    default:
-      str_item_type = "undef";
-      break;
-  }
-  return str_item_type;
+  return dispatcher::detail::ItemTypeToString(type);
 }
 dispatcher::DispatcherNode::ItemType
 dispatcher::DispatcherNode::GetItemTypeFromStr(std::string type)
 {
-  ItemType item_type = UNDEF;
-  std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-  if (type == "shell") {
-    item_type = SHELL;
-  } else if (type == "ros") {
-    item_type = ROS;
-  } else if (type == "category") {
-    item_type = CATEGORY;
-  }
-  return item_type;
+  return dispatcher::detail::ParseItemType(type);
 }

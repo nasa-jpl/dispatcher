@@ -22,6 +22,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+option(DISPATCHER_ENABLE_LINT_TESTS "Run ament lint tests for dispatcher" OFF)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -33,6 +35,7 @@ add_library(icons STATIC
 add_library(dispatcher_widget
   include/dispatcher/dispatcher_node.h
   include/dispatcher/dispatcher_widget.h
+  include/dispatcher/detail/logic.h
   include/dispatcher/item.h
   include/dispatcher/process_item.h
   include/dispatcher/ros_process_item.h
@@ -42,6 +45,7 @@ add_library(dispatcher_widget
   src/dispatcher_widget.cc
   src/dispatcher_node.cc
   src/item.cc
+  src/logic.cc
   src/process_item.cc
   src/script_item.cc
   src/shell_process_item.cc
@@ -102,8 +106,21 @@ install(
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
+  find_package(ament_cmake_gtest REQUIRED)
+  if(DISPATCHER_ENABLE_LINT_TESTS)
+    find_package(ament_lint_auto REQUIRED)
+    ament_lint_auto_find_test_dependencies()
+  endif()
+
+  ament_add_gtest(dispatcher_logic_test
+    test/dispatcher_logic_test.cpp
+    test/dispatcher_status_test.cpp
+  )
+  if(TARGET dispatcher_logic_test)
+    target_link_libraries(dispatcher_logic_test
+      dispatcher_widget
+    )
+  endif()
 endif()
 
 ament_package()

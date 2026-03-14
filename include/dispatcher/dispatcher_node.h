@@ -13,7 +13,6 @@
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
-
 namespace dispatcher
 {
 class DispatcherWidget;
@@ -47,39 +46,9 @@ class DispatcherNode : public rclcpp::Node
   {
     return hide_unconfigured_processes_;
   }
-  const std::string& get_cmd_prefix(const std::string& configuration)
-  {
-    // check if configuration exists
-    if (configurations_.find(configuration) == configurations_.end()) {
-      // configuration was not found, return default 'all' configuration
-      return configurations_["all"].cmd_prefix;
-    } else {
-      // check if specified configuration is empty
-      if (configurations_[configuration].cmd_prefix.empty()) {
-        // if empty, override with default 'all' configuration
-        return configurations_["all"].cmd_prefix;
-      } else {
-        return configurations_[configuration].cmd_prefix;
-      }
-    }
-  }
+  const std::string& get_cmd_prefix(const std::string& configuration);
   const std::map<std::string, std::string>& get_environment_variables(
-      const std::string& configuration)
-  {
-    // check if configuration exists
-    if (configurations_.find(configuration) == configurations_.end()) {
-      // configuration was not found, return default 'all' configuration
-      return configurations_["all"].environment_variables;
-    } else {
-      // check if specified configuration is empty
-      if (configurations_[configuration].environment_variables.empty()) {
-        // if empty, override with default 'all' configuration
-        return configurations_["all"].environment_variables;
-      } else {
-        return configurations_[configuration].environment_variables;
-      }
-    }
-  }
+      const std::string& configuration);
   int          get_ssh_timeout_sec() { return ssh_timeout_sec_; }
   void         Process();
   void         StartChecked();

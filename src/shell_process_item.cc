@@ -1,3 +1,4 @@
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/shell_process_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -41,9 +42,7 @@ void dispatcher::ShellProcessItem::Process()
   }
 
   // In the case of a base DispatcherItem, there's only ever one "node"
-  size_t      num_expected_online_nodes = 1;
   size_t      num_online_nodes_found    = num_online_nodes_prev_;
-  std::string online_nodes_str;
 
   // Use pgrep to infer if process is running, but only once a second
   if (nticks_ % static_cast<int>(ros_node_->GetTimerRate()) == 0) {
@@ -51,24 +50,22 @@ void dispatcher::ShellProcessItem::Process()
     num_online_nodes_found = (SystemCall(cmd, false) == 0) ? 1 : 0;
   }
 
-  online_ = (num_online_nodes_found > 0);
-  if (num_online_nodes_found != num_online_nodes_prev_) {
-    online_nodes_str = std::to_string(num_online_nodes_found) + "/" +
-                       std::to_string(num_expected_online_nodes) +
-                       std::string(" nodes online");
+  const auto status = dispatcher::detail::SummarizeShellStatus(
+      num_online_nodes_found);
+  online_ = status.online;
+  if (status.found != num_online_nodes_prev_) {
     RCLCPP_INFO(ros_node_->get_logger(),
                 "Status change for node %s, %ld/%ld nodes online",
-                name_.c_str(), num_online_nodes_found,
-                num_expected_online_nodes);
-    num_online_nodes_prev_ = num_online_nodes_found;
-    label_->setToolTip(online_nodes_str.c_str());
-    if (num_online_nodes_found == 0) {
+                name_.c_str(), status.found, status.expected);
+    num_online_nodes_prev_ = status.found;
+    label_->setToolTip(status.tooltip.c_str());
+    if (status.color == dispatcher::detail::StatusColor::kRed) {
       label_->setPixmap(red_status_icon_);
       label_->setStyleSheet(QString("color: red"));
-    } else if (num_online_nodes_found < num_expected_online_nodes) {
+    } else if (status.color == dispatcher::detail::StatusColor::kOrange) {
       label_->setPixmap(orange_status_icon_);
       label_->setStyleSheet(QString("color: orange"));
-    } else if (num_online_nodes_found == num_expected_online_nodes) {
+    } else {
       label_->setPixmap(green_status_icon_);
       label_->setStyleSheet(QString("color: green"));
     }

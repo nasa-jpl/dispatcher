@@ -1,3 +1,4 @@
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/process_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -67,9 +68,8 @@ dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
   index_             = layout->rowCount();
 
   // Convert any spaces to underscores in YAML Name parameter
-  std::string rep_str = node["name"].as<std::string>();
-  std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
-  tmux_name_ = std::to_string(index_) + "_" + rep_str;
+  tmux_name_ =
+      dispatcher::detail::MakeTmuxName(index_, node["name"].as<std::string>());
 
   if (node["stop_tmux_cmd"]) {
     stop_tmux_cmd_ = node["stop_tmux_cmd"].as<std::string>();
@@ -182,26 +182,12 @@ void dispatcher::ProcessItem::UpdateConfiguration()
     return;
   }
 
-  std::string cmd_tmp;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-
-  if (current_configuration_->hostname != "localhost") {
-    if (current_configuration_->user.empty()) {
-      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-                std::to_string(ssh_timeout_sec) + " " +
-                current_configuration_->hostname + " \"" +
-                current_configuration_->cmd + "\"";
-    } else {
-      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-                std::to_string(ssh_timeout_sec) + " " +
-                current_configuration_->user + "@" +
-                current_configuration_->hostname + " \"" +
-                current_configuration_->cmd + "\"";
-    }
-  } else {
-    cmd_tmp = current_configuration_->cmd;
-  }
-  start_->setToolTip(cmd_tmp.c_str());
+  start_->setToolTip(dispatcher::detail::BuildLaunchToolTip(
+                         current_configuration_->cmd,
+                         current_configuration_->hostname,
+                         current_configuration_->user, ssh_timeout_sec)
+                         .c_str());
 }
 
 bool dispatcher::ProcessItem::PrepareTmuxSession()
@@ -259,15 +245,18 @@ void dispatcher::ProcessItem::StartCb()
   // replace any instances of variables matching pattern $VARIABLE_NAME with its
   // value
   std::string configured_cmd = current_configuration_->cmd;
-  const auto& variables      = ros_node_->GetVariables();
-  for (auto& variable : variables) {
-    configured_cmd = std::regex_replace(configured_cmd,
-                                        std::regex("\\$" + variable->GetName()),
-                                        variable->GetValue());
+  std::vector<std::pair<std::string, std::string>> variable_values;
+  for (auto& variable : ros_node_->GetVariables()) {
+    variable_values.emplace_back(variable->GetName(), variable->GetValue());
   }
+  configured_cmd =
+      dispatcher::detail::SubstituteVariables(configured_cmd, variable_values);
   RCLCPP_INFO(ros_node_->get_logger(), "%s", configured_cmd.c_str());
 
-  TmuxSendKeys(cmd_prefix + " " + env_prefix + " " + configured_cmd);
+  TmuxSendKeys(dispatcher::detail::BuildPrefixedCommand(
+      cmd_prefix, ros_node_->get_environment_variables(
+                      current_configuration_->configuration_name),
+      configured_cmd));
 
   if (attach_on_start_) {
     // detach any existing clients and attach a new gnome terminal window
@@ -307,20 +296,10 @@ void dispatcher::ProcessItem::TerminalCb()
   }
 
   // Start a gnome session and attach a tmux session
-  std::string cmd             = "tmux a -t " + tmux_name_;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-  if (current_configuration_->hostname != "localhost") {
-    if (current_configuration_->user.empty()) {
-      cmd = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-            std::to_string(ssh_timeout_sec) + " -t " +
-            current_configuration_->hostname + " \"" + cmd + "\"";
-    } else {
-      cmd = "ssh -o PasswordAuthentication=no -o ConnectTimeout-" +
-            std::to_string(ssh_timeout_sec) + " -t " +
-            current_configuration_->user + "@" +
-            current_configuration_->hostname + " \"" + cmd + "\"";
-    }
-  }
+  std::string cmd = dispatcher::detail::BuildTmuxAttachCommand(
+      tmux_name_, current_configuration_->hostname, current_configuration_->user,
+      ssh_timeout_sec);
   RCLCPP_INFO(ros_node_->get_logger(),
               "sending command: gnome-terminal -t %s -- %s", name_.c_str(),
               cmd.c_str());

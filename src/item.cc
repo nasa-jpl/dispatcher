@@ -1,3 +1,4 @@
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/item.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -95,14 +96,9 @@ int dispatcher::Item::SystemCall(std::string cmd, bool verbose)
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
   if (current_configuration_ &&
       current_configuration_->hostname != "localhost") {
-    cmd_tmp =
-        "ssh -o PasswordAuthentication=no -o ControlPath=~/.ssh/cm-%r@%h:%p -o "
-        "ControlMaster=auto -o ControlPersist=3m -o ConnectTimeout=" +
-        std::to_string(ssh_timeout_sec) + " ";
-    if (!current_configuration_->user.empty()) {
-      cmd_tmp += current_configuration_->user + "@";
-    }
-    cmd_tmp += current_configuration_->hostname + " \"" + cmd + "\"";
+    cmd_tmp = dispatcher::detail::WrapSystemCallCommand(
+        cmd, current_configuration_->hostname, current_configuration_->user,
+        ssh_timeout_sec);
   }
   if (verbose) {
     RCLCPP_INFO(ros_node_->get_logger(), "SystemCall: %s", cmd_tmp.c_str());
