@@ -6,28 +6,31 @@
 namespace dispatcher
 {
 
+/*! @brief Process item that monitors one or more ROS graph nodes. */
 class RosProcessItem : public ProcessItem
 {
   Q_OBJECT  // must be included to add qt meta information
 
  public:
+  /*! @brief Constructs a ROS-backed process item and loads monitor metadata. */
   explicit RosProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&,
                           QGridLayout*);
+  /*! @brief Destroys the ROS process item. */
   ~RosProcessItem();
 
-  // Uses rqt to poll for aliveness of ROS nodes
-  // Also prints a more verbose EVR to report status of ros_nodes
+  /*! @brief Updates the item status from the current ROS graph snapshot. */
   void Process();
 
  public slots:
-  // Additionally does a source install/setup.bash before running commands
+  /*! @brief Starts the process after sourcing the workspace setup file. */
   void StartCb();
+  /*! @brief Stops the process using the base tmux stop behavior. */
   void StopCb();
+  /*! @brief Opens a terminal attached to the process tmux session. */
   void TerminalCb();
 
  private:
-  // default ros nodes to monitor / applies to all configurations
-  // if not overridden with configuration specific nodes to monitor
+  /*! @brief Default ROS nodes monitored when no config-specific override exists. */
   std::vector<RosNodeMonitorConfig> ros_nodes_;
 };
 
