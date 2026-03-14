@@ -91,6 +91,7 @@ class DispatcherNode : public rclcpp::Node
   {
     return variables_;
   }
+  double GetTimerRate() const { return target_loop_rate_hz_; }
 
  private:
   bool                                  last_online_state_           = false;

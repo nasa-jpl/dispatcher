@@ -2,6 +2,7 @@
 #include "dispatcher/dispatcher_widget.h"
 
 #include <stdlib.h>
+#include <regex>
 #include <string>
 
 #include <QHBoxLayout>

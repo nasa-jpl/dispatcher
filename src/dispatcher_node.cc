@@ -1,5 +1,4 @@
 #include "dispatcher/dispatcher_node.h"
-#include "dispatcher/config.h"
 #include "dispatcher/dispatcher_widget.h"
 #include "dispatcher/ros_process_item.h"
 #include "dispatcher/shell_process_item.h"
@@ -23,7 +22,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <cfw/cfw.h>
 
 /*!
 @brief class constructor for DispatcherNode application

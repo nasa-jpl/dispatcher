@@ -25,6 +25,7 @@ class ProcessItem : public Item
   bool        is_checked();
 
   void         SetEnabled(bool);
+  virtual void Process() = 0;
   void         UpdateConfiguration();
   bool         PrepareTmuxSession();
   bool         TmuxKillSession();

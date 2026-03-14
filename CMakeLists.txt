@@ -31,6 +31,14 @@ add_library(icons STATIC
 )
 
 add_library(dispatcher_widget
+  include/dispatcher/dispatcher_node.h
+  include/dispatcher/dispatcher_widget.h
+  include/dispatcher/item.h
+  include/dispatcher/process_item.h
+  include/dispatcher/ros_process_item.h
+  include/dispatcher/script_item.h
+  include/dispatcher/shell_process_item.h
+  include/dispatcher/variable.h
   src/dispatcher_widget.cc
   src/dispatcher_node.cc
   src/item.cc
@@ -43,7 +51,7 @@ add_library(dispatcher_widget
 
 target_include_directories(dispatcher_widget
   PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
 target_compile_features(dispatcher_widget PUBLIC cxx_std_17)
@@ -66,13 +74,12 @@ ament_target_dependencies(dispatcher_widget
 )
 
 target_link_libraries(dispatcher_widget
-  PUBLIC
-    Qt5::Core
-    Qt5::Widgets
-    Qt5::OpenGL
-    Qt5::Gui
-    yaml-cpp
-    icons
+  Qt5::Core
+  Qt5::Widgets
+  Qt5::OpenGL
+  Qt5::Gui
+  yaml-cpp
+  icons
 )
 
 add_executable(dispatcher

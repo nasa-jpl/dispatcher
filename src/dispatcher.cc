@@ -1,4 +1,3 @@
-#include "dispatcher/config.h"
 #include "dispatcher/dispatcher_widget.h"
 
 #include <QApplication>
