@@ -46,9 +46,9 @@ class DispatcherCategoryWidget : public QGroupBox
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public
-      : explicit DispatcherCategoryWidget(
-            QWidget* parent = 0, const std::string& category_name = "Default");
+ public:
+  explicit DispatcherCategoryWidget(
+      QWidget* parent = 0, const std::string& category_name = "Default");
   ~DispatcherCategoryWidget();
 
   bool get_checked_state() { return toggle_button_->isChecked(); }
@@ -69,10 +69,10 @@ class DispatcherWidget : public QScrollArea
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public
-      : explicit DispatcherWidget(QWidget*           parent = 0,
-                                  const std::string& dispatcher_lock_file_path =
-                                      "/tmp/dispatcher.lock");
+ public:
+  explicit DispatcherWidget(QWidget* parent = 0,
+                            const std::string& dispatcher_lock_file_path =
+                                "/tmp/dispatcher.lock");
   ~DispatcherWidget();
 
   // get methods

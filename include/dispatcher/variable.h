@@ -22,7 +22,7 @@ class DispatcherNode;
 
 class Variable : public QWidget
 {
-  Q_OBJECT;  // must be included to add qt meta information
+  Q_OBJECT  // must be included to add qt meta information
 
  public:
   explicit Variable(QWidget* parent, dispatcher::DispatcherNode* ros_node_,

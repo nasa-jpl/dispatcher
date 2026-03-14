@@ -8,7 +8,7 @@ namespace dispatcher
 
 class RosProcessItem : public ProcessItem
 {
-  Q_OBJECT;  // must be included to add qt meta information
+  Q_OBJECT  // must be included to add qt meta information
 
  public:
   explicit RosProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&,

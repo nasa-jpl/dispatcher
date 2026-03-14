@@ -8,7 +8,7 @@ namespace dispatcher
 
 class ScriptItem : public Item
 {
-  Q_OBJECT;  // must be included to add qt meta information
+  Q_OBJECT  // must be included to add qt meta information
 
  public:
   explicit ScriptItem(QWidget* parent, dispatcher::DispatcherNode* ros_node_,

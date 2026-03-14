@@ -11,7 +11,7 @@ namespace dispatcher
 
 class ProcessItem : public Item
 {
-  Q_OBJECT;  // must be included to add qt meta information
+  Q_OBJECT  // must be included to add qt meta information
 
  public:
   explicit ProcessItem(QWidget* parent, DispatcherNode*, const YAML::Node&,

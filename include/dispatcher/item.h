@@ -27,7 +27,7 @@ typedef struct {
 
 class Item : public QWidget
 {
-  Q_OBJECT;  // must be included to add qt meta information
+  Q_OBJECT  // must be included to add qt meta information
 
  public:
   explicit Item(QWidget* parent, dispatcher::DispatcherNode* ros_node_,
