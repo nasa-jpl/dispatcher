@@ -13,6 +13,10 @@
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
+  <depend>builtin_interfaces</depend>
+  <depend>yaml-cpp</depend>
+  <depend>qtbase5-dev</depend>
+  <depend>libqt5-opengl-dev</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

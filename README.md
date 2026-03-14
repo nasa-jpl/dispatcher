@@ -92,7 +92,7 @@ See the sample YAMLs in [`config/`](config/) for supported combinations:
 
 ## Running
 
-From a sourced ROS 2 workspace:
+From this package directory after building:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -116,10 +116,34 @@ If `gnome-terminal` is not installed, you can attach manually from any terminal:
 tmux a -t 3_commander
 ```
 
-## Testing
+## Build And Test
+
+Build `dispatcher` as a one-package workspace from this directory:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths . --packages-select dispatcher \
+  --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON
+```
 
 Run the gtest suite with:
 
 ```bash
-colcon test --packages-select dispatcher
+source /opt/ros/jazzy/setup.bash
+colcon test --base-paths . --packages-select dispatcher
 ```
+
+To print the collected test results:
+
+```bash
+colcon test-result --verbose
+```
+
+## GitLab CI
+
+This package includes a package-local pipeline in [`.gitlab-ci.yml`](.gitlab-ci.yml)
+that does not depend on the parent workspace. It uses a ROS 2 Jazzy Docker
+image and has two stages:
+
+- `build`: package-local `colcon build`
+- `test`: package-local `colcon test` and `colcon test-result --verbose`
