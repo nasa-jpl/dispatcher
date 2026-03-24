@@ -25,20 +25,15 @@ dispatcher::RosProcessItem::RosProcessItem(QWidget*                    parent,
                                            QGridLayout*                layout)
     : dispatcher::ProcessItem(parent, ros_node, node, layout)
 {
-  // Expecting process_items to have `namespace`, `node_name` and `ros_nodes` to
-  // have keys, so handle them in this class
-  if (node["namespace"] && node["node_name"]) {
-    RosNodeMonitorConfig monitor_config;
-    monitor_config.namespace_ = node["namespace"].as<std::string>();
-    monitor_config.name       = node["node_name"].as<std::string>();
-    ros_nodes_.push_back(monitor_config);
+  // ROS items may specify a single node pair or a ros_nodes array.
+  if (node["node_name"]) {
+    ros_nodes_.push_back(
+        dispatcher::detail::ParseRosNodeMonitorConfig(node, "node_name"));
   }
   if (node["ros_nodes"]) {
     for (const auto& ros_node : node["ros_nodes"]) {
-      RosNodeMonitorConfig monitor_config;
-      monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
-      monitor_config.name       = ros_node["name"].as<std::string>();
-      ros_nodes_.push_back(monitor_config);
+      ros_nodes_.push_back(
+          dispatcher::detail::ParseRosNodeMonitorConfig(ros_node, "name"));
     }
   }
 }

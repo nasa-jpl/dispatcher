@@ -57,8 +57,9 @@ Common item fields include:
 | `use_environment_variables` | Enables or disables environment-variable injection. |
 | `attach_on_start` | Opens a terminal automatically after launch. |
 
-ROS process items can additionally define `namespace` / `node_name` or a
-`ros_nodes` array for online-state monitoring.
+ROS process items can additionally define `node_name` plus an optional
+`namespace` that defaults to an empty string, or a `ros_nodes` array with the same
+monitoring fields for online-state monitoring.
 
 Shell process items use `pgrep` on the item name to infer online state.
 

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <regex>
 
 namespace dispatcher::detail
@@ -67,6 +68,20 @@ std::string FormatOnlineNode(
 }
 
 }  // namespace
+
+RosNodeMonitorConfig ParseRosNodeMonitorConfig(const YAML::Node&   node,
+                                               const std::string& name_key)
+{
+  RosNodeMonitorConfig config;
+  config.name = node[name_key].as<std::string>();
+  if (node["namespace"]) {
+    config.namespace_ = node["namespace"].as<std::string>();
+  }
+  else {
+    config.namespace_ = "";
+  }
+  return config;
+}
 
 const std::string* ResolveCmdPrefix(
     const std::map<std::string, DispatcherNode::Configuration>& configurations,
@@ -255,13 +270,25 @@ MonitorStatus SummarizeRosStatus(
 
   status.expected = expected_nodes.size();
   for (const auto& expected_node : expected_nodes) {
+    // add / to name if not present
+    std::string expected_name = expected_node.name;
+    std::string expected_namespace = expected_node.namespace_;
+    const auto expected_fullname = expected_namespace + expected_name;
+    std::cerr << "expected_fullname: " << expected_fullname << ", raw name: " << expected_node.name << ", raw namespace: " << expected_node.namespace_ << std::endl;
     for (const auto& online_node : online_nodes) {
-      if (expected_node.name == online_node.first &&
-          expected_node.namespace_ == online_node.second) {
+      std::string online_name = online_node.first;
+      std::string online_namespace = online_node.second;
+      // if namespace does not end with /, add it
+      if (online_namespace.back() != '/') {
+        online_namespace += "/";
+      }
+      const auto online_fullname = online_namespace + online_name;
+      std::cerr << "  online_fullname: " << online_fullname << ", raw name: " << online_node.first << ", raw namespace: " << online_node.second << std::endl;
+      if (expected_fullname == online_fullname) {
         status.tooltip += FormatOnlineNode(online_node);
         status.found++;
         break;
-      }
+      } 
     }
   }
 

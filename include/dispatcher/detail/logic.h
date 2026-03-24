@@ -117,6 +117,15 @@ std::string BuildScriptSystemCall(
     bool use_cmd_prefix, bool use_terminal);
 
 /*!
+@brief Parses a monitored ROS node entry from YAML.
+@param node YAML map containing `name_key` and optional `namespace`.
+@param name_key Field name that stores the ROS node name.
+@return Parsed monitor configuration with empty namespace fallback.
+*/
+RosNodeMonitorConfig ParseRosNodeMonitorConfig(const YAML::Node& node,
+                                               const std::string& name_key);
+
+/*!
 @brief Summarizes shell-process liveness for UI display.
 @param found Number of detected running processes.
 @return Aggregated status, tooltip text, and indicator color.

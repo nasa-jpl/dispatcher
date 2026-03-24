@@ -23,6 +23,24 @@ TEST(DispatcherLogicTest, ItemTypeToStringCoversAllEnums)
   EXPECT_EQ(ItemTypeToString(dispatcher::DispatcherNode::UNDEF), "undef");
 }
 
+TEST(DispatcherLogicTest, ParseRosNodeMonitorConfigDefaultsNamespaceToEmpty)
+{
+  const auto config = ParseRosNodeMonitorConfig(
+      YAML::Load("{node_name: commander}"), "node_name");
+
+  EXPECT_EQ(config.name, "commander");
+  EXPECT_EQ(config.namespace_, "");
+}
+
+TEST(DispatcherLogicTest, ParseRosNodeMonitorConfigKeepsEmptyNamespace)
+{
+  const auto config = ParseRosNodeMonitorConfig(
+      YAML::Load("{name: camera, namespace: \"\"}"), "name");
+
+  EXPECT_EQ(config.name, "camera");
+  EXPECT_EQ(config.namespace_, "");
+}
+
 TEST(DispatcherLogicTest, ResolveCmdPrefixFallsBackToAllWhenRequestedMissing)
 {
   std::map<std::string, dispatcher::DispatcherNode::Configuration>
