@@ -274,7 +274,6 @@ MonitorStatus SummarizeRosStatus(
     std::string expected_name = expected_node.name;
     std::string expected_namespace = expected_node.namespace_;
     const auto expected_fullname = expected_namespace + expected_name;
-    std::cerr << "expected_fullname: " << expected_fullname << ", raw name: " << expected_node.name << ", raw namespace: " << expected_node.namespace_ << std::endl;
     for (const auto& online_node : online_nodes) {
       std::string online_name = online_node.first;
       std::string online_namespace = online_node.second;
@@ -283,7 +282,6 @@ MonitorStatus SummarizeRosStatus(
         online_namespace += "/";
       }
       const auto online_fullname = online_namespace + online_name;
-      std::cerr << "  online_fullname: " << online_fullname << ", raw name: " << online_node.first << ", raw namespace: " << online_node.second << std::endl;
       if (expected_fullname == online_fullname) {
         status.tooltip += FormatOnlineNode(online_node);
         status.found++;
