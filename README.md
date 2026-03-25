@@ -1,76 +1,150 @@
 # Dispatcher
 
-A dynamically reconfigurable widget for starting, stopping and monitoring both ROS2 nodes and arbitrary non-ROS processes (aka shell processes).
+A Qt-based ROS 2 widget for starting, stopping, and monitoring both ROS nodes
+and arbitrary shell processes.
 
 ![dispatcher](doc/dispatcher.png)
 
-This package provides a Qt Widget with buttons dynamically configured from a yaml input file. Nodes and processes are launched in detached tmux sessions, which can be attached to from any terminal, or from multiple terminals. The names of those tmux sessions are programmatically named, and in the above example screenshot, those names would be `1_kuka`, `2_kuka-simulator`, and `3_commander`.****
+`dispatcher` builds its UI from a YAML file. Each configured item is launched in
+its own detached tmux session, and the terminal button can attach a
+`gnome-terminal` window to that session when available.
 
-The yaml config file contains the workspace location and settings for a number of ros2 nodes
+## Runtime Parameters
 
-## Interfaces
-| Type              | Interface Name              | Description                                                        |
-| ----------------- | --------------------------- | ------------------------------------------------------------------ |
-| GetVersionCmd.srv | `commander/srv/get_version` | Used to obtain semantic version information embedded in executable |
+The `dispatcher` executable uses the following ROS parameters:
 
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `dispatcher_config_path` | `string` | `""` | Path to the dispatcher YAML file. |
+| `initial_configuration` | `string` | `""` | Configuration name to select on startup. |
+| `ssh_timeout_sec` | `int` | `10` | Timeout used when building remote SSH commands. |
+| `target_loop_rate_hz` | `double` | `100.0` | Main process/status polling rate. |
 
-## Parameters
-| Name                    | Type   | Description                                        | Default |
-| ----------------------- | ------ | -------------------------------------------------- | ------- |
-| `casah_logs_dir`        | string | Location of log files                              | "/logs" |
-| `casah_verbosity_level` | string | One of {`TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`} | "INFO"  |
-| `target_loop_rate_hz`   | double | Process loop rate                                  | 100     |
-| `dispacher_config_path` | string | Path to dispatcher configuration yaml              | ''      |
-| `ssh_timeout_sec`       | int    | Timeout in secs when connecting to SSH server      | 10      |
+## YAML Configuration
 
+The top-level dispatcher YAML supports:
 
-## Example configuration
-The following `example.yaml` config illustrates how to set up the dispatcher tool.
+| Key | Required | Description |
+| --- | --- | --- |
+| `workspace` | Yes | Workspace path used by ROS process items before sourcing `install/setup.bash`. |
+| `nodes` | Yes | Process and category definitions rendered in the main panel. |
+| `configurations` | No | Named runtime configurations. Each entry may be a simple name or a map with `name`, `cmd_prefix`, `environment_variables`, and `icon`. |
+| `cmd_prefix` | No | Default command prefix for the implicit `all` configuration. |
+| `environment_variables` | No | Default environment variables for the implicit `all` configuration. |
+| `hide_unconfigured_processes` | No | If true, items missing in the active configuration are hidden instead of disabled. |
+| `scripts` | No | Script button definitions shown in the scripts panel. |
+| `variables` | No | Variable selectors used for `$VARIABLE` command substitution. |
 
-```yaml
-workspace: /opt/testbed_ws
+### Node Types
 
-nodes:
+Each entry in `nodes` can be:
 
-  - name: kuka       # name used for the button and for the tmux session, each one must be unique
-    namespace: /kuka  # namespace of ros2 node to monitor
-    node_name: kuka # name of ros2 node to monitor
-    cmd: ros2 run kuka kuka --ros-args -p kuka_rsi_config_path:=storm_launch/cfg/kuka/kuka_offline.yaml 
-    # command to launch node, you can also use ros2 launch to bring up launch files or call the executable directly
-    start_checked: true
+- A ROS process item. If `type` is omitted, the item is treated as ROS by default.
+- A shell process item with `type: shell`.
+- A collapsible category with `type: category` and an `items` array.
 
-  ## More entries
+Common item fields include:
 
-  - name: commander
-    # type: ros # optional yaml parameter to denote whether entry is a ROS node or arbitrary shell process( i.e type: shell )
-    namespace: /commander
-    node_name: commander
-    cmd: ros2 run commander commander
-    start_checked: true
-    stop_tmux_keys: "C-D" # Issues a Ctrl+D to close the Python interpreter
-```
+| Key | Description |
+| --- | --- |
+| `name` | UI label and tmux-session base name. |
+| `cmd` | Command used for the implicit `all` configuration. |
+| `configurations` | Per-configuration command definitions. |
+| `start_checked` | Whether the item starts checked in the UI. |
+| `stop_tmux_cmd` | Stop sequence sent to tmux. Defaults to `C-C`. |
+| `hostname` / `user` | Optional remote execution target for local commands or configuration entries. |
+| `use_cmd_prefix` | Enables or disables command-prefix injection. |
+| `use_environment_variables` | Enables or disables environment-variable injection. |
+| `attach_on_start` | Opens a terminal automatically after launch. |
 
-Start `dispatcher` in your workspace by running:
+ROS process items can additionally define `node_name` plus an optional
+`namespace` that defaults to an empty string, or a `ros_nodes` array with the same
+monitoring fields for online-state monitoring.
+
+Shell process items use `pgrep` on the item name to infer online state.
+
+### Scripts and Variables
+
+Script entries support:
+
+| Key | Description |
+| --- | --- |
+| `name` | Button label. |
+| `cmd` or `configurations` | Script command definition. |
+| `row`, `column` | Grid placement in the scripts panel. |
+| `icon` | Optional Qt resource path for the button icon. |
+| `use_terminal` | Whether to wrap execution in `gnome-terminal --`. |
+
+Variable entries support:
+
+| Key | Description |
+| --- | --- |
+| `name` | Variable name used in commands, for example `$FCAT_LOOP_RATE_HZ`. |
+| `choices` | Selectable values exposed in the UI. |
+
+## Example
+
+See the sample YAMLs in [`config/`](config/) for supported combinations:
+
+- [`config/example.yaml`](config/example.yaml)
+- [`config/example_remote_session.yaml`](config/example_remote_session.yaml)
+- [`config/example_variables.yaml`](config/example_variables.yaml)
+- [`config/example_no_configurations.yaml`](config/example_no_configurations.yaml)
+
+## Running
+
+From this package directory after building:
+
 ```bash
-cd /opt/testbed_ws
+source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-ros2 run dispatcher dispatcher --ros-args -p dispatcher_config_path:=/path/to/example.yaml
+ros2 run dispatcher dispatcher --ros-args \
+  -p dispatcher_config_path:=/path/to/dispatcher.yaml \
+  -p initial_configuration:=offline
 ```
 
-Click on the start button to begin the node, or click "start all checked" to start all currently
-checked nodes.  A green light should appear next to each node. To attach to the commander session, you can run the following in a terminal:
+If `initial_configuration` is omitted, the first configured entry is used.
 
-To attach to a running tmux session, you can click the terminal icon to the right of the stop button. This button launches a new gnome-terminal session and attaches to a tmux session using the command:
+The terminal button opens a command like:
 
 ```bash
-gnome-terminal -t commander -- tmux a -t 3_commander 
+gnome-terminal -t commander -- tmux a -t 3_commander
 ```
 
-Starting a terminal using the GUI button requires that you have `gnome-terminal` installed. If you do not have `gnome-terminal`, you can attach to the session from the terminal of your choice by running `tmux a -t 3_commander`.
+If `gnome-terminal` is not installed, you can attach manually from any terminal:
 
-## Other Features
+```bash
+tmux a -t 3_commander
+```
 
-`dispatcher` also supports capabilities such as variables and configurations. Example YAMLs leveraging these capabilities are in the `config/` subdirectory. Briefly, 
-- variables are string/numerical values that are substituted in the `cmd:` defined for a ROS node or process
-- configurations is the way to run the same node or process in different ways, such as providing different run-time parameters or configuration files.
-- grouping one or more ROS node or process into a section within dispatcher
+## Build And Test
+
+Build `dispatcher` as a one-package workspace from this directory:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths . --packages-select dispatcher \
+  --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON
+```
+
+Run the gtest suite with:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon test --base-paths . --packages-select dispatcher
+```
+
+To print the collected test results:
+
+```bash
+colcon test-result --verbose
+```
+
+## GitLab CI
+
+This package includes a package-local pipeline in [`.gitlab-ci.yml`](.gitlab-ci.yml)
+that does not depend on the parent workspace. It uses a ROS 2 Jazzy Docker
+image and has two stages:
+
+- `build`: package-local `colcon build`
+- `test`: package-local `colcon test` and `colcon test-result --verbose`

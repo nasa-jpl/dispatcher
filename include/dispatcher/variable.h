@@ -20,17 +20,23 @@ namespace dispatcher
 class DispatcherWidget;
 class DispatcherNode;
 
+/*! @brief Widget that exposes a named variable for command substitution. */
 class Variable : public QWidget
 {
-  Q_OBJECT;  // must be included to add qt meta information
+  Q_OBJECT  // must be included to add qt meta information
 
  public:
+  /*! @brief Constructs a variable selector from its YAML definition. */
   explicit Variable(QWidget* parent, dispatcher::DispatcherNode* ros_node_,
                     const YAML::Node&);
+  /*! @brief Destroys the variable widget. */
   ~Variable();
 
+  /*! @brief Enables or disables the variable selector UI. */
   void Enable(bool);
+  /*! @brief Returns the variable name used in `$VARIABLE` substitutions. */
   std::string GetName();
+  /*! @brief Returns the currently selected variable value. */
   std::string GetValue();
 
  public slots:

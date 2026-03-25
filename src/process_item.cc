@@ -1,3 +1,4 @@
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/process_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -12,6 +13,8 @@
 #include <QPixmap>
 #include <QString>
 #include <QVBoxLayout>
+
+#include <rclcpp/rclcpp.hpp>
 
 static bool check_gnome_terminal_exists()
 {
@@ -38,8 +41,8 @@ dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
   }
 
   if (node["cmd"] && node["configurations"]) {
-    EVR_FATAL_REF(ros_node_,
-                  "'cmd' and 'configurations' keys cannot be used together");
+    RCLCPP_FATAL(ros_node_->get_logger(),
+                 "'cmd' and 'configurations' keys cannot be used together");
     rclcpp::shutdown();
   }
 
@@ -65,9 +68,8 @@ dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
   index_             = layout->rowCount();
 
   // Convert any spaces to underscores in YAML Name parameter
-  std::string rep_str = node["name"].as<std::string>();
-  std::replace(rep_str.begin(), rep_str.end(), ' ', '_');
-  tmux_name_ = std::to_string(index_) + "_" + rep_str;
+  tmux_name_ =
+      dispatcher::detail::MakeTmuxName(index_, node["name"].as<std::string>());
 
   if (node["stop_tmux_cmd"]) {
     stop_tmux_cmd_ = node["stop_tmux_cmd"].as<std::string>();
@@ -180,57 +182,43 @@ void dispatcher::ProcessItem::UpdateConfiguration()
     return;
   }
 
-  std::string cmd_tmp;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-
-  if (current_configuration_->hostname != "localhost") {
-    if (current_configuration_->user.empty()) {
-      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-                std::to_string(ssh_timeout_sec) + " " +
-                current_configuration_->hostname + " \"" +
-                current_configuration_->cmd + "\"";
-    } else {
-      cmd_tmp = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-                std::to_string(ssh_timeout_sec) + " " +
-                current_configuration_->user + "@" +
-                current_configuration_->hostname + " \"" +
-                current_configuration_->cmd + "\"";
-    }
-  } else {
-    cmd_tmp = current_configuration_->cmd;
-  }
-  start_->setToolTip(cmd_tmp.c_str());
+  start_->setToolTip(dispatcher::detail::BuildLaunchToolTip(
+                         current_configuration_->cmd,
+                         current_configuration_->hostname,
+                         current_configuration_->user, ssh_timeout_sec)
+                         .c_str());
 }
 
 bool dispatcher::ProcessItem::PrepareTmuxSession()
 {
   if (!enabled_) {
-    EVR_WARNING_LO_REF(ros_node_,
-                       "Refusing to start node %s in tmux session: %s because "
-                       "node is disabled",
-                       name_.c_str(), tmux_name_.c_str());
+    RCLCPP_WARN(ros_node_->get_logger(),
+                "Refusing to start node %s in tmux session: %s because "
+                "node is disabled",
+                name_.c_str(), tmux_name_.c_str());
     return false;
   }
 
   if (online_) {
-    EVR_WARNING_HI_REF(ros_node_,
-                       "Refusing to start node %s in tmux session: %s "
-                       "because node was detected as already running",
-                       name_.c_str(), tmux_name_.c_str());
+    RCLCPP_WARN(ros_node_->get_logger(),
+                "Refusing to start node %s in tmux session: %s "
+                "because node was detected as already running",
+                name_.c_str(), tmux_name_.c_str());
     return false;
   }
 
-  EVR_ACTIVITY_HI_REF(ros_node_, "Starting node: %s in tmux session: %s",
-                      name_.c_str(), tmux_name_.c_str());
+  RCLCPP_INFO(ros_node_->get_logger(), "Starting node: %s in tmux session: %s",
+              name_.c_str(), tmux_name_.c_str());
 
   assert(current_configuration_);
-  EVR_DIAGNOSTIC_REF(ros_node_, "system cmd: %s",
-                     current_configuration_->cmd.c_str());
+  RCLCPP_DEBUG(ros_node_->get_logger(), "system cmd: %s",
+               current_configuration_->cmd.c_str());
 
   if (!TmuxHasSession()) {
-    EVR_ACTIVITY_LO_REF(
-        ros_node_, "Tmux Session was closed for %s, restarting session now",
-        name_.c_str());
+    RCLCPP_INFO(ros_node_->get_logger(),
+                "Tmux Session was closed for %s, restarting session now",
+                name_.c_str());
     (void)TmuxNewSession();
   }
   return true;
@@ -257,15 +245,18 @@ void dispatcher::ProcessItem::StartCb()
   // replace any instances of variables matching pattern $VARIABLE_NAME with its
   // value
   std::string configured_cmd = current_configuration_->cmd;
-  const auto& variables      = ros_node_->GetVariables();
-  for (auto& variable : variables) {
-    configured_cmd = std::regex_replace(configured_cmd,
-                                        std::regex("\\$" + variable->GetName()),
-                                        variable->GetValue());
+  std::vector<std::pair<std::string, std::string>> variable_values;
+  for (auto& variable : ros_node_->GetVariables()) {
+    variable_values.emplace_back(variable->GetName(), variable->GetValue());
   }
-  EVR_ACTIVITY_LO_REF(ros_node_, "%s", configured_cmd.c_str());
+  configured_cmd =
+      dispatcher::detail::SubstituteVariables(configured_cmd, variable_values);
+  RCLCPP_INFO(ros_node_->get_logger(), "%s", configured_cmd.c_str());
 
-  TmuxSendKeys(cmd_prefix + " " + env_prefix + " " + configured_cmd);
+  TmuxSendKeys(dispatcher::detail::BuildPrefixedCommand(
+      cmd_prefix, ros_node_->get_environment_variables(
+                      current_configuration_->configuration_name),
+      configured_cmd));
 
   if (attach_on_start_) {
     // detach any existing clients and attach a new gnome terminal window
@@ -278,8 +269,8 @@ void dispatcher::ProcessItem::StartCb()
 void dispatcher::ProcessItem::StopCb()
 {
   if (num_online_nodes_prev_ > 0) {
-    EVR_ACTIVITY_LO_REF(ros_node_, "Stopping node: %s in tmux session: %s",
-                        name_.c_str(), tmux_name_.c_str());
+    RCLCPP_INFO(ros_node_->get_logger(), "Stopping node: %s in tmux session: %s",
+                name_.c_str(), tmux_name_.c_str());
     TmuxSendKeys(stop_tmux_cmd_);
   }
 }
@@ -287,8 +278,8 @@ void dispatcher::ProcessItem::StopCb()
 void dispatcher::ProcessItem::TerminalCb()
 {
   if (!check_gnome_terminal_exists()) {
-    EVR_WARNING_HI_REF(
-        ros_node_,
+    RCLCPP_WARN(
+        ros_node_->get_logger(),
         "Cannot attach to tmux session because 'gnome-terminal' does not exist "
         "on this "
         "system; you can attach to the session by running `tmux a -t %s` "
@@ -298,29 +289,20 @@ void dispatcher::ProcessItem::TerminalCb()
   }
 
   if (!TmuxHasSession()) {
-    EVR_DIAGNOSTIC_REF(ros_node_,
-                       "No tmux session was found for %s, starting new session",
-                       tmux_name_.c_str());
+    RCLCPP_DEBUG(ros_node_->get_logger(),
+                 "No tmux session was found for %s, starting new session",
+                 tmux_name_.c_str());
     (void)TmuxNewSession();
   }
 
   // Start a gnome session and attach a tmux session
-  std::string cmd             = "tmux a -t " + tmux_name_;
   const int   ssh_timeout_sec = ros_node_->get_ssh_timeout_sec();
-  if (current_configuration_->hostname != "localhost") {
-    if (current_configuration_->user.empty()) {
-      cmd = "ssh -o PasswordAuthentication=no -o ConnectTimeout=" +
-            std::to_string(ssh_timeout_sec) + " -t " +
-            current_configuration_->hostname + " \"" + cmd + "\"";
-    } else {
-      cmd = "ssh -o PasswordAuthentication=no -o ConnectTimeout-" +
-            std::to_string(ssh_timeout_sec) + " -t " +
-            current_configuration_->user + "@" +
-            current_configuration_->hostname + " \"" + cmd + "\"";
-    }
-  }
-  EVR_ACTIVITY_LO_REF(ros_node_, "sending command: gnome-terminal -t %s -- %s",
-                      name_.c_str(), cmd.c_str());
+  std::string cmd = dispatcher::detail::BuildTmuxAttachCommand(
+      tmux_name_, current_configuration_->hostname, current_configuration_->user,
+      ssh_timeout_sec);
+  RCLCPP_INFO(ros_node_->get_logger(),
+              "sending command: gnome-terminal -t %s -- %s", name_.c_str(),
+              cmd.c_str());
   int result = system(("gnome-terminal -t " + name_ + " -- " + cmd).c_str());
   (void)result;
 }
@@ -330,8 +312,8 @@ bool dispatcher::ProcessItem::TmuxKillSession()
   std::string cmd    = "tmux kill-session -t " + tmux_name_;
   int         result = SystemCall(cmd);
   if (result == 1) {
-    EVR_WARNING_HI_REF(ros_node_, "tmux session %s could not be killed",
-                       tmux_name_.c_str());
+    RCLCPP_WARN(ros_node_->get_logger(), "tmux session %s could not be killed",
+                tmux_name_.c_str());
     return false;
   }
   return true;
@@ -342,8 +324,8 @@ bool dispatcher::ProcessItem::TmuxNewSession()
   std::string cmd    = "tmux new -d -s " + tmux_name_;
   int         result = SystemCall(cmd);
   if (result == 1) {
-    EVR_WARNING_HI_REF(ros_node_, "tmux session %s could not be created",
-                       tmux_name_.c_str());
+    RCLCPP_WARN(ros_node_->get_logger(),
+                "tmux session %s could not be created", tmux_name_.c_str());
     return false;
   }
   tmux_initialized_ = true;
@@ -371,11 +353,12 @@ bool dispatcher::ProcessItem::TmuxHasSession()
   std::string cmd    = "tmux has-session -t " + tmux_name_ + " 2>/dev/null";
   int         result = SystemCall(cmd);
   if (result != 0) {
-    EVR_DIAGNOSTIC_REF(ros_node_, "Tmux does not have active session for %s",
-                       tmux_name_.c_str());
+    RCLCPP_DEBUG(ros_node_->get_logger(),
+                 "Tmux does not have active session for %s",
+                 tmux_name_.c_str());
     return false;
   }
-  EVR_DIAGNOSTIC_REF(ros_node_, "Tmux has active session for %s",
-                     tmux_name_.c_str());
+  RCLCPP_DEBUG(ros_node_->get_logger(), "Tmux has active session for %s",
+               tmux_name_.c_str());
   return true;
 }

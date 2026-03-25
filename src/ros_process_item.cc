@@ -1,3 +1,4 @@
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/ros_process_item.h"
 #include "dispatcher/dispatcher_widget.h"
 
@@ -13,6 +14,8 @@
 #include <QString>
 #include <QVBoxLayout>
 
+#include <rclcpp/rclcpp.hpp>
+
 /*!
 @brief class constructor for RosProcessItem
 */
@@ -22,20 +25,15 @@ dispatcher::RosProcessItem::RosProcessItem(QWidget*                    parent,
                                            QGridLayout*                layout)
     : dispatcher::ProcessItem(parent, ros_node, node, layout)
 {
-  // Expecting process_items to have `namespace`, `node_name` and `ros_nodes` to
-  // have keys, so handle them in this class
-  if (node["namespace"] && node["node_name"]) {
-    RosNodeMonitorConfig monitor_config;
-    monitor_config.namespace_ = node["namespace"].as<std::string>();
-    monitor_config.name       = node["node_name"].as<std::string>();
-    ros_nodes_.push_back(monitor_config);
+  // ROS items may specify a single node pair or a ros_nodes array.
+  if (node["node_name"]) {
+    ros_nodes_.push_back(
+        dispatcher::detail::ParseRosNodeMonitorConfig(node, "node_name"));
   }
   if (node["ros_nodes"]) {
     for (const auto& ros_node : node["ros_nodes"]) {
-      RosNodeMonitorConfig monitor_config;
-      monitor_config.namespace_ = ros_node["namespace"].as<std::string>();
-      monitor_config.name       = ros_node["name"].as<std::string>();
-      ros_nodes_.push_back(monitor_config);
+      ros_nodes_.push_back(
+          dispatcher::detail::ParseRosNodeMonitorConfig(ros_node, "name"));
     }
   }
 }
@@ -55,70 +53,23 @@ void dispatcher::RosProcessItem::Process()
     return;
   }
 
-  const auto& online_nodes_             = ros_node_->get_online_nodes();
-  size_t      num_online_nodes_found    = 0;
-  size_t      num_expected_online_nodes = 0;
-  std::string online_nodes_str;
-
-  // does current configuration have any ros nodes specified?
-  // if yes, then use current configuration:
-  if (current_configuration_->ros_nodes.size() > 0) {
-    num_expected_online_nodes = current_configuration_->ros_nodes.size();
-    // for each ros node in the current configuration:
-    for (auto& ros_node : current_configuration_->ros_nodes) {
-      // check if node exists in list of online nodes
-      for (auto& online_node : online_nodes_) {
-        if (ros_node.name == online_node.first &&
-            ros_node.namespace_ == online_node.second) {
-          if (std::string(online_node.second) == std::string("/")) {
-            online_nodes_str += (std::string("\n  ") + "/" + online_node.first);
-          } else {
-            online_nodes_str += (std::string("\n  ") + online_node.second +
-                                 "/" + online_node.first);
-          }
-          num_online_nodes_found++;
-          break;
-        }
-      }
-    }
-  } else {
-    // for each ros node in the default configuration:
-    num_expected_online_nodes = ros_nodes_.size();
-    for (auto& ros_node : ros_nodes_) {
-      // check if node exists in list of online nodes
-      for (auto& online_node : online_nodes_) {
-        if (ros_node.name == online_node.first &&
-            ros_node.namespace_ == online_node.second) {
-          if (std::string(online_node.second) == std::string("/")) {
-            online_nodes_str += (std::string("\n  ") + "/" + online_node.first);
-          } else {
-            online_nodes_str += (std::string("\n  ") + online_node.second +
-                                 "/" + online_node.first);
-          }
-          num_online_nodes_found++;
-          break;
-        }
-      }
-    }
-  }
-
-  online_ = (num_online_nodes_found > 0);
-  if (num_online_nodes_found != num_online_nodes_prev_) {
-    online_nodes_str = std::to_string(num_online_nodes_found) + "/" +
-                       std::to_string(num_expected_online_nodes) +
-                       std::string(" nodes online") + online_nodes_str;
-    EVR_ACTIVITY_LO_REF(
-        ros_node_, "Status change for node %s, %ld/%ld nodes online",
-        name_.c_str(), num_online_nodes_found, num_expected_online_nodes);
-    num_online_nodes_prev_ = num_online_nodes_found;
-    label_->setToolTip(online_nodes_str.c_str());
-    if (num_online_nodes_found == 0) {
+  const auto status = dispatcher::detail::SummarizeRosStatus(
+      ros_nodes_, current_configuration_->ros_nodes,
+      ros_node_->get_online_nodes());
+  online_ = status.online;
+  if (status.found != num_online_nodes_prev_) {
+    RCLCPP_INFO(ros_node_->get_logger(),
+                "Status change for node %s, %ld/%ld nodes online",
+                name_.c_str(), status.found, status.expected);
+    num_online_nodes_prev_ = status.found;
+    label_->setToolTip(status.tooltip.c_str());
+    if (status.color == dispatcher::detail::StatusColor::kRed) {
       label_->setPixmap(red_status_icon_);
       label_->setStyleSheet(QString("color: red"));
-    } else if (num_online_nodes_found < num_expected_online_nodes) {
+    } else if (status.color == dispatcher::detail::StatusColor::kOrange) {
       label_->setPixmap(orange_status_icon_);
       label_->setStyleSheet(QString("color: orange"));
-    } else if (num_online_nodes_found == num_expected_online_nodes) {
+    } else {
       label_->setPixmap(green_status_icon_);
       label_->setStyleSheet(QString("color: green"));
     }

@@ -23,16 +23,19 @@
 
 #include <rclcpp/node_interfaces/node_graph.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "casah_node/evr_interface.hpp"
 
 #include <sensor_msgs/msg/joint_state.hpp>
 
 namespace dispatcher
 {
+/*! @brief Returns the build version string for the dispatcher package. */
 std::string version();
+/*! @brief Returns the source-control branch string for the dispatcher package. */
 std::string branch();
+/*! @brief Returns the source-control commit string for the dispatcher package. */
 std::string commit();
 
+/*! @brief Exception type used for fatal dispatcher widget startup errors. */
 class DispatcherException : public std::exception
 {
  private:
@@ -40,23 +43,31 @@ class DispatcherException : public std::exception
 
  public:
   explicit DispatcherException(const char* message) { message_ = message; };
+  /*! @brief Returns the stored exception message. */
   const char* what() const noexcept override { return message_; }
 };
 
+/*! @brief Collapsible container used to group related process items in the UI. */
 class DispatcherCategoryWidget : public QGroupBox
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public
-      : explicit DispatcherCategoryWidget(
-            QWidget* parent = 0, const std::string& category_name = "Default");
+ public:
+  /*! @brief Constructs a collapsible process category. */
+  explicit DispatcherCategoryWidget(
+      QWidget* parent = 0, const std::string& category_name = "Default");
+  /*! @brief Destroys the category widget. */
   ~DispatcherCategoryWidget();
 
+  /*! @brief Returns whether the category is currently expanded. */
   bool get_checked_state() { return toggle_button_->isChecked(); }
+  /*! @brief Expands or collapses the category widget. */
   void set_checked_state(bool check) { toggle_button_->setChecked(check); }
+  /*! @brief Returns the layout used to insert child process widgets. */
   QGridLayout* get_grid_layout() { return grid_layout_; }
 
  public slots:
+  /*! @brief Animates the category open or closed. */
   void ToggleCb(bool);
 
  private:
@@ -66,52 +77,68 @@ class DispatcherCategoryWidget : public QGroupBox
   QPropertyAnimation* animation_       = nullptr;
 };
 
+/*! @brief Main scrollable Qt widget that renders and controls the dispatcher UI. */
 class DispatcherWidget : public QScrollArea
 {
   Q_OBJECT  // must be included to add qt meta information
 
-      public
-      : explicit DispatcherWidget(QWidget*           parent = 0,
-                                  const std::string& dispatcher_lock_file_path =
-                                      "/tmp/dispatcher.lock");
+ public:
+  /*! @brief Constructs the main dispatcher widget and acquires the lock file. */
+  explicit DispatcherWidget(QWidget* parent = 0,
+                            const std::string& dispatcher_lock_file_path =
+                                "/tmp/dispatcher.lock");
+  /*! @brief Destroys the widget and releases the lock file. */
   ~DispatcherWidget();
 
-  // get methods
+  /*! @brief Returns the layout used for script-button widgets. */
   QGridLayout* get_script_layout() { return script_layout_; }
+  /*! @brief Returns the layout used for variable selector widgets. */
   QGridLayout* get_variable_layout() { return variable_layout_; }
+  /*! @brief Returns the backing ROS node used by the widget. */
   std::shared_ptr<dispatcher::DispatcherNode> get_ros_node()
   {
     return ros_node_;
   }
+  /*! @brief Returns the ROS graph snapshot cached by the widget. */
   const std::vector<std::pair<std::string, std::string>>& get_online_nodes()
   {
     return online_nodes_;
   }
+  /*! @brief Returns the configuration combo box widget. */
   QComboBox*  get_configuration_combo_box() { return configuration_combo_box_; }
+  /*! @brief Returns the currently selected configuration name. */
   std::string get_current_configuration()
   {
     return configuration_combo_box_->currentText().toStdString();
   }
+  /*! @brief Returns all collapsible category widgets currently in the UI. */
   std::vector<DispatcherCategoryWidget*> get_collapsible_widgets()
   {
     return vec_collapsible_widgets_;
   }
 
-  // Allows dynamically adding groups or singletons of processes through the
-  // return of a QGridLayout* that child Widgets can be added to
+  /*! @brief Creates a collapsible category section and returns its child layout. */
   QGridLayout* AddCategoryOfProcesses(const std::string&);
+  /*! @brief Creates a single-process section and returns its child layout. */
   QGridLayout* AddSingleProcess(const std::string&);
 
-  // utility methods
+  /*! @brief Returns true when at least one ROS node is reported online. */
   bool IsOnline() { return (!online_nodes_.empty()); }
+  /*! @brief Requests Qt application shutdown. */
   void Quit() { QCoreApplication::quit(); }
 
  public slots:
+  /*! @brief Advances one UI/ROS processing iteration. */
   void Process();
+  /*! @brief Starts all checked process items. */
   void StartAllCheckedCb();
+  /*! @brief Stops all checked process items. */
   void StopAllCheckedCb();
+  /*! @brief Shows or hides the script-button panel. */
   void EnableScripts(bool);
+  /*! @brief Shows or hides the variable-selection panel. */
   void EnableVariables(bool);
+  /*! @brief Applies the currently selected configuration to the widget. */
   void UpdateConfiguration();
 
  private:

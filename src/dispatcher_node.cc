@@ -1,5 +1,5 @@
 #include "dispatcher/dispatcher_node.h"
-#include "dispatcher/config.h"
+#include "dispatcher/detail/logic.h"
 #include "dispatcher/dispatcher_widget.h"
 #include "dispatcher/ros_process_item.h"
 #include "dispatcher/shell_process_item.h"
@@ -18,35 +18,36 @@
 #include <QSpacerItem>
 #include <QWidget>
 
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/node_interfaces/node_base_interface.hpp>
 
 #include <yaml-cpp/yaml.h>
 
-#include <cfw/cfw.h>
 
 /*!
 @brief class constructor for DispatcherNode application
 */
 dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
-    : casah_node::BaseInterface("dispatcher", "dispatcher"),
-      casah_node::EvrInterface("dispatcher", "dispatcher")
+    : rclcpp::Node("dispatcher_node", rclcpp::NodeOptions().allow_undeclared_parameters(true))
 {
   widget_ = widget;
 
   node_graph_ = std::make_shared<rclcpp::node_interfaces::NodeGraph>(
       this->get_node_base_interface().get());
 
-  InitializeTimerRate();
-  DeclareInitParameterString("dispatcher_config_path", "",
-                             "Path to dispatcher configuration file");
-  DeclareInitParameterString("initial_configuration", "",
-                             "Name of initial configuration to load");
+  this->declare_parameter<double>("target_loop_rate_hz", 100.0);
+  this->get_parameter("target_loop_rate_hz", target_loop_rate_hz_);
+
+
+  this->declare_parameter<std::string>("dispatcher_config_path", "");
   this->get_parameter("dispatcher_config_path", dispatcher_config_path_);
 
-  DeclareInitParameterInt("ssh_timeout_sec", 10,
-                          "Default timeout for initiating remote ssh sessions");
+  this->declare_parameter<int>("ssh_timeout_sec", 10);
   this->get_parameter("ssh_timeout_sec", ssh_timeout_sec_);
+
+  this->declare_parameter<std::string>("initial_configuration", "");
   this->get_parameter("initial_configuration", initial_configuration_);
+
   ParseConfig();
   CleanupTmuxSessions();
   UpdateConfiguration();
@@ -54,8 +55,8 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
 
 void dispatcher::DispatcherNode::ParseConfig()
 {
-  EVR_DIAGNOSTIC("Parsing dispatcher_config_path: %s",
-                 dispatcher_config_path_.c_str());
+  RCLCPP_DEBUG(this->get_logger(), "Parsing dispatcher_config_path: %s",
+               dispatcher_config_path_.c_str());
   YAML::Node root         = YAML::LoadFile(dispatcher_config_path_.c_str());
   auto       dispatcher_w = dynamic_cast<DispatcherWidget*>(widget_);
 
@@ -96,14 +97,16 @@ void dispatcher::DispatcherNode::ParseConfig()
     int index = combo_box->findText(QString::fromStdString(initial_configuration_));
     if (index >= 0) {
       combo_box->setCurrentIndex(index);
-      EVR_ACTIVITY_HI("Set initial_configuration to '%s'",
-                      initial_configuration_.c_str());
+      RCLCPP_INFO(this->get_logger(), "Set initial_configuration to '%s'",
+                  initial_configuration_.c_str());
     } else {
-      EVR_WARNING_HI("initial_configuration '%s' not found in available configurations",
-                     initial_configuration_.c_str());
+      RCLCPP_WARN(this->get_logger(),
+                  "initial_configuration '%s' not found in available configurations",
+                  initial_configuration_.c_str());
     }
   } else {
-    EVR_DIAGNOSTIC("No initial_configuration specified, using default");
+    RCLCPP_DEBUG(this->get_logger(),
+                 "No initial_configuration specified, using default");
   }
 
   // add default 'all' configuration
@@ -125,7 +128,8 @@ void dispatcher::DispatcherNode::ParseConfig()
             AddItem(node_type, item, grid_layout);
           }
         } else {
-          EVR_FATAL(
+          RCLCPP_FATAL(
+              this->get_logger(),
               "Encountered node type %s in YAML but user did not specify an "
               "'items' array that lists all the items to be run. Nothing "
               "additional will be added to dispatcher",
@@ -162,6 +166,25 @@ void dispatcher::DispatcherNode::ParseConfig()
 */
 dispatcher::DispatcherNode::~DispatcherNode() {}
 
+const std::string& dispatcher::DispatcherNode::get_cmd_prefix(
+    const std::string& configuration)
+{
+  static const std::string kEmptyPrefix;
+  const auto* resolved =
+      dispatcher::detail::ResolveCmdPrefix(configurations_, configuration);
+  return resolved == nullptr ? kEmptyPrefix : *resolved;
+}
+
+const std::map<std::string, std::string>&
+dispatcher::DispatcherNode::get_environment_variables(
+    const std::string& configuration)
+{
+  static const std::map<std::string, std::string> kEmptyEnvironmentVariables;
+  const auto* resolved = dispatcher::detail::ResolveEnvironmentVariables(
+      configurations_, configuration);
+  return resolved == nullptr ? kEmptyEnvironmentVariables : *resolved;
+}
+
 void dispatcher::DispatcherNode::Process()
 {
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
@@ -186,11 +209,11 @@ void dispatcher::DispatcherNode::Process()
 
 void dispatcher::DispatcherNode::UpdateConfiguration()
 {
-  EVR_ACTIVITY_HI("Updating configuration to: %s",
-                  widget_->get_configuration_combo_box()
-                      ->currentText()
-                      .toStdString()
-                      .c_str());
+  RCLCPP_INFO(this->get_logger(), "Updating configuration to: %s",
+              widget_->get_configuration_combo_box()
+                  ->currentText()
+                  .toStdString()
+                  .c_str());
 
   online_nodes_ = node_graph_->get_node_names_and_namespaces();
   for (auto& item : dispatcher_items_) {
@@ -228,27 +251,31 @@ void dispatcher::DispatcherNode::StopChecked()
 
 void dispatcher::DispatcherNode::StopAll()
 {
-  EVR_ACTIVITY_HI("Stopping all dispatch items and killing tmux sessions...");
+  RCLCPP_INFO(this->get_logger(),
+              "Stopping all dispatch items and killing tmux sessions...");
   for (auto& item : dispatcher_items_) {
     item->StopCb();
     item->TmuxKillSession();
   }
-  EVR_ACTIVITY_LO("Stopped all dispatch items and killing tmux sessions");
+  RCLCPP_INFO(this->get_logger(),
+              "Stopped all dispatch items and killing tmux sessions");
 }
 
 void dispatcher::DispatcherNode::CleanupTmuxSessions()
 {
-  EVR_ACTIVITY_HI(
-      "Removing out-dated tmux session for all dispatcher items...");
+  RCLCPP_INFO(this->get_logger(),
+              "Removing out-dated tmux session for all dispatcher items...");
 
   for (auto& item : dispatcher_items_) {
     // Attempt to clean up any local tmux sessions
     if (item->TmuxHasLocalSession()) {
-      EVR_WARNING_HI(
+      RCLCPP_WARN(
+          this->get_logger(),
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
-      EVR_WARNING_LO(
+      RCLCPP_WARN(
+          this->get_logger(),
           "If you consistently see this warning, contact your SW support "
           "developer");
       item->TmuxSendKeys("C-C");  // SIGINT
@@ -259,17 +286,20 @@ void dispatcher::DispatcherNode::CleanupTmuxSessions()
 
 void dispatcher::DispatcherNode::SetupTmuxSessions()
 {
-  EVR_ACTIVITY_HI("Creating tmux session for all Dispatch Items...");
+  RCLCPP_INFO(this->get_logger(),
+              "Creating tmux session for all Dispatch Items...");
 
   for (auto& item : dispatcher_items_) {
     // If the tmux session is already exists, try to refresh session and
     // start it back up from scratch
     if (item->TmuxHasSession()) {
-      EVR_WARNING_HI(
+      RCLCPP_WARN(
+          this->get_logger(),
           "Prior Tmux session '%s' for item '%s' detected, attempting to clean "
           "up the process safely",
           item->get_tmux_name().c_str(), item->get_name().c_str());
-      EVR_WARNING_LO(
+      RCLCPP_WARN(
+          this->get_logger(),
           "If you consistently see this warning, contact your SW support "
           "developer");
       item->TmuxSendKeys("C-C");  // SIGINT
@@ -278,7 +308,8 @@ void dispatcher::DispatcherNode::SetupTmuxSessions()
 
     item->TmuxNewSession();
   }
-  EVR_ACTIVITY_LO("Created Tmux session for all Dispatch Items.");
+  RCLCPP_INFO(this->get_logger(),
+              "Created Tmux session for all Dispatch Items.");
 }
 
 void dispatcher::DispatcherNode::EnableVariables(bool enable)
@@ -302,7 +333,8 @@ void dispatcher::DispatcherNode::AddItem(ItemType          node_type,
           new dispatcher::RosProcessItem(widget_, this, node, layout));
       break;
     default:
-      EVR_WARNING_HI(
+      RCLCPP_WARN(
+          this->get_logger(),
           "Encountered node named '%s' with type '%s' in YAML that's "
           "unsupported, it will be "
           "ignored and not added to dispatcher",
@@ -335,34 +367,10 @@ void dispatcher::DispatcherNode::AddConfiguration(const std::string& name,
 
 std::string dispatcher::DispatcherNode::ItemTypeToStr(ItemType type)
 {
-  std::string str_item_type;
-  switch (type) {
-    case ROS:
-      str_item_type = "ros";
-      break;
-    case SHELL:
-      str_item_type = "shell";
-      break;
-    case CATEGORY:
-      str_item_type = "category";
-      break;
-    default:
-      str_item_type = "undef";
-      break;
-  }
-  return str_item_type;
+  return dispatcher::detail::ItemTypeToString(type);
 }
 dispatcher::DispatcherNode::ItemType
 dispatcher::DispatcherNode::GetItemTypeFromStr(std::string type)
 {
-  ItemType item_type = UNDEF;
-  std::transform(type.begin(), type.end(), type.begin(), ::tolower);
-  if (type == "shell") {
-    item_type = SHELL;
-  } else if (type == "ros") {
-    item_type = ROS;
-  } else if (type == "category") {
-    item_type = CATEGORY;
-  }
-  return item_type;
+  return dispatcher::detail::ParseItemType(type);
 }

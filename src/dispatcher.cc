@@ -1,4 +1,3 @@
-#include "dispatcher/config.h"
 #include "dispatcher/dispatcher_widget.h"
 
 #include <QApplication>
@@ -11,7 +10,7 @@ int main(int argc, char* argv[])
 {
   rclcpp::init(argc, argv);
   // Define org and app name, which is necessary for QSettings later on
-  QCoreApplication::setOrganizationName("casah");
+  QCoreApplication::setOrganizationName("robotics");
   QCoreApplication::setApplicationName("dispatcher");
   QApplication app(argc, argv);
   Q_INIT_RESOURCE(icons);
