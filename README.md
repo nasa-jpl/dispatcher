@@ -82,16 +82,225 @@ Variable entries support:
 | `name` | Variable name used in commands, for example `$FCAT_LOOP_RATE_HZ`. |
 | `choices` | Selectable values exposed in the UI. |
 
-## Example
+## Examples
 
-See the sample YAMLs in [`config/`](config/) for supported combinations:
+The following examples build incrementally from a minimal configuration to a
+full-featured setup. Each one corresponds to a YAML file in [`config/`](config/)
+and a screenshot in [`doc/`](doc/).
 
-- [`config/example.yaml`](config/example.yaml)
-- [`config/example_remote_session.yaml`](config/example_remote_session.yaml)
-- [`config/example_variables.yaml`](config/example_variables.yaml)
-- [`config/example_no_configurations.yaml`](config/example_no_configurations.yaml)
+### Configurations
 
+[`config/example_configurations.yaml`](config/example_configurations.yaml)
+shows the simplest multi-configuration setup. Two named configurations
+(`config_A` and `config_B`) control which processes are available and which
+commands they run. Processes that lack a definition for the active configuration
+are grayed out.
 
+| config_A | config_B |
+| --- | --- |
+| ![config_A](doc/dispatcher_example_configurations_A.png) | ![config_B](doc/dispatcher_example_configurations_B.png) |
+
+```yaml
+configurations:
+  - config_A
+  - config_B
+
+nodes:
+  - name: both_configs
+    configurations:
+      - name: config_A
+        cmd: echo "Running config_A"
+      - name: config_B
+        cmd: echo "Running config_B"
+  - name: only_config_A
+    configurations:
+      - name: config_A
+        cmd: echo "Only running config_A"
+  - name: single_config
+    cmd: echo "Running single_config"
+```
+
+### Scripts
+
+[`config/example_scripts.yaml`](config/example_scripts.yaml) adds a **scripts
+panel** with one-click action buttons placed in a grid. Each button can
+optionally display an icon and choose whether to open in a terminal.
+
+![scripts](doc/dispatcher_example_scripts.png)
+
+```yaml
+scripts:
+  - name: kst
+    cmd: kst2 &
+    icon: :/icons/plot.png
+    row: 0
+    column: 0
+    use_terminal: false
+
+  - name: htop
+    cmd: htop
+    icon: :/icons/terminal.png
+    row: 0
+    column: 1
+    use_terminal: true
+
+  - name: rqt_graph
+    cmd: ros2 run rqt_graph rqt_graph &
+    row: 1
+    column: 0
+    use_terminal: false
+```
+
+### Variables
+
+[`config/example_variables.yaml`](config/example_variables.yaml) introduces
+**variable selectors** shown as drop-downs in the UI. References like
+`$FCAT_LOOP_RATE_HZ` in any command are substituted with the selected value
+at launch time.
+
+![variables](doc/dispatcher_example_variables.png)
+
+```yaml
+variables:
+  - name: FCAT_LOOP_RATE_HZ
+    choices:
+    - 1000
+    - 500
+    - 250
+    - 100
+
+nodes:
+  - name: fcat
+    ros_nodes:
+    - name: /fcat/fcat
+    cmd: ros2 launch robot_bringup fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
+    start_checked: true
+
+scripts:
+  - name: "Print Hostname and LOOP_RATE"
+    cmd: cat /etc/hostname && echo Loop rate $FCAT_LOOP_RATE_HZ
+    row: 0
+    column: 0
+    use_terminal: false
+```
+
+### Shell Processes
+
+[`config/example_shell.yaml`](config/example_shell.yaml) combines several
+features: `type: shell` processes that use `pgrep` for status,
+`hide_unconfigured_processes: true` to hide (rather than gray out) items
+without a command for the active configuration, and configuration entries with
+custom icons.
+
+![shell](doc/dispatcher_example_shell.png)
+
+```yaml
+hide_unconfigured_processes: true
+
+configurations:
+  - name: online
+    icon: :/icons/wifi.png
+  - name: offline
+    icon: :/icons/wifi-no.png
+
+nodes:
+  - name: fcat
+    ros_nodes:
+    - namespace: /fcat
+      name: fcat
+    configurations:
+    - name: online
+      cmd: ros2 launch ... --rate $FCAT_LOOP_RATE_HZ
+    - name: offline
+      cmd: ros2 launch ... --rate $FCAT_LOOP_RATE_HZ
+    start_checked: true
+
+  - name: my-ping3
+    type: shell
+    configurations:
+    - name: online
+      cmd: ping asimov-dev
+    - name: offline
+      cmd: ping asimov-dev
+    start_checked: true
+```
+
+### Categories
+
+[`config/example_category.yaml`](config/example_category.yaml) groups
+processes into collapsible categories using `type: category`. Each category
+can hold any mix of ROS and shell items and can be expanded or collapsed in
+the UI.
+
+| collapsed | expanded |
+| --- | --- |
+| ![collapsed](doc/dispatcher_example_category_collapsed.png) | ![expanded](doc/dispatcher_example_category_expanded.png) |
+
+```yaml
+nodes:
+  - name: commander
+    namespace: /commander
+    node_name: commander
+    cmd: ros2 run commander commander
+    start_checked: true
+
+  - name: motor control
+    type: category
+    items:
+    - name: fcat
+      type: ros
+      ros_nodes:
+      - namespace: /fcat
+        name: fcat
+      configurations:
+      - name: online
+        cmd: ros2 launch ... fcat_online.py
+      - name: offline
+        cmd: ros2 launch ... fcat_offline.py
+      start_checked: true
+
+  - name: sensors
+    type: category
+    items:
+    - name: ping1_but_this_is_a_very_long_name_to_demonstrate_elided
+      type: shell
+      configurations:
+      - name: online
+        cmd: ping google.com
+      - name: offline
+        cmd: ping asimov-dev
+      start_checked: true
+```
+
+### Remote Sessions
+
+[`config/example_remote_session.yaml`](config/example_remote_session.yaml)
+demonstrates running commands on a remote host over SSH. Adding `hostname`
+(and optionally `user`) to a process or script causes the dispatcher to wrap
+the command in `ssh hostname "command"`. Per-configuration environment
+variables are also shown.
+
+```yaml
+configurations:
+  - name: online
+    environment_variables:
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      CYCLONEDDS_URI: /etc/cyclonedds_online.xml
+  - name: offline
+    environment_variables:
+      RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
+      CYCLONEDDS_URI: /etc/cyclonedds_offline.xml
+
+nodes:
+  - name: fcat
+    configurations:
+    - name: online
+      cmd: ros2 launch ... fcat_online.py
+      hostname: asimov-dev.jpl.nasa.gov
+    - name: offline
+      cmd: ros2 launch ... fcat_offline.py
+    start_checked: true
+```
 
 ## Running
 
