@@ -8,8 +8,14 @@ configurations:
   - offline
 
 nodes:
+  - name: commander
+    namespace: /commander
+    node_name: commander
+    cmd: ros2 run commander commander
+    start_checked: true
+    stop_tmux_cmd: "C-D"
 
-  - name: robot
+  - name: motor control
     type: category # Use this type to define a collapsible category of proceses
     items:
     - name: fcat
@@ -24,14 +30,8 @@ nodes:
         cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
       start_checked: true
 
-  - name: commander
-    namespace: /commander
-    node_name: commander
-    cmd: ros2 run commander commander
-    start_checked: true
-    stop_tmux_cmd: "C-D"
 
-  - name: simulation_maybe
+  - name: sensors
     type: category 
     items:
     - name: ping1_but_this_is_a_very_long_name_to_demonstrate_elided
@@ -52,34 +52,11 @@ nodes:
         cmd: ping asimov-dev
       start_checked: true
 
-  - name: ping2
-    type: shell
-    configurations:
-    - name: online
-      cmd: ping google.com
-    - name: offline
-      cmd: ping asimov-dev
-    start_checked: true
-
-scripts:
-
-  - name: kst
-    cmd: kst2 &
-    icon: :/icons/plot.png
-    row: 0
-    column: 0
-    use_terminal: false
-
-  - name: htop
-    cmd: htop
-    icon: :/icons/terminal.png
-    row: 0
-    column: 1
-    use_terminal: true
-
-  - name: rqt_graph
-    cmd: ros2 run rqt_graph rqt_graph &
-    row: 1
-    column: 0
-    use_terminal: false
-
+    - name: ping2
+      type: shell
+      configurations:
+      - name: online
+        cmd: ping google.com
+      - name: offline
+        cmd: ping asimov-dev
+      start_checked: true

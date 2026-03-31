@@ -1,0 +1,20 @@
+workspace: .
+
+configurations:
+  - config_A
+  - config_B
+
+nodes:
+  - name: both_configs
+    configurations:
+      - name: config_A
+        cmd: echo "Running config_A"
+      - name: config_B
+        cmd: echo "Running config_B"
+  - name: only_config_A
+    configurations:
+      - name: config_A
+        cmd: echo "Only running config_A"
+  - name: single_config
+    cmd: echo "Running single_config"
+    

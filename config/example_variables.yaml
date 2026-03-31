@@ -1,10 +1,5 @@
 workspace: .
 
-# When a configuration is selected in dispatcher, if this is set to true,
-# then processes that are not defined for the specific configuration
-# will be hidden (instead of grayed out). [true, false]
-hide_unconfigured_processes: true
-
 variables:
   - name: FCAT_LOOP_RATE_HZ
     choices:
@@ -13,97 +8,16 @@ variables:
     - 250
     - 100
 
-
-configurations:
-  - name: online
-    icon: :/icons/wifi.png
-  - name: offline
-    icon: :/icons/wifi-no.png
-
 nodes:
-
   - name: fcat
     ros_nodes:
-    - namespace: /fcat
-      name: fcat
-    configurations:
-    - name: online
-      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py --rate $FCAT_LOOP_RATE_HZ
-    - name: offline
-      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
+    - name: /fcat/fcat
+    cmd: ros2 launch robot_bringup fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
     start_checked: true
-
-  - name: my-ping3
-    type: shell
-    configurations:
-    - name: online
-      cmd: ping asimov-dev
-    - name: offline
-      cmd: ping asimov-dev
-    start_checked: true
-
-  - name: ping3
-    type: shell
-    configurations:
-    - name: offline
-      cmd: ping asimov-dev
-    start_checked: true
-
-  - name: ping4
-    type: shell
-    configurations:
-    - name: offline
-      cmd: ping asimov-dev
-    start_checked: true
-
-  - name: category
-    type: category
-    items:
-      - name: pingA
-        type: shell
-        configurations:
-        - name: offline
-          cmd: ping asimov-dev
-        start_checked: true
-      - name: pingB
-        type: shell
-        configurations:
-        - name: offline
-          cmd: ping asimov-dev
-        start_checked: true
-      - name: pingC
-        type: shell
-        configurations:
-        - name: online
-          cmd: ping asimov-dev
-        - name: offline
-          cmd: ping asimov-dev
-        start_checked: true
-
 
 scripts:
-
-  - name: htop
-    cmd: htop
-    icon: :/icons/terminal.png
-    row: 0
-    column: 1
-    use_terminal: true
-
-  - name: rqt_graph
-    cmd: ros2 run rqt_graph rqt_graph &
-    row: 1
-    column: 0
-    use_terminal: false
-
-  - name: cheer_me_up
-    configurations:
-    - name: online
-      # $FCAT_LOOP_RATE_HZ would be replaced with one of the aforementioned choices before this cmd string is executed 
-      cmd: cat /etc/hostname && echo I love JPL times $FCAT_LOOP_RATE_HZ
-      hostname: asimov-dev
-    - name: offline
-      cmd: cat /etc/hostname  && echo I love JPL times $FCAT_LOOP_RATE_HZ
+  - name: "Print Hostname and LOOP_RATE"
+    cmd: cat /etc/hostname && echo Loop rate $FCAT_LOOP_RATE_HZ
     row: 0
     column: 0
     use_terminal: false

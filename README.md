@@ -3,7 +3,7 @@
 A Qt-based ROS 2 widget for starting, stopping, and monitoring both ROS nodes
 and arbitrary shell processes.
 
-![dispatcher](doc/dispatcher.png)
+![dispatcher](doc/dispatcher_simple.png)
 
 `dispatcher` builds its UI from a YAML file. Each configured item is launched in
 its own detached tmux session, and the terminal button can attach a
@@ -50,8 +50,8 @@ Common item fields include:
 | `name` | UI label and tmux-session base name. |
 | `cmd` | Command used for the implicit `all` configuration. |
 | `configurations` | Per-configuration command definitions. |
-| `start_checked` | Whether the item starts checked in the UI. |
-| `stop_tmux_cmd` | Stop sequence sent to tmux. Defaults to `C-C`. |
+| `start_checked` | Whether the item starts checked in the UI. Optional, defaults to `false`. |
+| `stop_tmux_cmd` | Stop sequence sent to tmux. Optional, defaults to `C-C`. |
 | `hostname` / `user` | Optional remote execution target for local commands or configuration entries. |
 | `use_cmd_prefix` | Enables or disables command-prefix injection. |
 | `use_environment_variables` | Enables or disables environment-variable injection. |
@@ -91,6 +91,8 @@ See the sample YAMLs in [`config/`](config/) for supported combinations:
 - [`config/example_variables.yaml`](config/example_variables.yaml)
 - [`config/example_no_configurations.yaml`](config/example_no_configurations.yaml)
 
+
+
 ## Running
 
 From this package directory after building:
@@ -99,7 +101,7 @@ From this package directory after building:
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 run dispatcher dispatcher --ros-args \
-  -p dispatcher_config_path:=/path/to/dispatcher.yaml \
+  -p dispatcher_config_path:=/path/to/dispatcher/config.yaml \
   -p initial_configuration:=offline
 ```
 
@@ -111,10 +113,25 @@ The terminal button opens a command like:
 gnome-terminal -t commander -- tmux a -t 3_commander
 ```
 
-If `gnome-terminal` is not installed, you can attach manually from any terminal:
+You can attach manually from any terminal. First, you can list them with
 
 ```bash
-tmux a -t 3_commander
+tmux ls
+```
+For example, for `example_category.yaml` config:
+```bash
+$ tmux ls
+1_commander: 1 windows (created Tue Mar 31 13:00:05 2026)
+1_fcat: 1 windows (created Tue Mar 31 13:00:05 2026)
+1_ping1_but_this_is_a_very_long_name_to_demonstrate_elided: 1 windows (created Tue Mar 31 13:00:05 2026)
+2_ping1_2: 1 windows (created Tue Mar 31 13:00:05 2026)
+3_ping2: 1 windows (created Tue Mar 31 13:00:05 2026)
+```
+
+Then, attach to the desired session with:
+
+```bash
+tmux a -t 1_fcat
 ```
 
 ## Build And Test
