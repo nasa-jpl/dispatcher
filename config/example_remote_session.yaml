@@ -26,9 +26,12 @@ nodes:
     - name: online
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py
       hostname: asimov-dev.jpl.nasa.gov 
-      # user: admin <- optionally specify username, if username is specified, dispatcher
-      # issues ssh commands as 'ssh username@hostname "command"'; otherwise dispatcher
-      # uses the syntax 'ssh hostname "command"'
+
+      # Optionally specify username, if username is specified, dispatcher
+      #   issues ssh commands as 'ssh username@hostname "command"'; otherwise dispatcher
+      #   uses the syntax 'ssh hostname "command"':
+      # user: admin 
+
     - name: offline
       cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
     start_checked: true
@@ -41,6 +44,7 @@ nodes:
     stop_tmux_cmd: "C-D"
 
 
+# Scripts can also be defined to run on specific configurations or hosts
 scripts:
 
   - name: kst
@@ -53,7 +57,7 @@ scripts:
   - name: htop
     configurations:
     - name: online
-      hostname: asimov-dev.jpl.nasa.gov
+      hostname: asimov-dev.jpl.nasa.gov 
       cmd: htop
     - name: offline
       cmd: htop

@@ -1,7 +1,5 @@
 workspace: .
 
-cmd_prefix: RMW_IMPLEMENTATION=rmw_cyclonedds_cpp CYCLONEDDS_URI=/etc/cyclonedds.xml
-
 nodes:
 
   - name: fcat
@@ -17,7 +15,6 @@ nodes:
     cmd: ros2 run commander commander
     start_checked: true
     stop_tmux_cmd: "C-D"
-
 
 scripts:
 

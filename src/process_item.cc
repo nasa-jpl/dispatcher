@@ -64,7 +64,7 @@ dispatcher::ProcessItem::ProcessItem(QWidget*                    parent,
     }
   }
 
-  bool start_checked = node["start_checked"].as<bool>();
+  bool start_checked = node["start_checked"] ? node["start_checked"].as<bool>() : false;
   index_             = layout->rowCount();
 
   // Convert any spaces to underscores in YAML Name parameter

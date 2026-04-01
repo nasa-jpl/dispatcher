@@ -273,6 +273,10 @@ MonitorStatus SummarizeRosStatus(
     // add / to name if not present
     std::string expected_name = expected_node.name;
     std::string expected_namespace = expected_node.namespace_;
+    // if namespace does not end with /, add it
+    if (!expected_namespace.empty() && expected_namespace.back() != '/') {
+      expected_namespace += "/";
+    }
     const auto expected_fullname = expected_namespace + expected_name;
     for (const auto& online_node : online_nodes) {
       std::string online_name = online_node.first;
