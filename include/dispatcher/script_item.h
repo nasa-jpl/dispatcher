@@ -14,7 +14,7 @@ class ScriptItem : public Item
  public:
   /*! @brief Constructs a script item from its YAML button definition. */
   explicit ScriptItem(QWidget* parent, dispatcher::DispatcherNode* ros_node_,
-                      const YAML::Node&);
+                      const YAML::Node&, QGridLayout* layout = nullptr);
   /*! @brief Destroys the script item. */
   ~ScriptItem();
 

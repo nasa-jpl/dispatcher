@@ -149,7 +149,37 @@ void dispatcher::DispatcherNode::ParseConfig()
   root["scripts"] ? dispatcher_w->EnableScripts(true)
                   : dispatcher_w->EnableScripts(false);
   for (const auto& script : root["scripts"]) {
-    script_items_.push_back(new dispatcher::ScriptItem(widget_, this, script));
+    std::string  name = script["name"].as<std::string>();
+    QGridLayout* grid_layout;
+    if (script["type"]) {
+      ItemType script_type = GetItemTypeFromStr(script["type"].as<std::string>());
+      if (script_type == CATEGORY) {
+        if (script["items"]) {
+          grid_layout = dispatcher_w->AddCategoryOfScripts(name);
+          for (const auto& item : script["items"]) {
+            script_items_.push_back(
+                new dispatcher::ScriptItem(widget_, this, item, grid_layout));
+          }
+        } else {
+          RCLCPP_FATAL(
+              this->get_logger(),
+              "Encountered script type %s in YAML but user did not specify an "
+              "'items' array that lists all the items to be run. Nothing "
+              "additional will be added to dispatcher",
+              ItemTypeToStr(script_type).c_str());
+        }
+      } else {
+        // Non-category script with a type field - use default layout
+        grid_layout = dispatcher_w->get_script_layout();
+        script_items_.push_back(
+            new dispatcher::ScriptItem(widget_, this, script, grid_layout));
+      }
+    } else {
+      // For backwards compatibility, assume this is a regular script
+      grid_layout = dispatcher_w->get_script_layout();
+      script_items_.push_back(
+          new dispatcher::ScriptItem(widget_, this, script, grid_layout));
+    }
   }
   root["variables"] ? dispatcher_w->EnableVariables(true)
                     : dispatcher_w->EnableVariables(false);
@@ -225,6 +255,11 @@ void dispatcher::DispatcherNode::UpdateConfiguration()
   // Purposely toggle all collapsible areas to redraw bounding boxes for items
   // that disappear
   for (auto& w : widget_->get_collapsible_widgets()) {
+    bool checked = w->get_checked_state();
+    w->set_checked_state(!checked);
+    w->set_checked_state(checked);
+  }
+  for (auto& w : widget_->get_script_collapsible_widgets()) {
     bool checked = w->get_checked_state();
     w->set_checked_state(!checked);
     w->set_checked_state(checked);
