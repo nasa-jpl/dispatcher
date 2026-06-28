@@ -213,8 +213,17 @@ void dispatcher::DispatcherWidget::InitializeWidgets()
   splitter_of_groupboxes_->addWidget(groupbox_processes_);
 
   // ScriptItem Groupbox
-  script_group_box_ = DispatcherGroupBox(splitter_of_groupboxes_);
-  script_layout_    = new QGridLayout(script_group_box_);
+  script_group_box_   = DispatcherGroupBox(splitter_of_groupboxes_);
+  script_main_layout_ = new QVBoxLayout(script_group_box_);
+  script_main_layout_->setContentsMargins(0, 0, 0, 0);
+
+  // Create a default grid layout for non-categorized scripts
+  QGroupBox* default_script_gb = DispatcherGroupBox(script_group_box_);
+  script_layout_ = new QGridLayout(default_script_gb);
+  default_script_gb->setLayout(script_layout_);
+  script_main_layout_->addWidget(default_script_gb);
+
+  script_group_box_->setLayout(script_main_layout_);
   splitter_of_groupboxes_->addWidget(script_group_box_);
 
   // Variables Groupbox
@@ -345,6 +354,20 @@ QGridLayout* dispatcher::DispatcherWidget::AddCategoryOfProcesses(
   return map_grid_layouts_[category_name];
 }
 
+QGridLayout* dispatcher::DispatcherWidget::AddCategoryOfScripts(
+    const std::string& category_name)
+{
+  dispatcher::DispatcherCategoryWidget* widget =
+      new dispatcher::DispatcherCategoryWidget(script_group_box_,
+                                               category_name);
+  script_main_layout_->addWidget(widget);
+  vec_script_collapsible_widgets_.push_back(widget);
+
+  std::string script_category_key = "script_" + category_name;
+  map_grid_layouts_[script_category_key] = widget->get_grid_layout();
+  return map_grid_layouts_[script_category_key];
+}
+
 dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
     QWidget* parent, const std::string& category_name)
     : QGroupBox(parent)
@@ -352,7 +375,7 @@ dispatcher::DispatcherCategoryWidget::DispatcherCategoryWidget(
   this->setObjectName(QString("categoryGb"));
   this->setStyleSheet(QString("QGroupBox#categoryGb {border:0}"));
   this->setContentsMargins(0, 0, 0, 0);
-  QVBoxLayout* v_layout_category = new QVBoxLayout(parent);
+  QVBoxLayout* v_layout_category = new QVBoxLayout(this);
   v_layout_category->setContentsMargins(-1, 0, -1, 0);
 
   // Define a QToolButton so we can click to collapse the below gb

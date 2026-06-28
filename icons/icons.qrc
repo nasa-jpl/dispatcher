@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>advance.png</file>
     <file>application.png</file>
     <file>apriltag.png</file>
     <file>build.png</file>
@@ -8,11 +9,14 @@
     <file>database.png</file>
     <file>dump.png</file>
     <file>exit.png</file>
+    <file>forward.png</file>
     <file>green.png</file>
     <file>grey.png</file>
     <file>home.png</file>
     <file>line.png</file>
     <file>orange.png</file>
+    <file>pause.png</file>
+    <file>play.png</file>
     <file>plot.png</file>
     <file>red.png</file>
     <file>reset.png</file>

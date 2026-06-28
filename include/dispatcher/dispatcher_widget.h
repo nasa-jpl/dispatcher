@@ -116,11 +116,18 @@ class DispatcherWidget : public QScrollArea
   {
     return vec_collapsible_widgets_;
   }
+  /*! @brief Returns all collapsible script category widgets currently in the UI. */
+  std::vector<DispatcherCategoryWidget*> get_script_collapsible_widgets()
+  {
+    return vec_script_collapsible_widgets_;
+  }
 
   /*! @brief Creates a collapsible category section and returns its child layout. */
   QGridLayout* AddCategoryOfProcesses(const std::string&);
   /*! @brief Creates a single-process section and returns its child layout. */
   QGridLayout* AddSingleProcess(const std::string&);
+  /*! @brief Creates a collapsible category section for scripts and returns its child layout. */
+  QGridLayout* AddCategoryOfScripts(const std::string&);
 
   /*! @brief Returns true when at least one ROS node is reported online. */
   bool IsOnline() { return (!online_nodes_.empty()); }
@@ -164,6 +171,8 @@ class DispatcherWidget : public QScrollArea
   std::vector<DispatcherCategoryWidget*>        vec_collapsible_widgets_;
   QGroupBox*                                    script_group_box_   = nullptr;
   QGridLayout*                                  script_layout_      = nullptr;
+  QVBoxLayout*                                  script_main_layout_ = nullptr;
+  std::vector<DispatcherCategoryWidget*>        vec_script_collapsible_widgets_;
   QGroupBox*                                    variable_group_box_ = nullptr;
   QGridLayout*                                  variable_layout_    = nullptr;
 

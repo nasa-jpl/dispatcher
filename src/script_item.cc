@@ -17,7 +17,8 @@
 @brief class constructor for ScriptItem
 */
 dispatcher::ScriptItem::ScriptItem(QWidget* parent, DispatcherNode* ros_node,
-                                   const YAML::Node& node)
+                                   const YAML::Node& node,
+                                   QGridLayout* layout)
     : dispatcher::Item(parent, ros_node, node)
 {
   if (node["configurations"]) {
@@ -49,13 +50,20 @@ dispatcher::ScriptItem::ScriptItem(QWidget* parent, DispatcherNode* ros_node,
     use_terminal_ = node["use_terminal"].as<bool>();
   }
 
-  // The GridLayout this ScriptItem is going into will have a space in the 0th
-  // row, so just increment the value read from the YAML
-  int row    = node["row"].as<int>() + 1;
-  int column = node["column"].as<int>();
-
-  QGridLayout* layout = dispatcher_->get_script_layout();
+  // Use provided layout or get the default script layout
+  bool using_default_layout = (layout == nullptr);
+  if (using_default_layout) {
+    layout = dispatcher_->get_script_layout();
+  }
   assert(layout);
+
+  // The GridLayout this ScriptItem is going into will have a space in the 0th
+  // row, so just increment the value read from the YAML (only for default layout)
+  int row    = node["row"].as<int>();
+  if (using_default_layout) {
+    row += 1;  // Offset for spacer in default layout
+  }
+  int column = node["column"].as<int>();
 
   std::string str(" ");
   str += name_;

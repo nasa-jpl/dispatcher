@@ -272,6 +272,78 @@ nodes:
       start_checked: true
 ```
 
+Categories can similarly be used to group the buttons generated with the `scripts` key. This allows the used to cluster buttons, and to toggle their visibility by collapsing them. As with nodes, the syntax is to use `type: category` in the script item YAML definition.
+
+![script_categories](doc/dispatcher_example_scripts_category.png)
+
+```yaml
+workspace: .
+
+nodes:
+  - name: commander
+    namespace: /commander
+    node_name: commander
+    cmd: ros2 run commander commander
+    start_checked: true
+
+scripts:
+
+  # Regular uncategorized scripts
+  - name: htop
+    cmd: htop
+    icon: :/icons/terminal.png
+    row: 0
+    column: 0
+    use_terminal: true
+
+  # Categorized visualization tools
+  - name: Visualization Tools
+    type: category
+    items:
+    - name: kst
+      cmd: kst2 &
+      icon: :/icons/plot.png
+      row: 0
+      column: 0
+      use_terminal: false
+
+    - name: rqt_graph
+      cmd: ros2 run rqt_graph rqt_graph &
+      row: 0
+      column: 1
+      use_terminal: false
+
+    - name: plotjuggler
+      cmd: ros2 run plotjuggler plotjuggler &
+      row: 1  
+      column: 0
+      use_terminal: false
+
+  # Categorized monitoring tools
+  - name: System Monitoring
+    type: category
+    items:
+    - name: rqt_console
+      cmd: ros2 run rqt_console rqt_console &
+      icon: :/icons/terminal.png
+      row: 0
+      column: 0
+      use_terminal: false
+
+    - name: rqt_top
+      cmd: ros2 run rqt_top rqt_top &
+      row: 0
+      column: 1
+      use_terminal: false
+
+  # Another regular script after categories
+  - name: rviz2
+    cmd: ros2 run rviz2 rviz2 &
+    row: 1
+    column: 0
+    use_terminal: false
+```
+
 ### Remote Sessions
 
 [`config/example_remote_session.yaml`](config/example_remote_session.yaml)
