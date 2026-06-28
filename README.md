@@ -1,13 +1,10 @@
 # Dispatcher
 
-A Qt-based ROS 2 widget for starting, stopping, and monitoring both ROS nodes
-and arbitrary shell processes.
+A Qt-based ROS 2 widget for starting, stopping, and monitoring both ROS nodes and arbitrary shell processes.
 
 ![dispatcher](doc/dispatcher_simple.png)
 
-`dispatcher` builds its UI from a YAML file. Each configured item is launched in
-its own detached tmux session, and the terminal button can attach a
-`gnome-terminal` window to that session when available.
+`dispatcher` builds its UI from a YAML file. Each configured item is launched in its own detached tmux session, and the terminal button can attach a `gnome-terminal` window to that session when available.
 
 ## Runtime Parameters
 
@@ -417,7 +414,13 @@ tmux a -t 1_fcat
 
 ## Build And Test
 
-Build `dispatcher` as a one-package workspace from this directory:
+Install the dependencies using rosdep:
+
+```bash
+rosdep install --from-paths src --ignore-src -r -y
+```
+
+Build `dispatcher`. From this package directory, run:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
@@ -438,11 +441,6 @@ To print the collected test results:
 colcon test-result --verbose
 ```
 
-## GitLab CI
+## License
 
-This package includes a package-local pipeline in [`.gitlab-ci.yml`](.gitlab-ci.yml)
-that does not depend on the parent workspace. It uses a ROS 2 Jazzy Docker
-image and has two stages:
-
-- `build`: package-local `colcon build`
-- `test`: package-local `colcon test` and `colcon test-result --verbose`
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
