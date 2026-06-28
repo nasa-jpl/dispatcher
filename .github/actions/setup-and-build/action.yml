@@ -1,0 +1,17 @@
+name: Setup dependencies and build dispatcher
+description: Install rosdep dependencies and build the dispatcher package with colcon.
+runs:
+  using: composite
+  steps:
+    - name: Install rosdep dependencies
+      shell: bash
+      run: |
+        apt-get update
+        rosdep update
+        rosdep install --from-paths . --ignore-src -r -y
+    - name: colcon build
+      shell: bash
+      run: |
+        source /opt/ros/jazzy/setup.bash
+        colcon build --base-paths . --packages-select dispatcher \
+          --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_TESTING=ON

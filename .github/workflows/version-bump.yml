@@ -1,0 +1,58 @@
+name: Version bump and tag
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+jobs:
+  bump:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Determine bump type from PR labels
+        id: bump
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          BUMP=patch
+          if   echo "$LABELS" | grep -q '"bump:major"'; then BUMP=major
+          elif echo "$LABELS" | grep -q '"bump:minor"'; then BUMP=minor
+          elif echo "$LABELS" | grep -q '"bump:patch"'; then BUMP=patch
+          fi
+          echo "type=$BUMP" >> "$GITHUB_OUTPUT"
+
+      - name: Compute new version
+        id: ver
+        run: |
+          CUR=$(sed -n 's|.*<version>\(.*\)</version>.*|\1|p' package.xml | head -n1)
+          IFS='.' read -r MA MI PA <<< "$CUR"
+          case "${{ steps.bump.outputs.type }}" in
+            major) MA=$((MA+1)); MI=0; PA=0 ;;
+            minor) MI=$((MI+1)); PA=0 ;;
+            patch) PA=$((PA+1)) ;;
+          esac
+          NEW="$MA.$MI.$PA"
+          echo "current=$CUR" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW"     >> "$GITHUB_OUTPUT"
+
+      - name: Update package.xml and CMakeLists.txt
+        run: |
+          sed -i "s|<version>${{ steps.ver.outputs.current }}</version>|<version>${{ steps.ver.outputs.new }}</version>|" package.xml
+          sed -i "s|VERSION ${{ steps.ver.outputs.current }}|VERSION ${{ steps.ver.outputs.new }}|" CMakeLists.txt
+
+      - name: Commit, tag, push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.xml CMakeLists.txt
+          git commit -m "chore: bump version to ${{ steps.ver.outputs.new }} [skip ci]"
+          git tag "v${{ steps.ver.outputs.new }}"
+          git push origin master
+          git push origin "v${{ steps.ver.outputs.new }}"
