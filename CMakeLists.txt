@@ -71,13 +71,11 @@ target_compile_options(dispatcher_widget
     $<$<CONFIG:Debug>:-ggdb3>
 )
 
-ament_target_dependencies(dispatcher_widget
-  rclcpp
-  sensor_msgs
-  std_srvs
-)
-
 target_link_libraries(dispatcher_widget
+  rclcpp::rclcpp
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
   Qt5::Core
   Qt5::Widgets
   Qt5::OpenGL
