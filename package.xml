@@ -3,7 +3,7 @@
 <package format="3">
   <name>dispatcher</name>
 
-  <version>0.4.0</version>
+  <version>0.4.1</version>
     <description>
     Qt-based ROS 2 application for launching and monitoring
     ROS nodes and arbitrary processes.
