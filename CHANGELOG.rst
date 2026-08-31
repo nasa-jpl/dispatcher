@@ -5,6 +5,15 @@ Changelog for package dispatcher
 Forthcoming
 -----------
 
+0.4.2 (2026-08-31 07:32)
+------------------------
+* Merge pull request `#3 <https://github.com/nasa-jpl/dispatcher/issues/3>`_ from nasa-jpl/fix-rolling
+
+  Fix rolling
+* add changelo update
+* use target_link_libraries instead of deprecated ament_target_dependencies
+* Contributors: Daniel Pastor
+
 0.4.0 (2026-06-28 20:40)
 ------------------------
 * chore: bump version to 0.4.0 [skip ci]
