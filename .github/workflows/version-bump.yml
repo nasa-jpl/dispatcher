@@ -47,11 +47,14 @@ jobs:
           sed -i "s|<version>${{ steps.ver.outputs.current }}</version>|<version>${{ steps.ver.outputs.new }}</version>|" package.xml
           sed -i "s|VERSION ${{ steps.ver.outputs.current }}|VERSION ${{ steps.ver.outputs.new }}|" CMakeLists.txt
 
+      - name: Update CHANGELOG.rst
+        run: python3 .github/scripts/update_changelog.py "${{ steps.ver.outputs.new }}"
+
       - name: Commit, tag, push
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.xml CMakeLists.txt
+          git add package.xml CMakeLists.txt CHANGELOG.rst
           git commit -m "chore: bump version to ${{ steps.ver.outputs.new }} [skip ci]"
           git tag "v${{ steps.ver.outputs.new }}"
           git push origin master
