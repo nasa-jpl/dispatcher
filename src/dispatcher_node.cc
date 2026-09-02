@@ -48,9 +48,18 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   this->declare_parameter<std::string>("initial_configuration", "");
   this->get_parameter("initial_configuration", initial_configuration_);
 
+  this->declare_parameter<bool>("start_checked_on_startup", false);
+  this->get_parameter("start_checked_on_startup",
+                      start_checked_on_startup_);
+
   ParseConfig();
   CleanupTmuxSessions();
   UpdateConfiguration();
+
+  if (start_checked_on_startup_) {
+    RCLCPP_INFO(this->get_logger(), "Starting all checked items on startup");
+    StartChecked();
+  }
 }
 
 void dispatcher::DispatcherNode::ParseConfig()

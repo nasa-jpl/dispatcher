@@ -14,6 +14,7 @@ The `dispatcher` executable uses the following ROS parameters:
 | --- | --- | --- | --- |
 | `dispatcher_config_path` | `string` | `""` | Path to the dispatcher YAML file. |
 | `initial_configuration` | `string` | `""` | Configuration name to select on startup. |
+| `start_checked_on_startup` | `bool` | `false` | Start all checked process items after loading the initial configuration. |
 | `ssh_timeout_sec` | `int` | `10` | Timeout used when building remote SSH commands. |
 | `target_loop_rate_hz` | `double` | `100.0` | Main process/status polling rate. |
 
@@ -380,10 +381,14 @@ source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 run dispatcher dispatcher --ros-args \
   -p dispatcher_config_path:=/path/to/dispatcher/config.yaml \
-  -p initial_configuration:=offline
+  -p initial_configuration:=offline \
+  -p start_checked_on_startup:=true
 ```
 
-If `initial_configuration` is omitted, the first configured entry is used.
+If `initial_configuration` is omitted, the first configured entry is used. The
+`start_checked_on_startup` parameter defaults to `false`; when enabled,
+dispatcher starts each available item whose YAML `start_checked` value is
+`true` after applying that initial configuration.
 
 The terminal button opens a command like:
 
