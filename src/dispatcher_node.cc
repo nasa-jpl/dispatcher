@@ -133,8 +133,11 @@ void dispatcher::DispatcherNode::ParseConfig()
         if (node["items"]) {
           grid_layout = dispatcher_w->AddCategoryOfProcesses(name);
           for (const auto& item : node["items"]) {
-            node_type = GetItemTypeFromStr(item["type"].as<std::string>());
-            AddItem(node_type, item, grid_layout);
+            // As with top-level entries, an item that omits 'type' is a ROS item
+            ItemType item_type =
+                item["type"] ? GetItemTypeFromStr(item["type"].as<std::string>())
+                             : ROS;
+            AddItem(item_type, item, grid_layout);
           }
         } else {
           RCLCPP_FATAL(
