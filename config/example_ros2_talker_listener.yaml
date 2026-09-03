@@ -43,11 +43,9 @@ configurations:
 
 nodes:
 
-  # NOTE: `namespace: /` is required. Status matching compares against the
-  # fully-qualified name reported by the ROS graph, which is `/talker` for a
-  # node in the root namespace. Omitting `namespace` defaults it to the empty
-  # string, which never matches, and the status light stays red even though the
-  # node is running.
+  # `namespace: /` is spelled out for clarity, but it is the default: an omitted
+  # namespace resolves to the root namespace, so `- name: talker` alone matches
+  # the graph's `/talker` just as well.
   - name: talker
     ros_nodes:
     - namespace: /

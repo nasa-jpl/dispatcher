@@ -39,7 +39,9 @@ Each entry in `nodes` can be:
 
 - A ROS process item. If `type` is omitted, the item is treated as ROS by default.
 - A shell process item with `type: shell`.
-- A collapsible category with `type: category` and an `items` array.
+- A collapsible category with `type: category` and an `items` array. Entries in
+  `items` follow the same rules, including the default to ROS when `type` is
+  omitted.
 
 Common item fields include:
 
@@ -56,8 +58,10 @@ Common item fields include:
 | `attach_on_start` | Opens a terminal automatically after launch. |
 
 ROS process items can additionally define `node_name` plus an optional
-`namespace` that defaults to an empty string, or a `ros_nodes` array with the same
-monitoring fields for online-state monitoring.
+`namespace`, or a `ros_nodes` array with the same monitoring fields for
+online-state monitoring. An omitted `namespace` resolves to the root namespace,
+so `name: talker` matches the graph's `/talker`; a `name` that is already
+absolute, such as `/fcat/fcat`, carries its own namespace.
 
 Shell process items use `pgrep` on the item name to infer online state.
 
@@ -179,13 +183,11 @@ get wrong when writing a config from scratch:
   indefinitely for the service, so pressing such a button while the target node
   is stopped leaves a process spinning. Bound them with
   `--max-wait-time-secs N` or `timeout N`.
-- **Root-namespace nodes need `namespace: /`.** Status matching compares against
-  the fully-qualified name from the ROS graph, which is `/talker` for a node in
-  the root namespace. Omitting `namespace` defaults it to the empty string, which
-  never matches, so the status light stays red even though the node is running.
-- **Items inside a `type: category` must declare their own `type`.** Top-level
-  entries in `nodes` default to `ros` when `type` is omitted, but category items
-  do not — they need an explicit `type: ros` or `type: shell`.
+- **A non-root `namespace` must be spelled out.** Status matching compares
+  against the fully-qualified name from the ROS graph, so a node remapped with
+  `-r __ns:=/demo` has to be monitored as `namespace: /demo`. An omitted
+  `namespace` resolves to the root namespace, and a `name` that is already
+  absolute (`name: /fcat/fcat`) carries its own.
 - **Do not monitor the same node from two items.** Both items turn green when
   either one is started, which makes the status lights meaningless. Give each
   item a distinct set of `ros_nodes`.

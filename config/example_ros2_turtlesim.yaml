@@ -47,11 +47,9 @@ nodes:
     cmd: ros2 run turtlesim turtlesim_node
     start_checked: true
 
-  # A ROS item, monitored through the graph. `namespace: /` is required: matching
-  # compares against the fully-qualified name, which is `/draw_square` for a node
-  # in the root namespace. Omitting `namespace` defaults it to the empty string,
-  # which never matches, and the status light stays red even though the node is
-  # running.
+  # A ROS item, monitored through the graph rather than with pgrep. `namespace: /`
+  # is spelled out for clarity, but it is the default: an omitted namespace
+  # resolves to the root namespace and still matches the graph's `/draw_square`.
   - name: draw_square
     ros_nodes:
     - namespace: /

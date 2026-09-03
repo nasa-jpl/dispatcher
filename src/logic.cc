@@ -61,13 +61,30 @@ StatusColor DetermineStatusColor(size_t found, size_t expected)
 std::string FormatOnlineNode(
     const std::pair<std::string, std::string>& online_node)
 {
-  if (online_node.second == "/") {
-    return "\n  /" + online_node.first;
-  }
-  return "\n  " + online_node.second + "/" + online_node.first;
+  return "\n  " +
+         MakeFullyQualifiedNodeName(online_node.second, online_node.first);
 }
 
 }  // namespace
+
+std::string MakeFullyQualifiedNodeName(const std::string& node_namespace,
+                                       const std::string& node_name)
+{
+  // A name that is already absolute carries its own namespace, which is how
+  // monitored nodes may be spelled in YAML, e.g. `name: /fcat/fcat`.
+  if (!node_name.empty() && node_name.front() == '/') {
+    return node_name;
+  }
+
+  std::string prefix = node_namespace;
+  if (!prefix.empty() && prefix.front() != '/') {
+    prefix.insert(prefix.begin(), '/');
+  }
+  if (prefix.empty() || prefix.back() != '/') {
+    prefix += "/";
+  }
+  return prefix + node_name;
+}
 
 RosNodeMonitorConfig ParseRosNodeMonitorConfig(const YAML::Node&   node,
                                                const std::string& name_key)
@@ -270,27 +287,16 @@ MonitorStatus SummarizeRosStatus(
 
   status.expected = expected_nodes.size();
   for (const auto& expected_node : expected_nodes) {
-    // add / to name if not present
-    std::string expected_name = expected_node.name;
-    std::string expected_namespace = expected_node.namespace_;
-    // if namespace does not end with /, add it
-    if (!expected_namespace.empty() && expected_namespace.back() != '/') {
-      expected_namespace += "/";
-    }
-    const auto expected_fullname = expected_namespace + expected_name;
+    const auto expected_fullname = MakeFullyQualifiedNodeName(
+        expected_node.namespace_, expected_node.name);
     for (const auto& online_node : online_nodes) {
-      std::string online_name = online_node.first;
-      std::string online_namespace = online_node.second;
-      // if namespace does not end with /, add it
-      if (online_namespace.back() != '/') {
-        online_namespace += "/";
-      }
-      const auto online_fullname = online_namespace + online_name;
+      const auto online_fullname =
+          MakeFullyQualifiedNodeName(online_node.second, online_node.first);
       if (expected_fullname == online_fullname) {
         status.tooltip += FormatOnlineNode(online_node);
         status.found++;
         break;
-      } 
+      }
     }
   }
 

@@ -24,6 +24,79 @@ TEST(DispatcherStatusTest, SummarizeShellStatusReportsOfflineAndOnlineStates)
   EXPECT_EQ(online.color, StatusColor::kGreen);
 }
 
+TEST(DispatcherStatusTest, MakeFullyQualifiedNodeNameResolvesEveryNamespaceForm)
+{
+  // An omitted or bare-root namespace resolves to the root namespace, so a
+  // monitored node spelled without one still matches the graph's '/talker'.
+  EXPECT_EQ(MakeFullyQualifiedNodeName("", "talker"), "/talker");
+  EXPECT_EQ(MakeFullyQualifiedNodeName("/", "talker"), "/talker");
+
+  EXPECT_EQ(MakeFullyQualifiedNodeName("/demo", "talker"), "/demo/talker");
+  EXPECT_EQ(MakeFullyQualifiedNodeName("/demo/", "talker"), "/demo/talker");
+  EXPECT_EQ(MakeFullyQualifiedNodeName("demo", "talker"), "/demo/talker");
+
+  // A name that is already absolute carries its own namespace.
+  EXPECT_EQ(MakeFullyQualifiedNodeName("", "/fcat/fcat"), "/fcat/fcat");
+  EXPECT_EQ(MakeFullyQualifiedNodeName("/", "/fcat/fcat"), "/fcat/fcat");
+}
+
+TEST(DispatcherStatusTest, SummarizeRosStatusMatchesRootNodesWithoutNamespace)
+{
+  // The ROS graph reports root-namespace nodes as ("talker", "/"). Monitoring
+  // them with no namespace at all must still match.
+  const std::vector<RosNodeMonitorConfig> configured_nodes = {
+      {"", "talker"},
+      {"", "listener"},
+  };
+  const std::vector<std::pair<std::string, std::string>> online_nodes = {
+      {"talker", "/"},
+      {"listener", "/"},
+  };
+
+  const auto status = SummarizeRosStatus({}, configured_nodes, online_nodes);
+
+  EXPECT_EQ(status.found, 2u);
+  EXPECT_EQ(status.expected, 2u);
+  EXPECT_TRUE(status.online);
+  EXPECT_EQ(status.color, StatusColor::kGreen);
+  EXPECT_EQ(status.tooltip, "2/2 nodes online\n  /talker\n  /listener");
+}
+
+TEST(DispatcherStatusTest, SummarizeRosStatusMatchesFullyQualifiedNodeNames)
+{
+  // 'ros_nodes: - name: /fcat/fcat' style, with no namespace key.
+  const std::vector<RosNodeMonitorConfig> configured_nodes = {
+      {"", "/fcat/fcat"},
+  };
+  const std::vector<std::pair<std::string, std::string>> online_nodes = {
+      {"fcat", "/fcat"},
+  };
+
+  const auto status = SummarizeRosStatus({}, configured_nodes, online_nodes);
+
+  EXPECT_EQ(status.found, 1u);
+  EXPECT_EQ(status.expected, 1u);
+  EXPECT_EQ(status.color, StatusColor::kGreen);
+}
+
+TEST(DispatcherStatusTest, SummarizeRosStatusDoesNotMatchAcrossNamespaces)
+{
+  // '/talker' and '/demo/talker' are different nodes and must not be confused,
+  // in either direction.
+  const std::vector<RosNodeMonitorConfig> root_only = {{"/", "talker"}};
+  const std::vector<RosNodeMonitorConfig> demo_only = {{"/demo", "talker"}};
+
+  const std::vector<std::pair<std::string, std::string>> demo_online = {
+      {"talker", "/demo"},
+  };
+  const std::vector<std::pair<std::string, std::string>> root_online = {
+      {"talker", "/"},
+  };
+
+  EXPECT_EQ(SummarizeRosStatus({}, root_only, demo_online).found, 0u);
+  EXPECT_EQ(SummarizeRosStatus({}, demo_only, root_online).found, 0u);
+}
+
 TEST(DispatcherStatusTest, SummarizeRosStatusUsesDefaultNodesWhenOverrideMissing)
 {
   const std::vector<RosNodeMonitorConfig> default_nodes = {

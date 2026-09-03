@@ -28,13 +28,13 @@ workspace: .
 
 nodes:
 
-  # NOTE: items nested inside a `type: category` must declare their own `type`.
-  # Top-level entries in `nodes` default to `ros` when `type` is omitted, but
-  # category items do not -- leaving it off aborts dispatcher on startup.
-  #
   # NOTE: the monitored `namespace` has to match the `__ns` remap, since status
   # matching compares against the fully-qualified name reported by the ROS
-  # graph (`/demo1/talker` here).
+  # graph (`/demo1/talker` here). Unlike the root namespace, a non-default one
+  # cannot be inferred.
+  #
+  # The `type: ros` on each item below is spelled out for clarity but optional;
+  # items default to ROS whether they are nested in a category or not.
   - name: /demo1
     type: category
     items:
