@@ -1,0 +1,144 @@
+# ============================================================================
+# ROS 2 service demo -- add_two_ints server plus client scripts.
+# ============================================================================
+#
+# Runs out of the box against stock ROS 2 packages; no custom package needed:
+#
+#   sudo apt install ros-$ROS_DISTRO-demo-nodes-cpp \
+#                    ros-$ROS_DISTRO-demo-nodes-py \
+#                    ros-$ROS_DISTRO-rqt-graph
+#
+# Launch from the root of the colcon workspace that contains dispatcher:
+#
+#   source install/setup.bash
+#   ros2 run dispatcher dispatcher --ros-args \
+#     -p dispatcher_config_path:=src/dispatcher/config/example_ros2_services.yaml \
+#     -p initial_configuration:=cpp \
+#     -p start_checked_on_startup:=true
+#
+# /add_two_ints_server advertises the example_interfaces/srv/AddTwoInts service
+# on /add_two_ints. Start it, then call it from the script buttons. The 'cpp' and
+# 'python' configurations serve the same interface from demo_nodes_cpp and
+# demo_nodes_py, so the client scripts work against either one unchanged.
+
+# ROS process items run `cd <workspace>` then `source install/setup.bash` before
+# the command, so this must be the colcon workspace root. '.' works when
+# dispatcher is launched from there.
+workspace: .
+
+variables:
+  - name: LOG_LEVEL
+    choices:
+    - info
+    - debug
+    - warn
+
+configurations:
+  - name: cpp
+    icon: :/icons/source_code.png
+  - name: python
+    icon: :/icons/application.png
+
+nodes:
+
+  # NOTE: `namespace: /` is required. Status matching compares against the
+  # fully-qualified name reported by the ROS graph, which is
+  # `/add_two_ints_server` for a node in the root namespace. Omitting
+  # `namespace` defaults it to the empty string, which never matches, and the
+  # status light stays red even though the node is running.
+  - name: add_two_ints_server
+    ros_nodes:
+    - namespace: /
+      name: add_two_ints_server
+    configurations:
+    - name: cpp
+      cmd: ros2 run demo_nodes_cpp add_two_ints_server --ros-args --log-level $LOG_LEVEL
+    - name: python
+      cmd: ros2 run demo_nodes_py add_two_ints_server --ros-args --log-level $LOG_LEVEL
+    start_checked: true
+
+  # A single item can also monitor several nodes at once, which is the usual
+  # shape for a launch file. This one runs the stock service-introspection demo,
+  # whose launch file starts a long-lived service and client pair, and reports
+  # 2/2 (green), 1/2 (orange), or 0/2 (red) in its status light.
+  #
+  # Note that the monitored node names are deliberately distinct from
+  # /add_two_ints_server above. Two items that monitor the same node both turn
+  # green when either one is started, which makes the status lights misleading.
+  #
+  # Avoid `demo_nodes_cpp add_two_ints_launch.py` here: that launch file
+  # registers a shutdown handler on its one-shot client, so the whole launch
+  # exits seconds after starting and the item just blinks green.
+  #
+  # NOTE: a process item's name becomes its tmux session name, interpolated
+  # unquoted into commands like `tmux has-session -t <index>_<name>`. Only spaces
+  # are sanitized (to underscores), so keep shell metacharacters -- parentheses,
+  # `&`, `;`, `$`, quotes -- out of process item names or every tmux call for
+  # that item fails with a shell syntax error. Script names are unaffected.
+  - name: introspection_pair_launch_file
+    ros_nodes:
+    - namespace: /
+      name: introspection_service
+    - namespace: /
+      name: introspection_client
+    cmd: ros2 launch demo_nodes_cpp introspect_services_launch.py
+
+scripts:
+
+# A script with `use_terminal: false` runs as a blocking system() call on the Qt
+# main thread, so it MUST end in `&` or the dispatcher UI freezes until the
+# command exits. Scripts with `use_terminal: true` are wrapped in
+# `gnome-terminal --`, which returns immediately, so those do not need the `&`.
+#
+# `ros2 service call` and the demo clients all wait indefinitely for the service
+# to appear, so each is guarded by an exact-match check against `ros2 service
+# list` first. A bare `timeout N` also prevents the hang, but SIGTERM lands in
+# the middle of the client's spin loop and dumps an rcl error traceback, so the
+# guard is both safer and quieter. `grep -qx` is required: a plain `grep
+# /add_two_ints` would also match /add_two_ints_server/get_parameters and friends.
+
+  - name: rqt_graph
+    cmd: ros2 run rqt_graph rqt_graph &
+    icon: :/icons/plot.png
+    row: 0
+    column: 0
+    use_terminal: false
+
+  # The YAML single quotes are needed because the command contains ': ', which
+  # would otherwise be parsed as a nested mapping. Note `;` rather than `&&`
+  # before `read`, so a failure stays on screen instead of closing the window
+  # immediately.
+  - name: call 2 + 3
+    cmd: 'ros2 service list | grep -qx /add_two_ints && timeout 5 ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts "{a: 2, b: 3}" || echo "Service /add_two_ints is not available -- start add_two_ints_server first" ; read -n 1 -s -p "Press any key to close"'
+    icon: :/icons/advance.png
+    row: 0
+    column: 1
+    use_terminal: true
+
+  - name: demo client (sync)
+    cmd: ros2 service list | grep -qx /add_two_ints && timeout 10 ros2 run demo_nodes_cpp add_two_ints_client || echo "Service /add_two_ints is not available -- start add_two_ints_server first" ; read -n 1 -s -p "Press any key to close"
+    icon: :/icons/forward.png
+    row: 1
+    column: 0
+    use_terminal: true
+
+  - name: demo client (async)
+    cmd: ros2 service list | grep -qx /add_two_ints && timeout 10 ros2 run demo_nodes_py add_two_ints_client_async || echo "Service /add_two_ints is not available -- start add_two_ints_server first" ; read -n 1 -s -p "Press any key to close"
+    icon: :/icons/cloud_sync.png
+    row: 1
+    column: 1
+    use_terminal: true
+
+  - name: service list
+    cmd: ros2 service list -t && echo && ros2 service type /add_two_ints && read -n 1 -s -p "Press any key to close"
+    icon: :/icons/source_code.png
+    row: 2
+    column: 0
+    use_terminal: true
+
+  - name: node info
+    cmd: ros2 node info /add_two_ints_server ; read -n 1 -s -p "Press any key to close"
+    icon: :/icons/terminal.png
+    row: 2
+    column: 1
+    use_terminal: true

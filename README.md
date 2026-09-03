@@ -86,6 +86,147 @@ The following examples build incrementally from a minimal configuration to a
 full-featured setup. Each one corresponds to a YAML file in [`config/`](config/)
 and a screenshot in [`doc/`](doc/).
 
+### ROS 2 Demos (runnable out of the box)
+
+Four examples run without any custom packages, using only the demos that ship
+with ROS 2. Each is self-contained and includes an `rqt_graph` button. Install
+the demo packages if needed:
+
+```bash
+sudo apt install ros-$ROS_DISTRO-demo-nodes-cpp \
+                 ros-$ROS_DISTRO-demo-nodes-py \
+                 ros-$ROS_DISTRO-turtlesim \
+                 ros-$ROS_DISTRO-rqt-graph
+```
+
+Launch any of them from the root of the colcon workspace containing
+`dispatcher`:
+
+```bash
+source install/setup.bash
+ros2 run dispatcher dispatcher --ros-args \
+  -p dispatcher_config_path:=src/dispatcher/config/<example>.yaml \
+  -p start_checked_on_startup:=true
+```
+
+| Example | Demonstrates |
+| --- | --- |
+| [`example_ros2_talker_listener.yaml`](config/example_ros2_talker_listener.yaml) | The publisher/subscriber "hello world" plus topic introspection scripts. `cpp` and `python` configurations swap between `demo_nodes_cpp` and `demo_nodes_py`; a `LOG_LEVEL` variable is substituted into every command. Pass `-p initial_configuration:=cpp`. |
+| [`example_ros2_namespaces.yaml`](config/example_ros2_namespaces.yaml) | Two talker/listener pairs remapped into `/demo1` and `/demo2` with `-r __ns:=`, each grouped in a collapsible `type: category`, plus one launch-file item that monitors two nodes at once. |
+| [`example_ros2_services.yaml`](config/example_ros2_services.yaml) | `add_two_ints_server` with `cpp`/`python` configurations, a two-node launch-file item, and script buttons that call the service and run the demo clients. Pass `-p initial_configuration:=cpp`. |
+| [`example_ros2_turtlesim.yaml`](config/example_ros2_turtlesim.yaml) | `type: shell` items with `pgrep`-based status next to an equivalent ROS item, `attach_on_start` for `turtle_teleop_key`, and script buttons that publish to topics and call services. |
+
+The talker/listener example is the smallest starting point:
+
+```yaml
+workspace: .
+
+variables:
+  - name: LOG_LEVEL
+    choices:
+    - info
+    - debug
+    - warn
+
+configurations:
+  - name: cpp
+    icon: :/icons/source_code.png
+  - name: python
+    icon: :/icons/application.png
+
+nodes:
+  - name: talker
+    ros_nodes:
+    - namespace: /
+      name: talker
+    configurations:
+    - name: cpp
+      cmd: ros2 run demo_nodes_cpp talker --ros-args --log-level $LOG_LEVEL
+    - name: python
+      cmd: ros2 run demo_nodes_py talker --ros-args --log-level $LOG_LEVEL
+    start_checked: true
+
+  - name: listener
+    ros_nodes:
+    - namespace: /
+      name: listener
+    configurations:
+    - name: cpp
+      cmd: ros2 run demo_nodes_cpp listener --ros-args --log-level $LOG_LEVEL
+    - name: python
+      cmd: ros2 run demo_nodes_py listener --ros-args --log-level $LOG_LEVEL
+    start_checked: true
+
+scripts:
+  - name: rqt_graph
+    cmd: ros2 run rqt_graph rqt_graph &
+    icon: :/icons/plot.png
+    row: 0
+    column: 0
+    use_terminal: false
+```
+
+Several details in those files are worth calling out because they are easy to
+get wrong when writing a config from scratch:
+
+- **A script with `use_terminal: false` must end in `&`.** Such a script runs as
+  a blocking `system("bash -c <cmd>")` call on the Qt main thread, so without the
+  `&` the entire dispatcher UI freezes until the command exits. Scripts with
+  `use_terminal: true` are wrapped in `gnome-terminal --`, which returns
+  immediately, so those do not need it.
+- **Avoid script commands that can block forever.** `ros2 topic pub --once` waits
+  indefinitely for a matching subscriber and `ros2 service call` waits
+  indefinitely for the service, so pressing such a button while the target node
+  is stopped leaves a process spinning. Bound them with
+  `--max-wait-time-secs N` or `timeout N`.
+- **Root-namespace nodes need `namespace: /`.** Status matching compares against
+  the fully-qualified name from the ROS graph, which is `/talker` for a node in
+  the root namespace. Omitting `namespace` defaults it to the empty string, which
+  never matches, so the status light stays red even though the node is running.
+- **Items inside a `type: category` must declare their own `type`.** Top-level
+  entries in `nodes` default to `ros` when `type` is omitted, but category items
+  do not — they need an explicit `type: ros` or `type: shell`.
+- **Do not monitor the same node from two items.** Both items turn green when
+  either one is started, which makes the status lights meaningless. Give each
+  item a distinct set of `ros_nodes`.
+- **Launch a multi-node item with a launch file, not `cmd_a & cmd_b`.** The stop
+  button sends `C-C` to the tmux session, which only reaches the foreground
+  process and leaves the backgrounded node orphaned.
+- **Commands cannot contain single quotes.** Process commands are sent as
+  `tmux send-keys -t <session> '<cmd>' Enter` and scripts are run as
+  `bash -c '<cmd>'`, so a literal `'` closes the wrapper. Use double quotes
+  instead, and wrap the whole YAML value in single quotes when the command
+  contains `': '` (as in `ros2 service call ... "{a: 2, b: 3}"`), which YAML
+  would otherwise read as a nested mapping.
+- **Keep shell metacharacters out of process item names.** A process item's name
+  becomes its tmux session name and is interpolated unquoted into commands like
+  `tmux has-session -t <index>_<name>`. Only spaces are sanitized (to
+  underscores), so a name like `root pair (launch file)` makes every tmux call
+  for that item fail with `sh: Syntax error: "(" unexpected`. Script names are
+  not affected.
+- **A `type: shell` item's name must match the process it starts.** Status comes
+  from `pgrep <name>`, which matches against the kernel's 15-character `comm`
+  field. Naming an item `turtle_teleop_key` fails — `pgrep` refuses patterns
+  longer than 15 characters — while `teleop` matches the truncated
+  `turtle_teleop_k` as a substring.
+- **Beware YAML booleans in service request fields.** `ros2 service call` parses
+  its request with YAML 1.1, which reads bare `off`, `on`, `yes`, and `no` as
+  booleans. `"{r: 255, g: 0, b: 0, width: 5, off: 0}"` fails with `attribute
+  name must be string, not 'bool'`; omit the field or quote the key.
+
+### Recovering From A Killed Dispatcher
+
+Dispatcher cleans up after itself on a normal quit or `SIGINT`/`SIGTERM`: it
+stops each item, kills the tmux sessions, and removes `/tmp/dispatcher.lock`. If
+the process is `SIGKILL`ed instead, none of that runs, which leaves behind:
+
+- **A stale lock file.** The next launch aborts with `Could not get lock on file
+  /tmp/dispatcher.lock; an instance of Dispatcher appears to already be
+  running`. Remove it with `rm /tmp/dispatcher.lock`.
+- **Orphaned tmux sessions still running your nodes.** Inspect with `tmux ls`
+  and clear them with `tmux kill-server` (or `tmux kill-session -t <name>` to be
+  selective).
+
 ### Configurations
 
 [`config/example_configurations.yaml`](config/example_configurations.yaml)
