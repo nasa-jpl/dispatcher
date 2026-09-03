@@ -10,7 +10,12 @@
   </description>
 
   <maintainer email="kwehage@jpl.nasa.gov">Kristopher Wehage</maintainer>
+  <maintainer email="daniel.pastor.moreno@jpl.nasa.gov">Daniel Pastor</maintainer>
 
+  <author email="Dennis.Wai@jpl.nasa.gov">Dennis Wai</author>
+  <author>Alex Brinkman</author>
+  <author email="Dennis.Wai@jpl.nasa.gov">Preston Rogers</author>
+  
   <license>Apache-2.0</license>
 
   <url type="repository">
