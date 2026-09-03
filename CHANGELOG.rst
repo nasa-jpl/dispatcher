@@ -5,6 +5,15 @@ Changelog for package dispatcher
 Forthcoming
 -----------
 
+0.4.3 (2026-09-03 16:42)
+------------------------
+* Merge pull request `#5 <https://github.com/nasa-jpl/dispatcher/issues/5>`_ from nasa-jpl/update-authors
+
+  update authors
+* fix author name
+* update authors
+* Contributors: Daniel Pastor
+
 0.4.2 (2026-08-31 07:32)
 ------------------------
 * Merge pull request `#3 <https://github.com/nasa-jpl/dispatcher/issues/3>`_ from nasa-jpl/fix-rolling
