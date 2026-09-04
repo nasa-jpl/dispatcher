@@ -22,62 +22,51 @@ configurations:
 
 nodes:
 
-  - name: fcat
-    ros_nodes:
-    - namespace: /fcat
-      name: fcat
-    configurations:
-    - name: online
-      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py --rate $FCAT_LOOP_RATE_HZ
-    - name: offline
-      cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py --rate $FCAT_LOOP_RATE_HZ
-    start_checked: true
-
-  - name: my-ping3
+  - name: ping-google-ip
     type: shell
     configurations:
     - name: online
-      cmd: ping asimov-dev
+      cmd: ping 8.8.8.8
     - name: offline
-      cmd: ping asimov-dev
+      cmd: ping 8.8.4.4
     start_checked: true
 
-  - name: ping3
+  - name: ping-Cloudflare-ip
     type: shell
     configurations:
     - name: offline
-      cmd: ping asimov-dev
+      cmd: ping 1.1.1.1
     start_checked: true
 
-  - name: ping4
+  - name: ping-OpenDNS-ip
     type: shell
     configurations:
     - name: offline
-      cmd: ping asimov-dev
+      cmd: ping 208.67.222.222
     start_checked: true
 
   - name: category
     type: category
     items:
-      - name: pingA
+      - name: ping-google-com
         type: shell
         configurations:
         - name: offline
-          cmd: ping asimov-dev
+          cmd: ping google.com
         start_checked: true
       - name: pingB
         type: shell
         configurations:
         - name: offline
-          cmd: ping asimov-dev
+          cmd: ping google.com
         start_checked: true
       - name: pingC
         type: shell
         configurations:
         - name: online
-          cmd: ping asimov-dev
+          cmd: ping google.com
         - name: offline
-          cmd: ping asimov-dev
+          cmd: ping google.com
         start_checked: true
 
 
@@ -96,14 +85,14 @@ scripts:
     column: 0
     use_terminal: false
 
-  - name: cheer_me_up
+  - name: print_loop_rate
     configurations:
     - name: online
       # $FCAT_LOOP_RATE_HZ would be replaced with one of the aforementioned choices before this cmd string is executed 
-      cmd: cat /etc/hostname && echo I love JPL times $FCAT_LOOP_RATE_HZ
-      hostname: asimov-dev
+      cmd: cat /etc/hostname && echo $FCAT_LOOP_RATE_HZ
+      hostname: google.com
     - name: offline
-      cmd: cat /etc/hostname  && echo I love JPL times $FCAT_LOOP_RATE_HZ
+      cmd: cat /etc/hostname  && echo $FCAT_LOOP_RATE_HZ
     row: 0
     column: 0
     use_terminal: false

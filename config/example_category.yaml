@@ -21,8 +21,7 @@ nodes:
     - name: fcat
       type: ros
       ros_nodes:
-      - namespace: /fcat
-        name: fcat
+      - name: /fcat/fcat
       configurations:
       - name: online
         cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_online.py

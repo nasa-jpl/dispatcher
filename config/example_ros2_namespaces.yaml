@@ -18,8 +18,9 @@
 # /demoN/chatter topic and neither hears the other. Each pair lives in its own
 # `type: category` group that can be collapsed in the UI.
 #
-# This file defines no `configurations`, so every item falls back to the
-# implicit 'all' configuration and the configuration selector is not shown.
+# This file defines no `configurations`, so every item falls back to the implicit
+# 'all' configuration. The configuration selector at the top of the window is
+# always present and simply stays empty.
 
 # ROS process items run `cd <workspace>` then `source install/setup.bash` before
 # the command, so this must be the colcon workspace root. '.' works when

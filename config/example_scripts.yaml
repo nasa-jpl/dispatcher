@@ -2,16 +2,8 @@ workspace: .
 
 nodes:
 
-  - name: fcat
-    ros_nodes:
-    - namespace: /fcat
-      name: fcat
-    cmd: ros2 launch install/asimov_bringup/share/asimov_bringup/launch/fcat_offline.py
-    start_checked: true
-
   - name: commander
-    namespace: /commander
-    node_name: commander
+    node_name: /commander/commander
     cmd: ros2 run commander commander
     start_checked: true
     stop_tmux_cmd: "C-D"

@@ -113,12 +113,47 @@ ros2 run dispatcher dispatcher --ros-args \
   -p start_checked_on_startup:=true
 ```
 
-| Example | Demonstrates |
-| --- | --- |
-| [`example_ros2_talker_listener.yaml`](config/example_ros2_talker_listener.yaml) | The publisher/subscriber "hello world" plus topic introspection scripts. `cpp` and `python` configurations swap between `demo_nodes_cpp` and `demo_nodes_py`; a `LOG_LEVEL` variable is substituted into every command. Pass `-p initial_configuration:=cpp`. |
-| [`example_ros2_namespaces.yaml`](config/example_ros2_namespaces.yaml) | Two talker/listener pairs remapped into `/demo1` and `/demo2` with `-r __ns:=`, each grouped in a collapsible `type: category`, plus one launch-file item that monitors two nodes at once. |
-| [`example_ros2_services.yaml`](config/example_ros2_services.yaml) | `add_two_ints_server` with `cpp`/`python` configurations, a two-node launch-file item, and script buttons that call the service and run the demo clients. Pass `-p initial_configuration:=cpp`. |
-| [`example_ros2_turtlesim.yaml`](config/example_ros2_turtlesim.yaml) | `type: shell` items with `pgrep`-based status next to an equivalent ROS item, `attach_on_start` for `turtle_teleop_key`, and script buttons that publish to topics and call services. |
+#### Talker / Listener
+
+[`config/example_ros2_talker_listener.yaml`](config/example_ros2_talker_listener.yaml)
+is the publisher/subscriber "hello world" plus topic introspection scripts. The
+`cpp` and `python` configurations swap between `demo_nodes_cpp` and
+`demo_nodes_py`, and a `LOG_LEVEL` variable is substituted into every command.
+Launch it with `-p initial_configuration:=cpp`.
+
+![talker_listener](doc/dispatcher_example_ros2_talker_listener.png)
+
+#### Namespaces And Categories
+
+[`config/example_ros2_namespaces.yaml`](config/example_ros2_namespaces.yaml) runs
+two talker/listener pairs remapped into `/demo1` and `/demo2` with `-r __ns:=`,
+each grouped in a collapsible `type: category` — `/demo1` is expanded and
+`/demo2` collapsed below. The `root_pair_launch_file` item shows a single entry
+monitoring two nodes at once. This file defines no `configurations`, so the
+selector at the top stays empty.
+
+![namespaces](doc/dispatcher_example_ros2_namespaces.png)
+
+#### Services
+
+[`config/example_ros2_services.yaml`](config/example_ros2_services.yaml) starts
+`add_two_ints_server` under `cpp`/`python` configurations alongside a two-node
+launch-file item, with script buttons that call the service and run the demo
+clients. Launch it with `-p initial_configuration:=cpp`. Note the second item's
+label elided to `introspec...unch_file`: item names longer than the checkbox
+width are shortened in the middle.
+
+![services](doc/dispatcher_example_ros2_services.png)
+
+#### Turtlesim
+
+[`config/example_ros2_turtlesim.yaml`](config/example_ros2_turtlesim.yaml) mixes
+`type: shell` items whose status comes from `pgrep` (`turtlesim_node`, `teleop`)
+with a ROS item monitored through the graph (`draw_square`). `teleop` sets
+`attach_on_start` so it opens its own terminal for keystrokes, and the scripts
+panel is filled with buttons that publish to topics and call services.
+
+![turtlesim](doc/dispatcher_example_ros2_turtlesim.png)
 
 The talker/listener example is the smallest starting point:
 
