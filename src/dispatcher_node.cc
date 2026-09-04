@@ -48,9 +48,18 @@ dispatcher::DispatcherNode::DispatcherNode(dispatcher::DispatcherWidget* widget)
   this->declare_parameter<std::string>("initial_configuration", "");
   this->get_parameter("initial_configuration", initial_configuration_);
 
+  this->declare_parameter<bool>("start_checked_on_startup", false);
+  this->get_parameter("start_checked_on_startup",
+                      start_checked_on_startup_);
+
   ParseConfig();
   CleanupTmuxSessions();
   UpdateConfiguration();
+
+  if (start_checked_on_startup_) {
+    RCLCPP_INFO(this->get_logger(), "Starting all checked items on startup");
+    StartChecked();
+  }
 }
 
 void dispatcher::DispatcherNode::ParseConfig()
@@ -124,8 +133,11 @@ void dispatcher::DispatcherNode::ParseConfig()
         if (node["items"]) {
           grid_layout = dispatcher_w->AddCategoryOfProcesses(name);
           for (const auto& item : node["items"]) {
-            node_type = GetItemTypeFromStr(item["type"].as<std::string>());
-            AddItem(node_type, item, grid_layout);
+            // As with top-level entries, an item that omits 'type' is a ROS item
+            ItemType item_type =
+                item["type"] ? GetItemTypeFromStr(item["type"].as<std::string>())
+                             : ROS;
+            AddItem(item_type, item, grid_layout);
           }
         } else {
           RCLCPP_FATAL(

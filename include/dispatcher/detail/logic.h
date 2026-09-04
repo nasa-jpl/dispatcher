@@ -117,10 +117,32 @@ std::string BuildScriptSystemCall(
     bool use_cmd_prefix, bool use_terminal);
 
 /*!
+@brief Joins a namespace and node name into the fully-qualified name that the
+ROS graph reports.
+
+Accepts every spelling that shows up in YAML and in
+`rclcpp::Node::get_node_names_and_namespaces()`, so an omitted namespace resolves
+to the root namespace rather than failing to match:
+
+    ("", "talker")       -> "/talker"
+    ("/", "talker")      -> "/talker"
+    ("/demo", "talker")  -> "/demo/talker"
+    ("demo", "talker")   -> "/demo/talker"
+    ("", "/fcat/fcat")   -> "/fcat/fcat"
+
+@param node_namespace Namespace of the node, absolute, relative, or empty.
+@param node_name Node name, either bare or already fully qualified.
+@return Fully-qualified node name beginning with `/`.
+*/
+std::string MakeFullyQualifiedNodeName(const std::string& node_namespace,
+                                       const std::string& node_name);
+
+/*!
 @brief Parses a monitored ROS node entry from YAML.
 @param node YAML map containing `name_key` and optional `namespace`.
 @param name_key Field name that stores the ROS node name.
-@return Parsed monitor configuration with empty namespace fallback.
+@return Parsed monitor configuration; an omitted `namespace` is left empty and
+        resolves to the root namespace during matching.
 */
 RosNodeMonitorConfig ParseRosNodeMonitorConfig(const YAML::Node& node,
                                                const std::string& name_key);

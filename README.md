@@ -14,6 +14,7 @@ The `dispatcher` executable uses the following ROS parameters:
 | --- | --- | --- | --- |
 | `dispatcher_config_path` | `string` | `""` | Path to the dispatcher YAML file. |
 | `initial_configuration` | `string` | `""` | Configuration name to select on startup. |
+| `start_checked_on_startup` | `bool` | `false` | Start all checked process items after loading the initial configuration. |
 | `ssh_timeout_sec` | `int` | `10` | Timeout used when building remote SSH commands. |
 | `target_loop_rate_hz` | `double` | `100.0` | Main process/status polling rate. |
 
@@ -38,7 +39,9 @@ Each entry in `nodes` can be:
 
 - A ROS process item. If `type` is omitted, the item is treated as ROS by default.
 - A shell process item with `type: shell`.
-- A collapsible category with `type: category` and an `items` array.
+- A collapsible category with `type: category` and an `items` array. Entries in
+  `items` follow the same rules, including the default to ROS when `type` is
+  omitted.
 
 Common item fields include:
 
@@ -55,8 +58,10 @@ Common item fields include:
 | `attach_on_start` | Opens a terminal automatically after launch. |
 
 ROS process items can additionally define `node_name` plus an optional
-`namespace` that defaults to an empty string, or a `ros_nodes` array with the same
-monitoring fields for online-state monitoring.
+`namespace`, or a `ros_nodes` array with the same monitoring fields for
+online-state monitoring. An omitted `namespace` resolves to the root namespace,
+so `name: talker` matches the graph's `/talker`; a `name` that is already
+absolute, such as `/fcat/fcat`, carries its own namespace.
 
 Shell process items use `pgrep` on the item name to infer online state.
 
@@ -84,6 +89,180 @@ Variable entries support:
 The following examples build incrementally from a minimal configuration to a
 full-featured setup. Each one corresponds to a YAML file in [`config/`](config/)
 and a screenshot in [`doc/`](doc/).
+
+### ROS 2 Demos (runnable out of the box)
+
+Four examples run without any custom packages, using only the demos that ship
+with ROS 2. Each is self-contained and includes an `rqt_graph` button. Install
+the demo packages if needed:
+
+```bash
+sudo apt install ros-$ROS_DISTRO-demo-nodes-cpp \
+                 ros-$ROS_DISTRO-demo-nodes-py \
+                 ros-$ROS_DISTRO-turtlesim \
+                 ros-$ROS_DISTRO-rqt-graph
+```
+
+Launch any of them from the root of the colcon workspace containing
+`dispatcher`:
+
+```bash
+source install/setup.bash
+ros2 run dispatcher dispatcher --ros-args \
+  -p dispatcher_config_path:=src/dispatcher/config/<example>.yaml \
+  -p start_checked_on_startup:=true
+```
+
+#### Talker / Listener
+
+[`config/example_ros2_talker_listener.yaml`](config/example_ros2_talker_listener.yaml)
+is the publisher/subscriber "hello world" plus topic introspection scripts. The
+`cpp` and `python` configurations swap between `demo_nodes_cpp` and
+`demo_nodes_py`, and a `LOG_LEVEL` variable is substituted into every command.
+Launch it with `-p initial_configuration:=cpp`.
+
+![talker_listener](doc/dispatcher_example_ros2_talker_listener.png)
+
+#### Namespaces And Categories
+
+[`config/example_ros2_namespaces.yaml`](config/example_ros2_namespaces.yaml) runs
+two talker/listener pairs remapped into `/demo1` and `/demo2` with `-r __ns:=`,
+each grouped in a collapsible `type: category` — `/demo1` is expanded and
+`/demo2` collapsed below. The `root_pair_launch_file` item shows a single entry
+monitoring two nodes at once. This file defines no `configurations`, so the
+selector at the top stays empty.
+
+![namespaces](doc/dispatcher_example_ros2_namespaces.png)
+
+#### Services
+
+[`config/example_ros2_services.yaml`](config/example_ros2_services.yaml) starts
+`add_two_ints_server` under `cpp`/`python` configurations alongside a two-node
+launch-file item, with script buttons that call the service and run the demo
+clients. Launch it with `-p initial_configuration:=cpp`. Note the second item's
+label elided to `introspec...unch_file`: item names longer than the checkbox
+width are shortened in the middle.
+
+![services](doc/dispatcher_example_ros2_services.png)
+
+#### Turtlesim
+
+[`config/example_ros2_turtlesim.yaml`](config/example_ros2_turtlesim.yaml) mixes
+`type: shell` items whose status comes from `pgrep` (`turtlesim_node`, `teleop`)
+with a ROS item monitored through the graph (`draw_square`). `teleop` sets
+`attach_on_start` so it opens its own terminal for keystrokes, and the scripts
+panel is filled with buttons that publish to topics and call services.
+
+![turtlesim](doc/dispatcher_example_ros2_turtlesim.png)
+
+The talker/listener example is the smallest starting point:
+
+```yaml
+workspace: .
+
+variables:
+  - name: LOG_LEVEL
+    choices:
+    - info
+    - debug
+    - warn
+
+configurations:
+  - name: cpp
+    icon: :/icons/source_code.png
+  - name: python
+    icon: :/icons/application.png
+
+nodes:
+  - name: talker
+    ros_nodes:
+    - namespace: /
+      name: talker
+    configurations:
+    - name: cpp
+      cmd: ros2 run demo_nodes_cpp talker --ros-args --log-level $LOG_LEVEL
+    - name: python
+      cmd: ros2 run demo_nodes_py talker --ros-args --log-level $LOG_LEVEL
+    start_checked: true
+
+  - name: listener
+    ros_nodes:
+    - namespace: /
+      name: listener
+    configurations:
+    - name: cpp
+      cmd: ros2 run demo_nodes_cpp listener --ros-args --log-level $LOG_LEVEL
+    - name: python
+      cmd: ros2 run demo_nodes_py listener --ros-args --log-level $LOG_LEVEL
+    start_checked: true
+
+scripts:
+  - name: rqt_graph
+    cmd: ros2 run rqt_graph rqt_graph &
+    icon: :/icons/plot.png
+    row: 0
+    column: 0
+    use_terminal: false
+```
+
+Several details in those files are worth calling out because they are easy to
+get wrong when writing a config from scratch:
+
+- **A script with `use_terminal: false` must end in `&`.** Such a script runs as
+  a blocking `system("bash -c <cmd>")` call on the Qt main thread, so without the
+  `&` the entire dispatcher UI freezes until the command exits. Scripts with
+  `use_terminal: true` are wrapped in `gnome-terminal --`, which returns
+  immediately, so those do not need it.
+- **Avoid script commands that can block forever.** `ros2 topic pub --once` waits
+  indefinitely for a matching subscriber and `ros2 service call` waits
+  indefinitely for the service, so pressing such a button while the target node
+  is stopped leaves a process spinning. Bound them with
+  `--max-wait-time-secs N` or `timeout N`.
+- **A non-root `namespace` must be spelled out.** Status matching compares
+  against the fully-qualified name from the ROS graph, so a node remapped with
+  `-r __ns:=/demo` has to be monitored as `namespace: /demo`. An omitted
+  `namespace` resolves to the root namespace, and a `name` that is already
+  absolute (`name: /fcat/fcat`) carries its own.
+- **Do not monitor the same node from two items.** Both items turn green when
+  either one is started, which makes the status lights meaningless. Give each
+  item a distinct set of `ros_nodes`.
+- **Launch a multi-node item with a launch file, not `cmd_a & cmd_b`.** The stop
+  button sends `C-C` to the tmux session, which only reaches the foreground
+  process and leaves the backgrounded node orphaned.
+- **Commands cannot contain single quotes.** Process commands are sent as
+  `tmux send-keys -t <session> '<cmd>' Enter` and scripts are run as
+  `bash -c '<cmd>'`, so a literal `'` closes the wrapper. Use double quotes
+  instead, and wrap the whole YAML value in single quotes when the command
+  contains `': '` (as in `ros2 service call ... "{a: 2, b: 3}"`), which YAML
+  would otherwise read as a nested mapping.
+- **Keep shell metacharacters out of process item names.** A process item's name
+  becomes its tmux session name and is interpolated unquoted into commands like
+  `tmux has-session -t <index>_<name>`. Only spaces are sanitized (to
+  underscores), so a name like `root pair (launch file)` makes every tmux call
+  for that item fail with `sh: Syntax error: "(" unexpected`. Script names are
+  not affected.
+- **A `type: shell` item's name must match the process it starts.** Status comes
+  from `pgrep <name>`, which matches against the kernel's 15-character `comm`
+  field. Naming an item `turtle_teleop_key` fails — `pgrep` refuses patterns
+  longer than 15 characters — while `teleop` matches the truncated
+  `turtle_teleop_k` as a substring.
+- **Beware YAML booleans in service request fields.** `ros2 service call` parses
+  its request with YAML 1.1, which reads bare `off`, `on`, `yes`, and `no` as
+  booleans. `"{r: 255, g: 0, b: 0, width: 5, off: 0}"` fails with `attribute
+  name must be string, not 'bool'`; omit the field or quote the key.
+
+### Recovering From A Killed Dispatcher
+
+Dispatcher cleans up after itself on a normal quit or `SIGINT`/`SIGTERM`: it
+stops each item, kills the tmux sessions, and removes `/tmp/dispatcher.lock`. If
+the process is `SIGKILL`ed instead, none of that runs, which leaves behind:
+
+- **A stale lock file.** The next launch aborts with `Could not get lock on file
+  /tmp/dispatcher.lock; an instance of Dispatcher appears to already be
+  running`. Remove it with `rm /tmp/dispatcher.lock`.
+- **Orphaned tmux sessions still running your nodes.** Inspect with `tmux ls`
+  and clear them with `tmux kill-server` (or `tmux kill-session -t <name>` to be
+  selective).
 
 ### Configurations
 
@@ -380,10 +559,14 @@ source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 run dispatcher dispatcher --ros-args \
   -p dispatcher_config_path:=/path/to/dispatcher/config.yaml \
-  -p initial_configuration:=offline
+  -p initial_configuration:=offline \
+  -p start_checked_on_startup:=true
 ```
 
-If `initial_configuration` is omitted, the first configured entry is used.
+If `initial_configuration` is omitted, the first configured entry is used. The
+`start_checked_on_startup` parameter defaults to `false`; when enabled,
+dispatcher starts each available item whose YAML `start_checked` value is
+`true` after applying that initial configuration.
 
 The terminal button opens a command like:
 

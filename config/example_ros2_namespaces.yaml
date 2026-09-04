@@ -1,0 +1,129 @@
+# ============================================================================
+# ROS 2 talker/listener in namespaces, grouped into collapsible categories.
+# ============================================================================
+#
+# Runs out of the box against stock ROS 2 packages; no custom package needed:
+#
+#   sudo apt install ros-$ROS_DISTRO-demo-nodes-cpp ros-$ROS_DISTRO-rqt-graph
+#
+# Launch from the root of the colcon workspace that contains dispatcher:
+#
+#   source install/setup.bash
+#   ros2 run dispatcher dispatcher --ros-args \
+#     -p dispatcher_config_path:=src/dispatcher/config/example_ros2_namespaces.yaml \
+#     -p start_checked_on_startup:=true
+#
+# Two independent talker/listener pairs are pushed into the /demo1 and /demo2
+# namespaces with the `__ns` remap, so each pair talks on its own
+# /demoN/chatter topic and neither hears the other. Each pair lives in its own
+# `type: category` group that can be collapsed in the UI.
+#
+# This file defines no `configurations`, so every item falls back to the implicit
+# 'all' configuration. The configuration selector at the top of the window is
+# always present and simply stays empty.
+
+# ROS process items run `cd <workspace>` then `source install/setup.bash` before
+# the command, so this must be the colcon workspace root. '.' works when
+# dispatcher is launched from there.
+workspace: .
+
+nodes:
+
+  # NOTE: the monitored `namespace` has to match the `__ns` remap, since status
+  # matching compares against the fully-qualified name reported by the ROS
+  # graph (`/demo1/talker` here). Unlike the root namespace, a non-default one
+  # cannot be inferred.
+  #
+  # The `type: ros` on each item below is spelled out for clarity but optional;
+  # items default to ROS whether they are nested in a category or not.
+  - name: /demo1
+    type: category
+    items:
+    - name: demo1 talker
+      type: ros
+      ros_nodes:
+      - namespace: /demo1
+        name: talker
+      cmd: ros2 run demo_nodes_cpp talker --ros-args -r __ns:=/demo1
+      start_checked: true
+
+    - name: demo1 listener
+      type: ros
+      ros_nodes:
+      - namespace: /demo1
+        name: listener
+      cmd: ros2 run demo_nodes_cpp listener --ros-args -r __ns:=/demo1
+      start_checked: true
+
+  - name: /demo2
+    type: category
+    items:
+    - name: demo2 talker
+      type: ros
+      ros_nodes:
+      - namespace: /demo2
+        name: talker
+      cmd: ros2 run demo_nodes_cpp talker --ros-args -r __ns:=/demo2
+
+    - name: demo2 listener
+      type: ros
+      ros_nodes:
+      - namespace: /demo2
+        name: listener
+      cmd: ros2 run demo_nodes_cpp listener --ros-args -r __ns:=/demo2
+
+  # A single item can also monitor several nodes at once, which is the usual
+  # shape for a launch file. This one runs the stock talker/listener launch file
+  # in the root namespace and reports 2/2 (green), 1/2 (orange), or 0/2 (red) in
+  # its status light. Use a launch file rather than chaining two `ros2 run`
+  # commands with `&`: the stop button sends C-C to the tmux session, which
+  # would leave a backgrounded node orphaned.
+  #
+  # NOTE: a process item's name becomes its tmux session name, interpolated
+  # unquoted into commands like `tmux has-session -t <index>_<name>`. Only spaces
+  # are sanitized (to underscores), so keep shell metacharacters -- parentheses,
+  # `&`, `;`, `$`, quotes -- out of process item names or every tmux call for
+  # that item fails with a shell syntax error.
+  - name: root_pair_launch_file
+    type: ros
+    ros_nodes:
+    - namespace: /
+      name: talker
+    - namespace: /
+      name: listener
+    cmd: ros2 launch demo_nodes_cpp talker_listener_launch.py
+
+scripts:
+
+# A script with `use_terminal: false` runs as a blocking system() call on the Qt
+# main thread, so it MUST end in `&` or the dispatcher UI freezes until the
+# command exits. Scripts with `use_terminal: true` are wrapped in
+# `gnome-terminal --`, which returns immediately, so those do not need the `&`.
+
+  - name: rqt_graph
+    cmd: ros2 run rqt_graph rqt_graph &
+    icon: :/icons/plot.png
+    row: 0
+    column: 0
+    use_terminal: false
+
+  - name: node list
+    cmd: ros2 node list && read -n 1 -s -p "Press any key to close"
+    icon: :/icons/source_code.png
+    row: 0
+    column: 1
+    use_terminal: true
+
+  - name: echo /demo1/chatter
+    cmd: ros2 topic echo /demo1/chatter
+    icon: :/icons/terminal.png
+    row: 1
+    column: 0
+    use_terminal: true
+
+  - name: echo /demo2/chatter
+    cmd: ros2 topic echo /demo2/chatter
+    icon: :/icons/terminal.png
+    row: 1
+    column: 1
+    use_terminal: true
