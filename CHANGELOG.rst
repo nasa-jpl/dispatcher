@@ -5,6 +5,25 @@ Changelog for package dispatcher
 Forthcoming
 -----------
 
+0.4.4 (2026-09-05 02:08)
+------------------------
+* Merge pull request `#6 <https://github.com/nasa-jpl/dispatcher/issues/6>`_ from nasa-jpl/copilot/fix-bump-github-actions-job
+
+  Fix "bump" workflow: use pull_request_target so fork-based merges can push tags
+* Fix bump workflow: use pull_request_target to get write token for fork PRs
+
+  Co-authored-by: PastorD <7848129+PastorD@users.noreply.github.com>
+* Initial plan
+* Merge pull request `#4 <https://github.com/nasa-jpl/dispatcher/issues/4>`_ from PastorD/feature/start-checked-on-startup
+
+  Add checked-item startup parameter
+* improve config docs
+* fix category type default to match non-category behaviour
+* fix namespace resolution
+* add ros2 examples
+* Add checked-item startup parameter
+* Contributors: copilot-swe-agent[bot], Daniel Pastor
+
 0.4.3 (2026-09-03 16:42)
 ------------------------
 * Merge pull request `#5 <https://github.com/nasa-jpl/dispatcher/issues/5>`_ from nasa-jpl/update-authors
