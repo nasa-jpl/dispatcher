@@ -32,7 +32,7 @@ add_library(icons STATIC
   icons/icons.qrc
 )
 
-add_library(dispatcher_widget
+add_library(dispatcher_widget STATIC
   include/dispatcher/dispatcher_node.h
   include/dispatcher/dispatcher_widget.h
   include/dispatcher/detail/logic.h
