@@ -5,6 +5,36 @@ Changelog for package dispatcher
 Forthcoming
 -----------
 
+0.4.5 (2026-09-23 16:53)
+------------------------
+* Merge pull request `#7 <https://github.com/nasa-jpl/dispatcher/issues/7>`_ from nasa-jpl/fix-static-widget-lib
+
+  fix: build dispatcher_widget as a static library
+* fix: build dispatcher_widget as a static library
+
+  Under colcon, BUILD_SHARED_LIBS=ON turned dispatcher_widget into a
+  shared library, but the only install rule installs the dispatcher
+  executable. libdispatcher_widget.so was left in the build tree, so the
+  installed (and Debian-packaged) executable had a dangling NEEDED entry
+  and no RUNPATH:
+
+    $ ros2 run dispatcher dispatcher
+    .../dispatcher: error while loading shared libraries:
+    libdispatcher_widget.so: cannot open shared object file
+
+  The library is consumed only by the dispatcher executable and the
+  in-tree gtest, and nothing ament_exports it, so linking it statically
+  is the simplest fix. The icons qrc resource is still pulled in via the
+  existing Q_INIT_RESOURCE(icons) call in src/dispatcher.cc.
+
+  Verified in osrf/ros:rolling-desktop: the installed binary no longer
+  references libdispatcher_widget.so, runs from a clean install tree,
+  keeps its qrc resources, and the 22 unit tests pass. Reverting the
+  STATIC keyword reproduces the loader failure.
+
+  Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+* Contributors: Daniel Pastor
+
 0.4.4 (2026-09-05 02:08)
 ------------------------
 * Merge pull request `#6 <https://github.com/nasa-jpl/dispatcher/issues/6>`_ from nasa-jpl/copilot/fix-bump-github-actions-job
