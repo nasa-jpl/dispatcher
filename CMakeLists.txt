@@ -113,6 +113,7 @@ if(BUILD_TESTING)
   ament_add_gtest(dispatcher_logic_test
     test/dispatcher_logic_test.cpp
     test/dispatcher_status_test.cpp
+    test/variable_test.cpp
   )
   if(TARGET dispatcher_logic_test)
     target_link_libraries(dispatcher_logic_test

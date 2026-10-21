@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QGroupBox>
 #include <QLabel>
 #include <QWidget>
@@ -45,6 +46,8 @@ class Variable : public QWidget
   DispatcherWidget* dispatcher_ = nullptr;
   DispatcherNode*   ros_node_   = nullptr;
   QComboBox*        combo_box_  = nullptr;
+  QDoubleSpinBox*   number_input_ = nullptr;
+  bool             allow_while_running_ = false;
 
   std::string                         name_;
   std::vector<std::string>            choices_;

@@ -329,6 +329,14 @@ scripts:
 
 ### Variables
 
+For numeric script inputs, a variable may use `type: float` with `min`, `max`,
+`step`, `default`, and `decimals` (default 3). This displays a numeric text field
+with increment/decrement buttons. An optional `label` changes the displayed
+text without changing its `$VARIABLE` substitution name. Set
+`allow_while_running: true` for inputs such as live velocity setpoints that must
+remain editable while monitored nodes run. Existing choice variables retain
+their previous behavior. Numeric substitutions always use a decimal point.
+
 [`config/example_variables.yaml`](config/example_variables.yaml) introduces
 **variable selectors** shown as drop-downs in the UI. References like
 `$FCAT_LOOP_RATE_HZ` in any command are substituted with the selected value
